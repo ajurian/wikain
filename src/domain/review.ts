@@ -16,8 +16,8 @@ export interface FsrsReviewLog {
   review: Date;
 }
 
-/** Which tier produced a review. Extends as further tiers land (recognition, cloze, free, …). */
-export type ReviewTier = "cued";
+/** Which tier produced a review. Extends as further tiers land (recognition, cloze, …). */
+export type ReviewTier = "cued" | "free";
 
 /**
  * One graded interaction (spec/12-data-model.md DM-1 review layer). Persisted from review #1
@@ -30,6 +30,12 @@ export interface ReviewLog {
   tier: ReviewTier;
   rating: Rating;
   reviewedAt: Date;
+  /**
+   * RAT-5 / SM-9: whether the production was scaffolded (hint / sentence starter). Instrumented from
+   * day one even though v1 does not rate on it (it gates Fluent, not the rating). Absent on
+   * deterministic tiers (cued), which carry no scaffolding.
+   */
+  scaffolded?: boolean;
   /** The raw FSRS scheduling log (RAT-8). */
   fsrs: FsrsReviewLog;
 }

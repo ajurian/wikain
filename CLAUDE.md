@@ -88,20 +88,42 @@ it needs **no external services** (no DeepSeek/Neon/BetterAuth/network):
   root). A smoke test runs a real `items.json` item through real wink + ts-fsrs.
 - **Covers:** INV-1, INV-3, SM-4, SM-6 (deterministic fail reschedules, never demotes), RAT-1, RAT-8.
 
+**Also implemented — the judged free-production slice** (same branch; still **no external services** —
+the cloud judge is **faked**, no DeepSeek/network). Mirrors the cued skeleton, proving INV-2:
+- **domain:** `constants.ts` (RL named tunables — `DEGENERATE_MIN_CONTENT_TOKENS`,
+  `VERBATIM_SIMILARITY_THRESHOLD`, `MAX_RULE_BOUNCE_RETRIES`), `verdict.ts` (JDG-4 contract +
+  **pure** `passesGate` = sense AND grammar, JDG-2/5), `ruleLayer.ts` (RL-2/3/4 **pure** checks +
+  `NlpToken` data shape; reuses `isLemmaMatch`), `mastery.ts` `demoteOneRung` (SM-6/7, floors at
+  Recognized).
+- **application:** ports `judge` (`JudgePort`) + `sentenceAnalyzer` (kept separate from `lemmatizer`,
+  SOLID-4); use-case `submitFreeProduction.ts` (rule-layer → judge → rate → demote-on-fail → persist;
+  returns a `bounce | judged` union). `ReviewTier` widened to `"cued" | "free"`; `ReviewLog.scaffolded`
+  instrumented (RAT-5).
+- **infrastructure:** `fakeJudge.ts` (records calls; `passingVerdict` helper), `winkLemmatizer` now
+  also implements `SentenceAnalyzer.analyze` (wink UPOS + stopword), `tagalogLexicon.ts` (**stub**
+  shipped lexicon for RL-4), `composeFreeProduction` in `composition.ts`. A smoke test runs real
+  `items.json` + real wink through a gate-pass (one rating) and a word-absent bounce (no rating).
+- **Covers:** INV-2 (bounce → no rating/scheduler/log, card stays due), INV-1, RL-1/2/3/4, RL-6,
+  JDG-2/5, SM-6/7, RAT-1/4/5. *(38 tests total at time of writing.)*
+
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
-  the domain. Reuse `isLemmaMatch` for the rule layer's presence check (RL-2) when it lands.
+  the domain. `isLemmaMatch` now backs both cued grading (TIER-5) and the rule layer's presence
+  check (RL-2); the degeneracy check (RL-3) uses a **separate** `SentenceAnalyzer` port (POS tags),
+  not bolted onto `Lemmatizer` (SOLID-4). One wink adapter implements both.
 - **Scheduling types** (`FsrsCardState`/`FsrsReviewLog`) are declared **structurally in the domain**;
   ts-fsrs's own `Card`/`ReviewLog` are mapped only inside `tsFsrsScheduler`. Don't leak ts-fsrs (or
   any library) into application/domain — put it behind a port (`ARCH-3`).
 - Every test names the `spec/` ID it exercises.
 
 **Deferred (do NOT build until pulled into scope — `PRAG-1`):** recognition MCQ + cloze tiers and
-their `Seen` spacing / RAT-7 drop-back; rule layer (`04`); verdict memo (`05`); cloud judge (`06`) +
-edit resolution (`07`) + failure path (`08`); seeding (`09`); counter (`10`); end-to-end loop
-integration (`11`); Neon (STACK-3) + BetterAuth (STACK-4) adapters; presentation/UI. **Natural next
-slice:** the judged free-production path (`RL` → faked `JudgePort` → verdict), which reuses the
-`submitCuedReview` use-case/port skeleton and proves INV-2 (bounces produce no rating).
+their `Seen` spacing / RAT-7 drop-back; verdict memo (`05`, `MEMO-1` is a `MAY`); the **real**
+DeepSeek judge (`JDG-10/11`) + edit resolution (`07`) + failure path (`08`); `Productive→Fluent`
+promotion (`SM-5`) + counter (`10`); seeding (`09`); end-to-end loop integration (`11`);
+maintenance-at-`Fluent` (`JDG-8`); Neon (STACK-3) + BetterAuth (STACK-4) adapters; presentation/UI.
+**Natural next slice:** either `SM-5` `Productive→Fluent` promotion (judged-pass count + calendar-day
+spacing + stability + unscaffolded) with the counter (`10`), or the **real DeepSeek judge** adapter +
+the `08` failure path (swap `FakeJudge` for the HTTPS transport behind the same `JudgePort`).
 
 > **Status caveat:** this slice is on `runtime-cued-slice`. Re-confirm with `git branch`/`git log`
 > and re-run `npm test` at session start — do not trust this count if the tree has moved on.

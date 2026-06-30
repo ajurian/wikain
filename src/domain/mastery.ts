@@ -11,3 +11,15 @@ import type { MasteryState } from "./card.js";
 export function promoteOnCuedPass(state: MasteryState): MasteryState {
   return state === "Recognized" ? "Productive" : state;
 }
+
+/**
+ * SM-6 / SM-7: a failed judged free-production or maintenance review demotes the word exactly one
+ * rung, following `Fluent → Productive → Recognized` and flooring at `Recognized` (a production
+ * failure breaks the production, not the form–meaning link). Deterministic-tier fails never reach
+ * here (SM-6) — only a judged-gate fail does. Below `Productive` the state is returned unchanged.
+ */
+export function demoteOneRung(state: MasteryState): MasteryState {
+  if (state === "Fluent") return "Productive";
+  if (state === "Productive") return "Recognized";
+  return state;
+}

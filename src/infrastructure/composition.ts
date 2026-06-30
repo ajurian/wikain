@@ -6,10 +6,13 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { SubmitCuedReviewDeps } from "../application/submitCuedReview.js";
+import type { SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
+import type { JudgePort } from "../application/ports/judge.js";
 import { JsonCatalog } from "./catalog.js";
 import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { WinkLemmatizer } from "./winkLemmatizer.js";
+import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,5 +25,26 @@ export function composeCuedReview(itemsPath: string = ITEMS_PATH): SubmitCuedRev
     cards: new InMemoryCardRepository(),
     scheduler: new TsFsrsScheduler(),
     lemmatizer: new WinkLemmatizer(),
+  };
+}
+
+/**
+ * Wiring for the judged free-production slice. The `judge` is injected because v1 has no real judge
+ * adapter yet (the DeepSeek transport + failure path is the `08` slice) — pass a FakeJudge here. The
+ * one wink adapter serves as both Lemmatizer (presence) and SentenceAnalyzer (degeneracy POS).
+ */
+export function composeFreeProduction(
+  judge: JudgePort,
+  itemsPath: string = ITEMS_PATH,
+): SubmitFreeProductionDeps {
+  const wink = new WinkLemmatizer();
+  return {
+    catalog: JsonCatalog.fromFile(itemsPath),
+    cards: new InMemoryCardRepository(),
+    scheduler: new TsFsrsScheduler(),
+    lemmatizer: wink,
+    analyzer: wink,
+    judge,
+    tagalogLexicon: TAGALOG_LEXICON,
   };
 }
