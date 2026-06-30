@@ -26,4 +26,12 @@ export class InMemoryCardRepository implements CardRepository {
   async appendReviewLog(log: ReviewLog): Promise<void> {
     this.reviewLogs.push(log);
   }
+
+  async logsForWord(userId: string, senseId: string): Promise<ReviewLog[]> {
+    return this.reviewLogs.filter((l) => l.userId === userId && l.senseId === senseId);
+  }
+
+  async listCards(userId: string): Promise<Card[]> {
+    return [...this.cards.values()].filter((c) => c.userId === userId);
+  }
 }

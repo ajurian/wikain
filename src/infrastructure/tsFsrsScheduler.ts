@@ -29,4 +29,11 @@ export class TsFsrsScheduler implements Scheduler {
     const { card: nextCard, log } = this.engine.next(card as FsrsCard, now, grade);
     return { card: nextCard, log };
   }
+
+  getRetrievability(card: FsrsCardState, now: Date): number {
+    // `format=false` returns the raw forgetting-curve probability in [0,1] (CNT-3) rather than the
+    // ts-fsrs default percentage string. Same input-boundary cast as `next` (FsrsCardState only
+    // differs in `state` typing).
+    return this.engine.get_retrievability(card as FsrsCard, now, false);
+  }
 }

@@ -16,4 +16,10 @@ export interface Scheduler {
     rating: Rating,
     now: Date,
   ): { card: FsrsCardState; log: FsrsReviewLog };
+  /**
+   * Current retrievability in [0,1] of a card at `now` (the FSRS forgetting curve). Read live (not
+   * stored) so the counter ticks down between reviews (spec/10 CNT-3). Distinct from scheduling: this
+   * gates the headline metric at COUNTER_R_FLOOR, not REQUEST_RETENTION.
+   */
+  getRetrievability(card: FsrsCardState, now: Date): number;
 }

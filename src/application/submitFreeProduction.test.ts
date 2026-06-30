@@ -117,10 +117,25 @@ function makeScheduler(): { scheduler: Scheduler; calls: Rating[] } {
         scheduled_days: 1,
         review: now,
       };
+      // Preserve stability so SM-5(c) is exercised from the seeded card.fsrs.stability.
       return { card: { ...card, due: new Date(now.getTime() + 86_400_000) }, log };
     },
+    getRetrievability: () => 1, // unused on this write path
   };
   return { scheduler, calls };
+}
+
+/** A prior passing free production on a given calendar day (for the SM-5 ledger). */
+function passLog(reviewedAt: string, scaffolded = false): ReviewLog {
+  return {
+    userId: "u1",
+    senseId: SENSE,
+    tier: "free",
+    rating: "Good",
+    reviewedAt: new Date(reviewedAt),
+    scaffolded,
+    fsrs: {} as FsrsReviewLog,
+  };
 }
 
 function makeRepo(initial: Card): { cards: CardRepository; logs: ReviewLog[]; stored: () => Card } {
@@ -134,6 +149,9 @@ function makeRepo(initial: Card): { cards: CardRepository; logs: ReviewLog[]; st
     appendReviewLog: async (l) => {
       logs.push(l);
     },
+    logsForWord: async (userId, senseId) =>
+      logs.filter((l) => l.userId === userId && l.senseId === senseId),
+    listCards: async () => [card],
   };
   return { cards, logs, stored: () => card };
 }
@@ -223,7 +241,7 @@ describe("submitFreeProduction — judged path (INV-1)", () => {
     expect(logs[0]?.scaffolded).toBe(false); // RAT-5 instrumented
   });
 
-  it("a gate pass leaves mastery at Productive (SM-5 Fluent promotion is a later slice)", async () => {
+  it("a single gate pass leaves mastery at Productive (one pass does not meet SM-5's ≥3 spaced-day gate)", async () => {
     const judge = new RecordingJudge(verdict());
     const { d, stored } = deps(productiveCard(), judge);
 
@@ -274,5 +292,60 @@ describe("submitFreeProduction — judged path (INV-1)", () => {
       if (res.kind === "judged") outcomes.push(res.mastery);
     }
     expect(outcomes).toEqual(["Recognized", "Recognized", "Recognized"]);
+  });
+});
+
+describe("submitFreeProduction — SM-5 Productive → Fluent promotion", () => {
+  const DAY3 = new Date("2026-06-30T09:00:00Z");
+  const PASS = "she negotiate a better contract price";
+
+  /** A Productive card whose post-review stability clears FLUENT_MIN_STABILITY_DAYS (SM-5 c). */
+  function stableProductiveCard(): Card {
+    return { userId: "u1", senseId: SENSE, mastery: "Productive", fsrs: { ...makeFsrs(), stability: 25 } };
+  }
+
+  it("SM-5: a 3rd spaced unscaffolded judged pass with stability ≥ floor promotes Productive → Fluent", async () => {
+    const judge = new RecordingJudge(verdict());
+    const { d, logs, stored } = deps(stableProductiveCard(), judge);
+    // Two prior passing free productions on two separate calendar days (SM-5 a/b); this pass = day 3.
+    logs.push(passLog("2026-06-25T09:00:00Z"), passLog("2026-06-27T09:00:00Z"));
+
+    const res = await submitFreeProduction(
+      { userId: "u1", senseId: SENSE, response: PASS, now: DAY3, scaffolded: false },
+      d,
+    );
+
+    expect(res.kind).toBe("judged");
+    if (res.kind === "judged") expect(res.mastery).toBe("Fluent");
+    expect(stored().mastery).toBe("Fluent");
+  });
+
+  it("SM-5(d): a scaffolded most-recent pass blocks promotion even when count/days/stability are met", async () => {
+    const judge = new RecordingJudge(verdict());
+    const { d, logs, stored } = deps(stableProductiveCard(), judge);
+    logs.push(passLog("2026-06-25T09:00:00Z"), passLog("2026-06-27T09:00:00Z"));
+
+    const res = await submitFreeProduction(
+      { userId: "u1", senseId: SENSE, response: PASS, now: DAY3, scaffolded: true },
+      d,
+    );
+
+    if (res.kind === "judged") expect(res.mastery).toBe("Productive");
+    expect(stored().mastery).toBe("Productive");
+  });
+
+  it("SM-5(c): the same 3 spaced passes do NOT promote when stability is below the floor", async () => {
+    const judge = new RecordingJudge(verdict());
+    // productiveCard()'s stability is 1 (< FLUENT_MIN_STABILITY_DAYS).
+    const { d, logs, stored } = deps(productiveCard(), judge);
+    logs.push(passLog("2026-06-25T09:00:00Z"), passLog("2026-06-27T09:00:00Z"));
+
+    const res = await submitFreeProduction(
+      { userId: "u1", senseId: SENSE, response: PASS, now: DAY3, scaffolded: false },
+      d,
+    );
+
+    if (res.kind === "judged") expect(res.mastery).toBe("Productive");
+    expect(stored().mastery).toBe("Productive");
   });
 });

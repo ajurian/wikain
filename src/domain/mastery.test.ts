@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { promoteOnCuedPass, demoteOneRung } from "./mastery.js";
+import { promoteOnCuedPass, demoteOneRung, promoteOnJudgedPass } from "./mastery.js";
 
 describe("SM-4 cued-pass promotion", () => {
   it("promotes Recognized → Productive on a cued pass", () => {
@@ -23,5 +23,23 @@ describe("SM-6 / SM-7 judged-fail demotion", () => {
     expect(demoteOneRung("Recognized")).toBe("Recognized");
     expect(demoteOneRung("Seen")).toBe("Seen");
     expect(demoteOneRung("New")).toBe("New");
+  });
+});
+
+describe("SM-5 judged-pass promotion to Fluent", () => {
+  it("promotes Productive → Fluent when the gate qualifies", () => {
+    expect(promoteOnJudgedPass("Productive", true)).toBe("Fluent");
+  });
+
+  it("leaves Productive unchanged when the gate does not qualify", () => {
+    expect(promoteOnJudgedPass("Productive", false)).toBe("Productive");
+  });
+
+  it("a Fluent maintenance pass stays Fluent (no promotion above Fluent)", () => {
+    expect(promoteOnJudgedPass("Fluent", true)).toBe("Fluent");
+  });
+
+  it("never promotes a state below Productive on a judged pass (only Productive promotes)", () => {
+    expect(promoteOnJudgedPass("Recognized", true)).toBe("Recognized");
   });
 });

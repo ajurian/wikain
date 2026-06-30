@@ -92,6 +92,7 @@ function makeScheduler(): { scheduler: Scheduler; calls: Rating[] } {
       };
       return { card: { ...card, due: new Date(now.getTime() + 86_400_000) }, log };
     },
+    getRetrievability: () => 1,
   };
   return { scheduler, calls };
 }
@@ -107,6 +108,9 @@ function makeRepo(initial: Card): { cards: CardRepository; logs: ReviewLog[]; st
     appendReviewLog: async (l) => {
       logs.push(l);
     },
+    logsForWord: async (userId, senseId) =>
+      logs.filter((l) => l.userId === userId && l.senseId === senseId),
+    listCards: async () => [card],
   };
   return { cards, logs, stored: () => card };
 }
@@ -185,7 +189,7 @@ describe("runReviewPass — judged branch (LOOP-1, LOOP-3, LOOP-4, LOOP-5)", () 
     expect(stored()).toBe(before); // card untouched → stays due
   });
 
-  it("LOOP-4: a gate-passing free production rates Good, persists one log, and stays Productive (SM-5 deferred)", async () => {
+  it("LOOP-4: a gate-passing free production rates Good, persists one log, and stays Productive (one pass < SM-5 gate)", async () => {
     const { d, judge, calls, logs, stored } = deps(card("Productive"));
 
     const res = await runReviewPass(

@@ -31,3 +31,13 @@ authenticated principal, never the auth library itself.
 **Rule:** shadcn-ui components and Tailwind classes appear only in presentation; no
 domain/application module imports UI.
 **Why:** UI is the most volatile layer (`CMP-5`) — keep it out of stable code.
+
+### STACK-6 — Drizzle ORM in infrastructure only
+**Rule:** Drizzle is the schema/query builder for Neon (`STACK-3`); its types and queries appear only
+in the repository adapter, never in domain/application/presentation.
+**Why:** the ORM is a swappable detail behind the repository port (`ARCH-3`).
+
+### STACK-7 — React in presentation only
+**Rule:** React is the UI runtime; it renders only in presentation, hosting TanStack (`STACK-2`) and
+shadcn-ui (`STACK-5`). No domain/application module imports React.
+**Why:** UI is the most volatile layer (`CMP-5`) — keep it out of stable code.

@@ -1,9 +1,12 @@
 import { checkRuleLayer, type RuleBounceReason } from "../domain/ruleLayer.js";
-import { demoteOneRung } from "../domain/mastery.js";
+import { demoteOneRung, promoteOnJudgedPass } from "../domain/mastery.js";
 import { passesGate, type JudgeVerdict } from "../domain/verdict.js";
 import { deriveRating, type Rating } from "../domain/rating.js";
+import { distinctPassDays, mostRecentPassScaffolded } from "../domain/judgedPassLedger.js";
+import { qualifiesForFluent } from "../domain/fluentGate.js";
 import { MAX_RULE_BOUNCE_RETRIES } from "../domain/constants.js";
 import type { Card, MasteryState } from "../domain/card.js";
+import type { ReviewLog } from "../domain/review.js";
 import type { Catalog } from "./ports/catalog.js";
 import type { CardRepository } from "./ports/cardRepository.js";
 import type { Scheduler } from "./ports/scheduler.js";
@@ -68,8 +71,10 @@ export type SubmitFreeProductionResult = BounceResult | JudgedResult;
  *  - JDG-1/JDG-2: the judge runs only on a rule-layer pass; the gate is sense AND grammar.
  *  - INV-1 / RAT-1 / RAT-4: one judged verdict → exactly one rating on the first genuine gate fail
  *    (no retry-until-pass — the use-case judges once and schedules once).
- *  - SM-6 / SM-7: a gate fail demotes one rung (floor Recognized); a pass leaves mastery at
- *    Productive (the Productive→Fluent promotion, SM-5, is a later slice).
+ *  - SM-6 / SM-7: a gate fail demotes one rung (floor Recognized).
+ *  - SM-5: a gate pass at Productive promotes to Fluent iff the four-condition gate qualifies
+ *    (≥FLUENT_JUDGED_PASSES spaced judged passes, FSRS stability, unscaffolded most-recent — derived
+ *    from the judged-pass ledger over the persisted ReviewLogs); otherwise mastery is unchanged.
  *  - RAT-8 / DM-6: exactly one ReviewLog per rated review; RAT-5: the scaffold flag is instrumented.
  *
  * The verdict memo (spec/05 MEMO-1, a `MAY`) is intentionally not consulted here yet.
@@ -128,13 +133,9 @@ export async function submitFreeProduction(
   const passed = passesGate(verdict);
   const rating = deriveRating(passed);
   const { card: nextFsrs, log: fsrsLog } = deps.scheduler.next(card.fsrs, rating, now);
-  // SM-6 / SM-7: a gate fail demotes one rung; a pass stays Productive (SM-5 promotion deferred).
-  const mastery = passed ? card.mastery : demoteOneRung(card.mastery);
 
-  const updated: Card = { ...card, mastery, fsrs: nextFsrs };
-  await deps.cards.save(updated);
-  // RAT-8 / DM-6: one ReviewLog per rated review; RAT-5: scaffold flag instrumented from day one.
-  await deps.cards.appendReviewLog({
+  // RAT-8 / DM-6: the single ReviewLog for this rated review; RAT-5: scaffold flag instrumented.
+  const reviewLog: ReviewLog = {
     userId: input.userId,
     senseId: input.senseId,
     tier: "free",
@@ -142,7 +143,34 @@ export async function submitFreeProduction(
     reviewedAt: now,
     scaffolded: input.scaffolded ?? false,
     fsrs: fsrsLog,
-  });
+  };
+
+  // SM-6 / SM-7: a gate fail demotes one rung. SM-5: a pass promotes Productive → Fluent only when
+  // the four-condition gate qualifies; a Fluent maintenance pass stays Fluent (JDG-8).
+  let mastery: MasteryState;
+  if (!passed) {
+    mastery = demoteOneRung(card.mastery);
+  } else if (card.mastery === "Productive") {
+    // The ledger is derived from prior logs + this pass (judgedPassLedger) so cued passes never
+    // count (INV-4); stability is read post-review. Day boundary defaults to UTC (per-user tz is
+    // seeding-deferred). Only Productive is queried — Fluent maintenance skips the read.
+    const ledger: ReviewLog[] = [
+      ...(await deps.cards.logsForWord(input.userId, input.senseId)),
+      reviewLog,
+    ];
+    const qualifies = qualifiesForFluent({
+      passDays: distinctPassDays(ledger),
+      stability: nextFsrs.stability,
+      mostRecentScaffolded: mostRecentPassScaffolded(ledger),
+    });
+    mastery = promoteOnJudgedPass(card.mastery, qualifies);
+  } else {
+    mastery = card.mastery;
+  }
+
+  const updated: Card = { ...card, mastery, fsrs: nextFsrs };
+  await deps.cards.save(updated);
+  await deps.cards.appendReviewLog(reviewLog);
 
   return { kind: "judged", passed, rating, verdict, mastery, due: nextFsrs.due };
 }

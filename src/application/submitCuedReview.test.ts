@@ -83,6 +83,7 @@ function makeScheduler(): { scheduler: Scheduler; calls: Rating[] } {
       };
       return { card: next, log };
     },
+    getRetrievability: () => 1,
   };
   return { scheduler, calls };
 }
@@ -102,6 +103,9 @@ function makeRepo(initial: Card): {
     appendReviewLog: async (l) => {
       logs.push(l);
     },
+    logsForWord: async (userId, senseId) =>
+      logs.filter((l) => l.userId === userId && l.senseId === senseId),
+    listCards: async () => [card],
   };
   return { cards, logs, stored: () => card };
 }

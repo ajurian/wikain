@@ -23,3 +23,13 @@ export function demoteOneRung(state: MasteryState): MasteryState {
   if (state === "Productive") return "Recognized";
   return state;
 }
+
+/**
+ * SM-5: a passing judged free production promotes `Productive → Fluent` ONLY when the four-condition
+ * gate (`qualifiesForFluent`) is met. Any other state — including a `Fluent` maintenance pass, which
+ * stays `Fluent` — is returned unchanged. The gate decision is computed by the caller from the
+ * judged-pass ledger + FSRS stability so this transition stays a pure state map.
+ */
+export function promoteOnJudgedPass(state: MasteryState, qualifiesForFluent: boolean): MasteryState {
+  return state === "Productive" && qualifiesForFluent ? "Fluent" : state;
+}

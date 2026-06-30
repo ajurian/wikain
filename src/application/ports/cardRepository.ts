@@ -10,4 +10,12 @@ export interface CardRepository {
   save(card: Card): Promise<void>;
   /** RAT-8 / DM-6: persist every ReviewLog from review #1. A bounce writes none (INV-2). */
   appendReviewLog(log: ReviewLog): Promise<void>;
+  /**
+   * The word's persisted ReviewLogs (the read counterpart to `appendReviewLog`). Returns all logs;
+   * the judged-pass ledger filters to free passes (INV-4) and derives the SM-5 / CNT-2 spaced-pass
+   * counts from them, so the ledger has one source of truth and no running Card field to drift.
+   */
+  logsForWord(userId: string, senseId: string): Promise<ReviewLog[]>;
+  /** All of a user's cards — the counter read-model iterates them to total "words you can now use". */
+  listCards(userId: string): Promise<Card[]>;
 }

@@ -125,6 +125,24 @@ point the UI will call. The two existing use-cases stay **byte-for-byte unchange
   persists one log, bounce none), SM-1, SM-6 (Fluent maintenance demotes `Fluent→Productive`).
   *(51 tests total at time of writing.)*
 
+**Also implemented — the SM-5 Fluent promotion + counter slice** (`spec/01` SM-5 + `spec/10`;
+committed on branch `runtime-fluent-counter-slice`, off `runtime-loop-slice`; still **no external
+services**). Completes the ladder's productive top end + the headline metric. SM-5 and the counter
+share one primitive — *distinct calendar days bearing a passing free judged production* — derived
+from the persisted `ReviewLog`s (no Card-field drift, INV-4 filters cued/recognition):
+- **domain:** `judgedPassLedger.ts` (`distinctPassDays` w/ injectable UTC-offset day boundary +
+  `mostRecentPassScaffolded`), `fluentGate.ts` (`qualifiesForFluent` = SM-5's four-condition
+  conjunction), `mastery.ts` `promoteOnJudgedPass` (Productive→Fluent iff gate; Fluent stays Fluent),
+  `counter.ts` `isCounted` (CNT-2/3/6), four new `constants.ts` (`FLUENT_JUDGED_PASSES`=3,
+  `FLUENT_MIN_STABILITY_DAYS`=21, `COUNTER_MIN_SPACED_PASSES`=2, `COUNTER_R_FLOOR`=0.70).
+- **application:** `Scheduler.getRetrievability` + `CardRepository.logsForWord`/`listCards` ports;
+  `submitFreeProduction` passing branch promotes from the ledger (fail/bounce + single-save
+  unchanged); new `readUsableCounter.ts` read-model (live retrievability gate at read time).
+- **infrastructure:** ts-fsrs `get_retrievability` behind the port, in-memory query impls,
+  `composeUsableCounter`, `fluentCounter.smoke.test.ts` (real wink + ts-fsrs + fake judge:
+  3-spaced-pass promotion + counter membership/decay).
+- **Covers:** SM-5 (a/b/c/d), SM-6/7, SM-9, INV-4, CNT-2/3/4/6. *(81 tests total at time of writing.)*
+
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
   the domain. `isLemmaMatch` now backs both cued grading (TIER-5) and the rule layer's presence
@@ -137,18 +155,19 @@ point the UI will call. The two existing use-cases stay **byte-for-byte unchange
 
 **Deferred (do NOT build until pulled into scope — `PRAG-1`):** recognition MCQ + cloze tiers and
 their `Seen` spacing / RAT-7 drop-back; verdict memo (`05`, `MEMO-1` is a `MAY`); the **real**
-DeepSeek judge (`JDG-10/11`) + edit resolution (`07`) + failure path (`08`); `Productive→Fluent`
-promotion (`SM-5`) + counter (`10`); seeding (`09`); Neon (STACK-3) + BetterAuth (STACK-4) adapters;
-presentation/UI. *(The end-to-end loop integration (`11`) — including maintenance-at-`Fluent`,
-`JDG-8` — is now implemented; the `Seen` on-ramp tiers it routes to are still deferred.)*
-**Natural next slice:** either `SM-5` `Productive→Fluent` promotion (judged-pass count + calendar-day
-spacing + stability + unscaffolded) with the counter (`10`), or the **real DeepSeek judge** adapter +
-the `08` failure path (swap `FakeJudge` for the HTTPS transport behind the same `JudgePort`).
+DeepSeek judge (`JDG-10/11`) + edit resolution (`07`) + failure path (`08`); the counter's daily
+goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); Neon + Drizzle (STACK-3/6) +
+BetterAuth (STACK-4) adapters; presentation/UI (React + TanStack + shadcn, STACK-7/2/5). *(SM-5
+`Productive→Fluent` promotion + the counter-membership core (`10`) are now implemented; the `Seen`
+on-ramp tiers the loop routes to are still deferred.)*
+**Natural next slice:** the **real DeepSeek judge** adapter + the `08` failure path (swap `FakeJudge`
+for the HTTPS transport behind the same `JudgePort`), or the first persistence/UI slice (Neon+Drizzle
+repository behind `CardRepository`, then a React presentation over `runReviewPass` + the counter).
 
-> **Status caveat:** the latest slice (loop orchestration, `spec/11`) is on `runtime-loop-slice`
-> (off `runtime-judged-slice`; neither merged to `master`). Re-confirm with `git branch`/`git log`
-> and re-run `npm test` (51 at time of writing) at session start — do not trust this count if the
-> tree has moved on.
+> **Status caveat:** the latest slice (SM-5 + counter, `spec/01`+`spec/10`) is on
+> `runtime-fluent-counter-slice` (off `runtime-loop-slice`; nothing merged to `master`). Re-confirm
+> with `git branch`/`git log` and re-run `npm test` (81 at time of writing) at session start — do not
+> trust this count if the tree has moved on.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 

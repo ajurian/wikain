@@ -8,7 +8,10 @@ import { fileURLToPath } from "node:url";
 import type { SubmitCuedReviewDeps } from "../application/submitCuedReview.js";
 import type { SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
 import type { RunReviewPassDeps } from "../application/runReviewPass.js";
+import type { ReadUsableCounterDeps } from "../application/readUsableCounter.js";
 import type { JudgePort } from "../application/ports/judge.js";
+import type { CardRepository } from "../application/ports/cardRepository.js";
+import type { Scheduler } from "../application/ports/scheduler.js";
 import { JsonCatalog } from "./catalog.js";
 import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
@@ -61,4 +64,16 @@ export function composeReviewPass(
   itemsPath: string = ITEMS_PATH,
 ): RunReviewPassDeps {
   return composeFreeProduction(judge, itemsPath);
+}
+
+/**
+ * Wiring for the "words you can now use" counter read-model (spec/10). It reads the same per-user
+ * card + ReviewLog store the review pass writes, so callers pass the SHARED repository (and scheduler
+ * for live retrievability) — defaults construct standalone instances for tests.
+ */
+export function composeUsableCounter(
+  cards: CardRepository = new InMemoryCardRepository(),
+  scheduler: Scheduler = new TsFsrsScheduler(),
+): ReadUsableCounterDeps {
+  return { cards, scheduler };
 }
