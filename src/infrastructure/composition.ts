@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { SubmitCuedReviewDeps } from "../application/submitCuedReview.js";
 import type { SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
+import type { RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { JudgePort } from "../application/ports/judge.js";
 import { JsonCatalog } from "./catalog.js";
 import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
@@ -47,4 +48,17 @@ export function composeFreeProduction(
     judge,
     tagalogLexicon: TAGALOG_LEXICON,
   };
+}
+
+/**
+ * Wiring for the end-to-end loop (spec/11). `runReviewPass` selects the tier from mastery state and
+ * dispatches to the cued or judged use-case, so it needs the full judged-branch dependency set (a
+ * structural superset of the cued one). The `judge` is injected — pass a FakeJudge until the real
+ * DeepSeek adapter (`06`/`08`) lands.
+ */
+export function composeReviewPass(
+  judge: JudgePort,
+  itemsPath: string = ITEMS_PATH,
+): RunReviewPassDeps {
+  return composeFreeProduction(judge, itemsPath);
 }

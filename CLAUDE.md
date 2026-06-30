@@ -104,7 +104,26 @@ the cloud judge is **faked**, no DeepSeek/network). Mirrors the cued skeleton, p
   shipped lexicon for RL-4), `composeFreeProduction` in `composition.ts`. A smoke test runs real
   `items.json` + real wink through a gate-pass (one rating) and a word-absent bounce (no rating).
 - **Covers:** INV-2 (bounce → no rating/scheduler/log, card stays due), INV-1, RL-1/2/3/4, RL-6,
-  JDG-2/5, SM-6/7, RAT-1/4/5. *(38 tests total at time of writing.)*
+  JDG-2/5, SM-6/7, RAT-1/4/5.
+
+**Also implemented — the end-to-end loop orchestration slice** (`spec/11`; committed on branch
+`runtime-loop-slice`, off `runtime-judged-slice`; still **no external services** — in-memory repo +
+faked judge). This is the integration layer that composes the two slices above into the single entry
+point the UI will call. The two existing use-cases stay **byte-for-byte unchanged**:
+- **domain:** `tier.ts` — **pure** `selectTier(mastery)` realizing the `SM-1` table (`Recognized→cued`,
+  `Productive`/`Fluent→free`; `Seen`/`New` throw — on-ramp tiers deferred, PRAG-1). Reuses the
+  existing `ReviewTier` type; it is a **pure function, not a port** (no I/O — ARCH-2/COMP-3).
+- **application:** `runReviewPass.ts` — loads the card once to read mastery, routes via `selectTier`,
+  dispatches to `submitCuedReview` or `submitFreeProduction`, returns a `{ tier, outcome }`
+  discriminated union. Deps `RunReviewPassDeps = SubmitFreeProductionDeps` (the judged set is a
+  structural superset of the cued one, so one dependency object forwards to both).
+- **infrastructure:** `composeReviewPass(judge, itemsPath?)` in `composition.ts` (delegates to
+  `composeFreeProduction`); `reviewPass.smoke.test.ts` drives the real catalog + wink + ts-fsrs + fake
+  judge through a `Recognized→cued` pass (zero judge calls) and a `Productive→free` pass.
+- **Covers:** LOOP-1 (mastery selects tier), LOOP-2 (cued = no LLM), LOOP-3/INV-2 (bounce → no
+  rating/schedule/log), LOOP-4 (pass rates Good / fail rates Again + demotes), LOOP-5 (rated branch
+  persists one log, bounce none), SM-1, SM-6 (Fluent maintenance demotes `Fluent→Productive`).
+  *(51 tests total at time of writing.)*
 
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
@@ -119,14 +138,17 @@ the cloud judge is **faked**, no DeepSeek/network). Mirrors the cued skeleton, p
 **Deferred (do NOT build until pulled into scope — `PRAG-1`):** recognition MCQ + cloze tiers and
 their `Seen` spacing / RAT-7 drop-back; verdict memo (`05`, `MEMO-1` is a `MAY`); the **real**
 DeepSeek judge (`JDG-10/11`) + edit resolution (`07`) + failure path (`08`); `Productive→Fluent`
-promotion (`SM-5`) + counter (`10`); seeding (`09`); end-to-end loop integration (`11`);
-maintenance-at-`Fluent` (`JDG-8`); Neon (STACK-3) + BetterAuth (STACK-4) adapters; presentation/UI.
+promotion (`SM-5`) + counter (`10`); seeding (`09`); Neon (STACK-3) + BetterAuth (STACK-4) adapters;
+presentation/UI. *(The end-to-end loop integration (`11`) — including maintenance-at-`Fluent`,
+`JDG-8` — is now implemented; the `Seen` on-ramp tiers it routes to are still deferred.)*
 **Natural next slice:** either `SM-5` `Productive→Fluent` promotion (judged-pass count + calendar-day
 spacing + stability + unscaffolded) with the counter (`10`), or the **real DeepSeek judge** adapter +
 the `08` failure path (swap `FakeJudge` for the HTTPS transport behind the same `JudgePort`).
 
-> **Status caveat:** this slice is on `runtime-cued-slice`. Re-confirm with `git branch`/`git log`
-> and re-run `npm test` at session start — do not trust this count if the tree has moved on.
+> **Status caveat:** the latest slice (loop orchestration, `spec/11`) is on `runtime-loop-slice`
+> (off `runtime-judged-slice`; neither merged to `master`). Re-confirm with `git branch`/`git log`
+> and re-run `npm test` (51 at time of writing) at session start — do not trust this count if the
+> tree has moved on.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 
