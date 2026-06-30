@@ -36,18 +36,19 @@ derived from the PRD, then tests are written against the specs, then runtime cod
   cites its PRD `§`; v1 is normative and v2/enable-later sits in non-normative **Deferred** sections;
   any spec/PRD conflict is flagged (`> [FLAG]`), never silently resolved.
 
-**What is implemented:** only the **build-time content-generation pipeline** (`build/`,
-TypeScript/Node), which realizes `docs/BUILD.md`. **The v4 web/multi-user runtime specified in
-`spec/` does not exist yet** — no runtime code, no FSRS wiring, no judge client, and **no tests yet**
-(the next phase is writing the test runner + tests against the `spec/` IDs/scenarios, then
-implementation). Do not assume runtime pieces are present; scaffold them only when asked. *(Note: v4
-dropped the earlier single-user Electron shell for a web/multi-tenant backend — ignore any stale
-"Electron" framing elsewhere.)*
+**What is implemented:** (1) the **build-time content-generation pipeline** (`build/`,
+TypeScript/Node), which realizes `docs/BUILD.md`; and (2) the **first runtime slice** (`src/`,
+started 2026-06-30) — see `### v4 runtime (src/)` below. **Most of the v4 web/multi-user runtime
+specified in `spec/` still does not exist** — no judge client, rule layer, memo, seeding, counter,
+Neon/BetterAuth adapters, or UI yet. Do not assume a runtime piece is present; scaffold it only when
+asked. *(Note: v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend —
+ignore any stale "Electron" framing elsewhere.)*
 
 ### Build pipeline commands
 
-TypeScript runs directly via `tsx` (no compile step). There is **no test runner or linter yet** — do
-not invent one; `npm run typecheck` is the only build gate.
+TypeScript runs directly via `tsx` (no compile step). The runtime phase added **vitest** (`npm test`)
+as the test runner; there is still **no linter** — do not invent one. The build gates are
+`npm run typecheck` (covers `build/**` + `src/**`) and `npm test`.
 
 ```bash
 npm install
@@ -58,6 +59,52 @@ npm run ingest      # Stage B: merge the in-session-generated batch → build/ou
 npm run validate    # Stage C: §7.1 auto-asserts over build/out/items.json (or pass a path)
 npm run combine     # concat all batch_*.json → build/out/items.json
 ```
+
+## v4 runtime (`src/`) — STARTED 2026-06-30
+
+The runtime phase has begun. Code lives in `src/` under a **clean/onion architecture** (governed by
+`.claude/rules/`, esp. `ARCH-1..4`), built **test-first** against `spec/` IDs with **vitest**
+(`06-tdd.md`). Layout: `src/domain/` (pure, imports nothing outward), `src/application/` (use-cases +
+`ports/` interfaces), `src/infrastructure/` (adapters). `src/presentation/` does not exist yet.
+NodeNext ESM — relative imports carry `.js` extensions; tests are co-located `*.test.ts` (`TDD-4`).
+
+```bash
+npm test            # vitest run (the runtime test gate)
+npm run test:watch  # vitest watch
+```
+
+**Implemented so far — the deterministic cued-production review slice** (committed on branch
+`runtime-cued-slice`, not yet merged to `master`). This is the architecture-proving vertical slice;
+it needs **no external services** (no DeepSeek/Neon/BetterAuth/network):
+- **domain:** `lexicalItem.ts` (DM-2 read-only contract; its `.test.ts` type-asserts conformance to
+  `build/types.ts` so producer/consumer drift fails typecheck — DM-12/DM-4), `card.ts`
+  (`MasteryState`, `Card`, `FsrsCardState`), `review.ts`, `rating.ts` (RAT-1), `mastery.ts` (SM-4),
+  `grading.ts` (TIER-5 **pure** lemma-match over port-supplied forms).
+- **application:** ports `catalog`/`cardRepository`/`scheduler`/`lemmatizer`; use-case
+  `submitCuedReview.ts` (grade → rate → schedule → promote → persist).
+- **infrastructure:** `winkLemmatizer` (en-US, mirrors `stageC` wink setup — DM-9), `tsFsrsScheduler`
+  (ts-fsrs; library types confined to the adapter, one boundary cast), `inMemoryCardRepository`
+  (Neon deferred), `JsonCatalog` (reads `build/out/items.json`), `composition.ts` (single wiring
+  root). A smoke test runs a real `items.json` item through real wink + ts-fsrs.
+- **Covers:** INV-1, INV-3, SM-4, SM-6 (deterministic fail reschedules, never demotes), RAT-1, RAT-8.
+
+**Key design conventions established (follow them in later slices):**
+- The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
+  the domain. Reuse `isLemmaMatch` for the rule layer's presence check (RL-2) when it lands.
+- **Scheduling types** (`FsrsCardState`/`FsrsReviewLog`) are declared **structurally in the domain**;
+  ts-fsrs's own `Card`/`ReviewLog` are mapped only inside `tsFsrsScheduler`. Don't leak ts-fsrs (or
+  any library) into application/domain — put it behind a port (`ARCH-3`).
+- Every test names the `spec/` ID it exercises.
+
+**Deferred (do NOT build until pulled into scope — `PRAG-1`):** recognition MCQ + cloze tiers and
+their `Seen` spacing / RAT-7 drop-back; rule layer (`04`); verdict memo (`05`); cloud judge (`06`) +
+edit resolution (`07`) + failure path (`08`); seeding (`09`); counter (`10`); end-to-end loop
+integration (`11`); Neon (STACK-3) + BetterAuth (STACK-4) adapters; presentation/UI. **Natural next
+slice:** the judged free-production path (`RL` → faked `JudgePort` → verdict), which reuses the
+`submitCuedReview` use-case/port skeleton and proves INV-2 (bounces produce no rating).
+
+> **Status caveat:** this slice is on `runtime-cued-slice`. Re-confirm with `git branch`/`git log`
+> and re-run `npm test` at session start — do not trust this count if the tree has moved on.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 
