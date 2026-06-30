@@ -1,0 +1,24 @@
+{
+  "name": "wikain",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Wikain — single-user English active-vocabulary trainer. Build-time content generation pipeline.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "stageA": "tsx build/stageA.ts",
+    "feed": "tsx build/stageB.ts feed",
+    "ingest": "tsx build/stageB.ts ingest",
+    "validate": "tsx build/stageC.ts",
+    "combine": "tsx build/combine.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "wink-eng-lite-web-model": "^1.8.0",
+    "wink-nlp": "^2.3.2"
+  }
+}
