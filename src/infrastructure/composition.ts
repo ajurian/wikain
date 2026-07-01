@@ -17,6 +17,8 @@ import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { WinkLemmatizer } from "./winkLemmatizer.js";
 import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
+import { DeepSeekJudge } from "./deepSeekJudge.js";
+import { deepSeekConfigFromEnv } from "./deepSeekConfig.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -64,6 +66,21 @@ export function composeReviewPass(
   itemsPath: string = ITEMS_PATH,
 ): RunReviewPassDeps {
   return composeFreeProduction(judge, itemsPath);
+}
+
+/**
+ * The live judge (spec/06 JDG-10, spec/08 NET-7): a DeepSeek adapter configured from the environment.
+ * This is the single place the API key is read — it stays server-side (NET-7). Kept out of the default
+ * `compose*` wirings so the test suite never constructs it (and never needs a key or the network); it
+ * is only invoked by a real entry point / the manual smoke script.
+ */
+export function liveJudge(): JudgePort {
+  return new DeepSeekJudge(deepSeekConfigFromEnv());
+}
+
+/** Wiring for the end-to-end loop against the real DeepSeek judge (NET-7). Requires `DEEPSEEK_API_KEY`. */
+export function composeReviewPassLive(itemsPath: string = ITEMS_PATH): RunReviewPassDeps {
+  return composeReviewPass(liveJudge(), itemsPath);
 }
 
 /**

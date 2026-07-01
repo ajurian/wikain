@@ -12,7 +12,7 @@ import type { CardRepository } from "./ports/cardRepository.js";
 import type { Scheduler } from "./ports/scheduler.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";
-import type { JudgePort } from "./ports/judge.js";
+import { JudgeUnavailableError, type JudgePort, type JudgeUnavailableReason } from "./ports/judge.js";
 
 export interface SubmitFreeProductionInput {
   userId: string;
@@ -60,7 +60,18 @@ export interface JudgedResult {
   due: Date;
 }
 
-export type SubmitFreeProductionResult = BounceResult | JudgedResult;
+/**
+ * A cloud-judge transport failure (spec/08 NET-3/4/5): the input was well-formed (it passed the rule
+ * layer, so the judge was reached), but no verdict came back. Like a bounce it derives no rating, makes
+ * no scheduler call, writes no ReviewLog, and leaves the card due (INV-2 / RAT-2) — but it is a
+ * transport failure, not malformed input, so it is a distinct outcome carrying the failure reason.
+ */
+export interface UnavailableResult {
+  kind: "unavailable";
+  reason: JudgeUnavailableReason;
+}
+
+export type SubmitFreeProductionResult = BounceResult | JudgedResult | UnavailableResult;
 
 /**
  * The judged free-production review pass — the cloud-judge branch of the end-to-end loop
@@ -122,12 +133,23 @@ export async function submitFreeProduction(
   }
 
   // RL-1: the judge runs only on a rule-layer pass. (Memo lookup, spec/05, is deferred.)
-  const verdict = await deps.judge.judge({
-    sentence: input.response,
-    lemma: item.lemma,
-    intendedSense: item.intended_sense,
-    modelSentence: item.model_sentence,
-  });
+  // INV-2 / NET-3/4/5: a transport failure (timeout/5xx/429/offline, after the adapter's one retry —
+  // NET-6) yields no verdict. It must NOT be rated `Again` (that would inject a phantom lapse). The
+  // card is left untouched (stays due) and the failure reason is surfaced for the UI's neutral message.
+  let verdict: JudgeVerdict;
+  try {
+    verdict = await deps.judge.judge({
+      sentence: input.response,
+      lemma: item.lemma,
+      intendedSense: item.intended_sense,
+      modelSentence: item.model_sentence,
+    });
+  } catch (error) {
+    if (error instanceof JudgeUnavailableError) {
+      return { kind: "unavailable", reason: error.reason };
+    }
+    throw error;
+  }
 
   // INV-1 / RAT-1 / RAT-4: exactly one rating on this single verdict.
   const passed = passesGate(verdict);

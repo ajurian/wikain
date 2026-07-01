@@ -73,9 +73,12 @@ npm test            # vitest run (the runtime test gate)
 npm run test:watch  # vitest watch
 ```
 
-**Implemented so far — the deterministic cued-production review slice** (committed on branch
-`runtime-cued-slice`, not yet merged to `master`). This is the architecture-proving vertical slice;
-it needs **no external services** (no DeepSeek/Neon/BetterAuth/network):
+**All four runtime slices below are now merged to `master`** as one linear history (the per-slice
+`runtime-*` branches were deleted post-merge, 2026-06-30) — `master` is the only branch. Re-confirm
+with `git log` at session start.
+
+**Implemented — the deterministic cued-production review slice.** This is the architecture-proving
+vertical slice; it needs **no external services** (no DeepSeek/Neon/BetterAuth/network):
 - **domain:** `lexicalItem.ts` (DM-2 read-only contract; its `.test.ts` type-asserts conformance to
   `build/types.ts` so producer/consumer drift fails typecheck — DM-12/DM-4), `card.ts`
   (`MasteryState`, `Card`, `FsrsCardState`), `review.ts`, `rating.ts` (RAT-1), `mastery.ts` (SM-4),
@@ -88,7 +91,7 @@ it needs **no external services** (no DeepSeek/Neon/BetterAuth/network):
   root). A smoke test runs a real `items.json` item through real wink + ts-fsrs.
 - **Covers:** INV-1, INV-3, SM-4, SM-6 (deterministic fail reschedules, never demotes), RAT-1, RAT-8.
 
-**Also implemented — the judged free-production slice** (same branch; still **no external services** —
+**Also implemented — the judged free-production slice** (still **no external services** —
 the cloud judge is **faked**, no DeepSeek/network). Mirrors the cued skeleton, proving INV-2:
 - **domain:** `constants.ts` (RL named tunables — `DEGENERATE_MIN_CONTENT_TOKENS`,
   `VERBATIM_SIMILARITY_THRESHOLD`, `MAX_RULE_BOUNCE_RETRIES`), `verdict.ts` (JDG-4 contract +
@@ -106,9 +109,8 @@ the cloud judge is **faked**, no DeepSeek/network). Mirrors the cued skeleton, p
 - **Covers:** INV-2 (bounce → no rating/scheduler/log, card stays due), INV-1, RL-1/2/3/4, RL-6,
   JDG-2/5, SM-6/7, RAT-1/4/5.
 
-**Also implemented — the end-to-end loop orchestration slice** (`spec/11`; committed on branch
-`runtime-loop-slice`, off `runtime-judged-slice`; still **no external services** — in-memory repo +
-faked judge). This is the integration layer that composes the two slices above into the single entry
+**Also implemented — the end-to-end loop orchestration slice** (`spec/11`; still **no external
+services** — in-memory repo + faked judge). This is the integration layer that composes the two slices above into the single entry
 point the UI will call. The two existing use-cases stay **byte-for-byte unchanged**:
 - **domain:** `tier.ts` — **pure** `selectTier(mastery)` realizing the `SM-1` table (`Recognized→cued`,
   `Productive`/`Fluent→free`; `Seen`/`New` throw — on-ramp tiers deferred, PRAG-1). Reuses the
@@ -125,9 +127,8 @@ point the UI will call. The two existing use-cases stay **byte-for-byte unchange
   persists one log, bounce none), SM-1, SM-6 (Fluent maintenance demotes `Fluent→Productive`).
   *(51 tests total at time of writing.)*
 
-**Also implemented — the SM-5 Fluent promotion + counter slice** (`spec/01` SM-5 + `spec/10`;
-committed on branch `runtime-fluent-counter-slice`, off `runtime-loop-slice`; still **no external
-services**). Completes the ladder's productive top end + the headline metric. SM-5 and the counter
+**Also implemented — the SM-5 Fluent promotion + counter slice** (`spec/01` SM-5 + `spec/10`; still
+**no external services**). Completes the ladder's productive top end + the headline metric. SM-5 and the counter
 share one primitive — *distinct calendar days bearing a passing free judged production* — derived
 from the persisted `ReviewLog`s (no Card-field drift, INV-4 filters cued/recognition):
 - **domain:** `judgedPassLedger.ts` (`distinctPassDays` w/ injectable UTC-offset day boundary +
@@ -143,6 +144,34 @@ from the persisted `ReviewLog`s (no Card-field drift, INV-4 filters cued/recogni
   3-spaced-pass promotion + counter membership/decay).
 - **Covers:** SM-5 (a/b/c/d), SM-6/7, SM-9, INV-4, CNT-2/3/4/6. *(81 tests total at time of writing.)*
 
+**Also implemented — the real DeepSeek cloud-judge + failure-path slice** (`spec/06` JDG-10/11/6/4 +
+`spec/08` NET-*; started 2026-07-01). The **first slice that touches an external service** — it swaps
+`FakeJudge` for a real DeepSeek V4 Flash HTTPS adapter behind the *unchanged* `JudgePort`, closing the
+**cloud-failure half of INV-2** (only the rule-layer half was proven before). **`runReviewPass` needed
+no code change** — the widened result union threads through its types. The **test suite stays fully
+offline** (the adapter is tested via an injected fake `http`; smoke tests keep `FakeJudge`; `liveJudge`
+is never constructed in tests):
+- **application:** `ports/judge.ts` gains `JudgeUnavailableError` + `JudgeUnavailableReason`
+  (`transient`/`rate_limited`/`offline`/`invalid_response`) — thrown by infra, caught by the use-case
+  (dependency points inward, ARCH-1); the `judge()` signature is unchanged (a verdict stays its only
+  success shape — SOLID-3). `submitFreeProduction` gains a third `UnavailableResult` arm
+  (`bounce | judged | unavailable`): a transport failure derives **no** rating/scheduler/log and leaves
+  the card due (INV-2/RAT-2) — it is **not** a bounce. `constants.ts` `CLOUD_RETRY_COUNT`=1 (NET-3).
+- **infrastructure:** `deepSeekJudge.ts` (`DeepSeekJudge`; injectable `http` seam defaulting to `fetch`;
+  JDG-6 JSON mode — *not* GBNF; the single backed-off retry lives here, NET-3/6; error classification
+  NET-3/4/5; **never fabricates a gate** — a 2xx body missing a gate boolean throws `invalid_response`,
+  JDG-3/INV-2; other-4xx like 401 fails loud as a plain `Error`), `deepSeekConfig.ts`
+  (`deepSeekConfigFromEnv`, the **only** place `DEEPSEEK_API_KEY` is read — server-side, NET-7),
+  `deepSeekRubric.ts` (system prompt + 2 few-shots + `RUBRIC_VERSION`, the JDG-9/11 cache/version
+  lever), `liveJudge()`/`composeReviewPassLive()` in `composition.ts` (kept out of default wirings so
+  tests need no key/network).
+- **Covers:** INV-2 (cloud-failure half — no rating/scheduler/log, card stays due), NET-3/4/5/6/7,
+  JDG-4/6/10/11, JDG-2/5 (parse maps to the pure `passesGate`, unchanged). *(95 tests total at time of
+  writing.)*
+- **Deferred within this slice (need UI, PRAG-1):** NET-2 "checking…" affordance and the NET-5
+  *pre-submit* offline block are presentation; the `unavailable` result carries the reason for a future
+  UI. The optional key-gated manual smoke script is not built.
+
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
   the domain. `isLemmaMatch` now backs both cued grading (TIER-5) and the rule layer's presence
@@ -154,20 +183,20 @@ from the persisted `ReviewLog`s (no Card-field drift, INV-4 filters cued/recogni
 - Every test names the `spec/` ID it exercises.
 
 **Deferred (do NOT build until pulled into scope — `PRAG-1`):** recognition MCQ + cloze tiers and
-their `Seen` spacing / RAT-7 drop-back; verdict memo (`05`, `MEMO-1` is a `MAY`); the **real**
-DeepSeek judge (`JDG-10/11`) + edit resolution (`07`) + failure path (`08`); the counter's daily
-goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); Neon + Drizzle (STACK-3/6) +
-BetterAuth (STACK-4) adapters; presentation/UI (React + TanStack + shadcn, STACK-7/2/5). *(SM-5
-`Productive→Fluent` promotion + the counter-membership core (`10`) are now implemented; the `Seen`
-on-ramp tiers the loop routes to are still deferred.)*
-**Natural next slice:** the **real DeepSeek judge** adapter + the `08` failure path (swap `FakeJudge`
-for the HTTPS transport behind the same `JudgePort`), or the first persistence/UI slice (Neon+Drizzle
-repository behind `CardRepository`, then a React presentation over `runReviewPass` + the counter).
+their `Seen` spacing / RAT-7 drop-back; verdict memo (`05`, `MEMO-1` is a `MAY`); edit resolution
+(`07`); the failure path's UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block, need
+UI); the counter's daily goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); Neon +
+Drizzle (STACK-3/6) + BetterAuth (STACK-4) adapters; presentation/UI (React + TanStack + shadcn,
+STACK-7/2/5). *(The **real DeepSeek judge (`JDG-10/11`) + failure path (`08`) are now implemented** —
+see the slice above; the `Seen` on-ramp tiers the loop routes to are still deferred.)*
+**Natural next slice:** the first persistence slice (Neon+Drizzle repository behind the already
+`userId`-scoped `CardRepository`, STACK-3/6), or the pure edit-resolution algorithm (`spec/07`
+EDIT-*, no external services — resolves `verdict.replacements` into inline spans), then a React
+presentation over `runReviewPass` + the counter.
 
-> **Status caveat:** the latest slice (SM-5 + counter, `spec/01`+`spec/10`) is on
-> `runtime-fluent-counter-slice` (off `runtime-loop-slice`; nothing merged to `master`). Re-confirm
-> with `git branch`/`git log` and re-run `npm test` (81 at time of writing) at session start — do not
-> trust this count if the tree has moved on.
+> **Status caveat:** all runtime slices through the real judge + `08` failure path (`spec/06`+`08`,
+> atop SM-5 + counter) are on `master`. Re-confirm with `git log` and re-run `npm test` (95 at time of
+> writing) at session start — do not trust this count if the tree has moved on.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 

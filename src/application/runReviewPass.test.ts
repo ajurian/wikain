@@ -11,6 +11,7 @@ import type { CardRepository } from "./ports/cardRepository.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";
 import { FakeJudge, passingVerdict } from "../infrastructure/fakeJudge.js";
+import { JudgeUnavailableError } from "./ports/judge.js";
 import type { Scheduler } from "./ports/scheduler.js";
 
 const NOW = new Date("2026-06-30T00:00:00Z");
@@ -226,6 +227,29 @@ describe("runReviewPass — judged branch (LOOP-1, LOOP-3, LOOP-4, LOOP-5)", () 
     }
     expect(calls).toEqual(["Again"]);
     expect(stored().mastery).toBe("Recognized");
+  });
+
+  it("NET-3 (INV-2): a cloud-judge failure on the free branch surfaces 'unavailable' — no rating/schedule/log, card stays due", async () => {
+    const judge = new FakeJudge(() => {
+      throw new JudgeUnavailableError("transient");
+    });
+    const { d, calls, logs, stored } = deps(card("Productive"), judge);
+    const before = stored();
+
+    const res = await runReviewPass(
+      { userId: "u1", senseId: SENSE, response: PASS_RESPONSE, now: NOW },
+      d,
+    );
+
+    expect(res.tier).toBe("free");
+    if (res.tier === "free") {
+      expect(res.outcome.kind).toBe("unavailable");
+      if (res.outcome.kind === "unavailable") expect(res.outcome.reason).toBe("transient");
+    }
+    expect(judge.calls).toHaveLength(1); // the judge WAS reached (rule layer passed)
+    expect(calls).toEqual([]); // scheduler not called
+    expect(logs).toHaveLength(0); // no ReviewLog
+    expect(stored()).toBe(before); // card untouched → stays due
   });
 
   it("SM-1/SM-6: a Fluent card runs the judged maintenance branch; a gate fail demotes Fluent → Productive", async () => {

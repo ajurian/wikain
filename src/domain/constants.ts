@@ -27,6 +27,16 @@ export const FLUENT_JUDGED_PASSES = 3;
 /** SM-5(c): `Productive → Fluent` requires FSRS stability (in days) at or above this. */
 export const FLUENT_MIN_STABILITY_DAYS = 21;
 
+// --- Cloud judge failure path (spec/08, `NET`) ---
+
+/**
+ * NET-3: on a timeout / 5xx / transient network error the judge transport retries this many times
+ * (with backoff) before surfacing a persistent failure. A transport retry is NOT a learner signal
+ * (NET-6) and never touches the rating — distinct from the no-retry-until-pass rule for genuine judge
+ * fails (RAT-4). Owned by the adapter; the use-case sees only the final resolved-or-failed outcome.
+ */
+export const CLOUD_RETRY_COUNT = 1;
+
 // --- Counter / gamification (spec/10, `CNT`) ---
 
 /** CNT-2: a word is counted after this many spaced successful free *judged* productions. */

@@ -13,7 +13,7 @@ import type { Catalog } from "./ports/catalog.js";
 import type { CardRepository } from "./ports/cardRepository.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";
-import type { JudgePort, JudgeRequest } from "./ports/judge.js";
+import { JudgeUnavailableError, type JudgePort, type JudgeRequest } from "./ports/judge.js";
 import type { Scheduler } from "./ports/scheduler.js";
 import { MAX_RULE_BOUNCE_RETRIES } from "../domain/constants.js";
 
@@ -84,6 +84,16 @@ class RecordingJudge implements JudgePort {
   async judge(request: JudgeRequest): Promise<JudgeVerdict> {
     this.calls.push(request);
     return this.reply;
+  }
+}
+
+/** A judge whose transport persistently failed (spec/08): it throws instead of returning a verdict. */
+class UnavailableJudge implements JudgePort {
+  readonly calls: JudgeRequest[] = [];
+  constructor(private readonly reason: JudgeUnavailableError["reason"] = "transient") {}
+  async judge(request: JudgeRequest): Promise<JudgeVerdict> {
+    this.calls.push(request);
+    throw new JudgeUnavailableError(this.reason);
   }
 }
 
@@ -216,6 +226,38 @@ describe("submitFreeProduction — rule-layer bounce (INV-2)", () => {
       expect(res.revealModelSentence).toBe(true);
     }
     expect(calls).toEqual([]);
+  });
+});
+
+describe("submitFreeProduction — cloud-judge failure path (spec/08, INV-2)", () => {
+  it("NET-3 / INV-2: a persistent transport failure returns 'unavailable' — no rating, no schedule, no log, card stays due", async () => {
+    const judge = new UnavailableJudge("transient");
+    const { d, calls, logs, stored } = deps(productiveCard(), judge);
+    const before = stored();
+
+    const res = await submitFreeProduction(
+      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price", now: NOW },
+      d,
+    );
+
+    expect(res.kind).toBe("unavailable");
+    if (res.kind === "unavailable") expect(res.reason).toBe("transient");
+    expect(judge.calls).toHaveLength(1); // the judge WAS reached (rule layer passed) — NET-2
+    expect(calls).toEqual([]); // scheduler.next NOT invoked (INV-2)
+    expect(logs).toHaveLength(0); // no ReviewLog (INV-2 / NET-3)
+    expect(stored()).toBe(before); // card untouched → stays due, unrated
+  });
+
+  it("NET-4 / NET-5: the reason (rate_limited / offline) is surfaced on the result", async () => {
+    for (const reason of ["rate_limited", "offline"] as const) {
+      const { d } = deps(productiveCard(), new UnavailableJudge(reason));
+      const res = await submitFreeProduction(
+        { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price", now: NOW },
+        d,
+      );
+      expect(res.kind).toBe("unavailable");
+      if (res.kind === "unavailable") expect(res.reason).toBe(reason);
+    }
   });
 });
 
