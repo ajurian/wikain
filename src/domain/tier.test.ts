@@ -14,11 +14,11 @@ describe("selectTier — mastery state selects the tier (SM-1)", () => {
     expect(selectTier("Fluent")).toBe("free");
   });
 
-  it("SM-1 / PRAG-1: Seen has no wired tier yet (on-ramp deferred) and throws", () => {
-    expect(() => selectTier("Seen")).toThrow(/deferred/);
+  it("SM-3: Seen is routed via the on-ramp ledger upstream, not by selectTier — reaching it throws", () => {
+    expect(() => selectTier("Seen")).toThrow(/onRampLedger/);
   });
 
-  it("SM-1: New is a pre-state with no tier and throws", () => {
+  it("SM-1: New is a pre-state with no tier and throws (introduction is seeding, spec/09)", () => {
     expect(() => selectTier("New")).toThrow(/deferred/);
   });
 });

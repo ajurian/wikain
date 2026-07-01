@@ -9,3 +9,15 @@ export function isLemmaMatch(responseForms: readonly string[], targetLemma: stri
   if (target === "") return false;
   return responseForms.some((form) => form.toLowerCase() === target);
 }
+
+/**
+ * TIER-2: the recognition MCQ is a pick-the-word choice — the correct option IS the target word, so
+ * grading is an exact (case-insensitive) identity, NOT a lemma match. The options are surface words
+ * (target + carried distractors); accepting an inflected form would defeat the point of a
+ * multiple-choice retrieval. Deterministic, no LLM (TIER-1).
+ */
+export function isRecognitionCorrect(chosen: string, targetWord: string): boolean {
+  const target = targetWord.trim().toLowerCase();
+  if (target === "") return false;
+  return chosen.trim().toLowerCase() === target;
+}

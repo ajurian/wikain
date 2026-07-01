@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { promoteOnCuedPass, demoteOneRung, promoteOnJudgedPass } from "./mastery.js";
+import {
+  promoteOnCuedPass,
+  demoteOneRung,
+  promoteOnJudgedPass,
+  promoteOnClozePass,
+} from "./mastery.js";
 
 describe("SM-4 cued-pass promotion", () => {
   it("promotes Recognized → Productive on a cued pass", () => {
@@ -23,6 +28,21 @@ describe("SM-6 / SM-7 judged-fail demotion", () => {
     expect(demoteOneRung("Recognized")).toBe("Recognized");
     expect(demoteOneRung("Seen")).toBe("Seen");
     expect(demoteOneRung("New")).toBe("New");
+  });
+});
+
+describe("SM-3 Seen on-ramp cloze-pass promotion", () => {
+  it("promotes Seen → Recognized on a passing cloze", () => {
+    expect(promoteOnClozePass("Seen", true)).toBe("Recognized");
+  });
+
+  it("SM-6: a cloze fail at Seen does not demote or promote (stays Seen)", () => {
+    expect(promoteOnClozePass("Seen", false)).toBe("Seen");
+  });
+
+  it("leaves a non-Seen state unchanged (cloze on-ramp is shown only at Seen)", () => {
+    expect(promoteOnClozePass("Recognized", true)).toBe("Recognized");
+    expect(promoteOnClozePass("New", true)).toBe("New");
   });
 });
 

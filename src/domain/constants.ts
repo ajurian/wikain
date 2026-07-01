@@ -4,6 +4,19 @@
  * literals (INV §1.3). Grouped by the owning spec file.
  */
 
+// --- Card tiers (spec/03, `TIER`) ---
+
+/** TIER-2: the recognition MCQ presents this many word options (1 target + 3 distractors). */
+export const RECOGNITION_MCQ_OPTIONS = 4;
+
+// --- FSRS rating / Seen on-ramp (spec/02, `RAT`) ---
+
+/**
+ * RAT-7: a failed typed-cloze at `Seen` drops back to the meaning→word MCQ for at most this many
+ * reps before re-attempting cloze. At the cap the word stays on cloze (no MCQ↔cloze ping-pong).
+ */
+export const SEEN_CLOZE_DROPBACK_CAP = 1;
+
 // --- Rule layer (spec/04, `RL`) ---
 
 /** RL-3: a free production needs at least this many content tokens (excluding the target). */

@@ -33,3 +33,15 @@ export function demoteOneRung(state: MasteryState): MasteryState {
 export function promoteOnJudgedPass(state: MasteryState, qualifiesForFluent: boolean): MasteryState {
   return state === "Productive" && qualifiesForFluent ? "Fluent" : state;
 }
+
+/**
+ * SM-3: `Seen → Recognized` fires on a passing typed-cloze. A recognition MCQ pass alone does NOT
+ * promote (that is the identity map — the caller leaves mastery untouched), so promotion is modelled
+ * only for the cloze pass. By construction the on-ramp only presents the cloze after a prior MCQ pass
+ * (routing via `onRampLedger.nextSeenTier`), so the "prior MCQ" precondition of SM-3 is guaranteed
+ * upstream and not re-checked here. A cloze fail is a deterministic-tier fail (SM-6) — no demotion —
+ * so any non-pass or non-`Seen` state is returned unchanged.
+ */
+export function promoteOnClozePass(state: MasteryState, passed: boolean): MasteryState {
+  return state === "Seen" && passed ? "Recognized" : state;
+}

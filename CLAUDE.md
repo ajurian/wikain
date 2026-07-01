@@ -227,35 +227,68 @@ the network:
   live Neon migration/CI wiring beyond the `makeNeonDb` factory. **Note the pglite suite adds ~12s**
   (a fresh migrated DB per test); share-one-DB-with-truncation is the optimization if it drags.
 
+**Also implemented — the `Seen` on-ramp tiers slice** (`spec/03` TIER-1/2/5 + `spec/01` SM-3 +
+`spec/02` RAT-7; started 2026-07-01). This is the **missing rung** between introduction and the
+existing loop: it makes the ladder continuous by wiring the two `Seen` on-ramp tiers the loop
+previously threw on. Still **no external services** — both tiers are deterministic (recognition = exact
+match, cloze = the same lemma-match as cued), mirroring the cued slice; **no use-case above was changed
+in behavior** (`submitCuedReview` was refactored onto a shared core with its public API byte-identical):
+- **domain:** `onRampLedger.ts` (`nextSeenTier` — the recognition-vs-cloze position is **derived from
+  the persisted `ReviewLog`s**, not a new Card field, mirroring `judgedPassLedger`'s no-drift
+  convention; a pure fold encoding SM-3's two-step + RAT-7's capped drop-back via a sticky
+  `dropbackUsed` flag); `isRecognitionCorrect` in `grading.ts` (TIER-2 **exact identity**, not
+  lemma-match — the MCQ is pick-the-word); `promoteOnClozePass` in `mastery.ts` (SM-3 `Seen→Recognized`
+  on a cloze pass; an MCQ pass alone never promotes); `ReviewTier` widened to
+  `recognition | cloze | cued | free` (INV-4 preserved — the ledger/counter still filter `tier==="free"`);
+  two constants (`RECOGNITION_MCQ_OPTIONS`=4, `SEEN_CLOZE_DROPBACK_CAP`=1).
+- **application:** `submitDeterministicReview.ts` — the **shared grade→rate→schedule→promote→log core**
+  extracted once the third deterministic tier appeared (rule-of-three, PRAG-3), strategy-injected by
+  `{ tier, grade, promote }` (SOLID-2 — new tiers are config, not core edits). `submitCuedReview` was
+  refactored onto it; thin `submitCloze` + `submitRecognition` are new configs. `runReviewPass` routes
+  `Seen` via `nextSeenTier` **before** `selectTier` (which was narrowed to return `cued | free`, since
+  `Seen` is routed upstream and `New` throws — `New→Seen` intro is seeding). The `RunReviewPassResult`
+  union gained `recognition`/`cloze` arms; `RunReviewPassDeps` is **unchanged** (the deterministic tiers
+  need only a subset of the existing superset).
+- **infrastructure:** **no new adapters** (composition wirings unchanged). `onRamp.smoke.test.ts` drives
+  a real `items.json` word `Seen → Recognized → Productive` through real wink + ts-fsrs with the
+  FakeJudge recording **zero calls** — the acceptance proof that the loop no longer dead-ends on `Seen`.
+- **Key insight — the RAT-7 drop-back is pure *routing*** (which tier to show next), never a mastery
+  change, so nothing about it lives in the use-cases; it is entirely in `nextSeenTier`.
+- **Covers:** TIER-1/2/5, SM-3 (spaced two-step, promotion on the cloze pass), RAT-7 (first cloze fail →
+  one MCQ drop-back, capped, no ping-pong), SM-6 (deterministic fails never demote), RAT-1/8 + DM-6,
+  INV-1/INV-3. *(143 tests total at time of writing.)*
+- **Deferred within this slice (PRAG-1):** MCQ option assembly/shuffle + rendering (presentation, like
+  EDIT-7); the `New→Seen` introduction that *creates* `Seen` cards (seeding, `09`).
+
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
-  the domain. `isLemmaMatch` now backs both cued grading (TIER-5) and the rule layer's presence
-  check (RL-2); the degeneracy check (RL-3) uses a **separate** `SentenceAnalyzer` port (POS tags),
+  the domain. `isLemmaMatch` now backs cued grading, cloze grading (both TIER-5) and the rule layer's
+  presence check (RL-2); the degeneracy check (RL-3) uses a **separate** `SentenceAnalyzer` port (POS tags),
   not bolted onto `Lemmatizer` (SOLID-4). One wink adapter implements both.
 - **Scheduling types** (`FsrsCardState`/`FsrsReviewLog`) are declared **structurally in the domain**;
   ts-fsrs's own `Card`/`ReviewLog` are mapped only inside `tsFsrsScheduler`. Don't leak ts-fsrs (or
   any library) into application/domain — put it behind a port (`ARCH-3`).
 - Every test names the `spec/` ID it exercises.
 
-**Deferred (do NOT build until pulled into scope — `PRAG-1`):** recognition MCQ + cloze tiers and
-their `Seen` spacing / RAT-7 drop-back; verdict memo (`05`, `MEMO-1` is a `MAY`); the failure path's
-UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block, need UI); the counter's daily
-goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); BetterAuth (STACK-4) adapter;
-presentation/UI (React + TanStack + shadcn, STACK-7/2/5). *(The **real DeepSeek judge (`JDG-10/11`) +
-failure path (`08`)**, the **pure edit-resolution algorithm (`07` EDIT-2..6)**, and the **first
-persistence slice (`12`, Neon + Drizzle behind `CardRepository`, STACK-3/6)** are now implemented —
-see the slices above; EDIT-7's inline render and the `Seen` on-ramp tiers the loop routes to are still
-deferred.)*
+**Deferred (do NOT build until pulled into scope — `PRAG-1`):** verdict memo (`05`, `MEMO-1` is a
+`MAY`); the failure path's UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block, need
+UI); the counter's daily goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); BetterAuth
+(STACK-4) adapter; presentation/UI (React + TanStack + shadcn, STACK-7/2/5). *(The **real DeepSeek judge
+(`JDG-10/11`) + failure path (`08`)**, the **pure edit-resolution algorithm (`07` EDIT-2..6)**, the
+**first persistence slice (`12`, Neon + Drizzle behind `CardRepository`, STACK-3/6)**, and the **`Seen`
+on-ramp tiers (`03` + SM-3 + RAT-7)** are now implemented — see the slices above; EDIT-7's inline render
+and the recognition-MCQ option assembly/shuffle are the remaining presentation-only bits.)*
 **Natural next slice:** a **seeding slice (`09`)** — the thing that actually *creates* a user's cards
-(lazy card creation SEED-7, list-stack frontier, pacing, FSRS cold-start), now that there is a real
-store to persist them into; and/or a **React presentation** over `runReviewPass` + the counter (also
-where EDIT-7 renders the `resolveEdits` output). *(The persistence slice only persists cards a caller
-hands it — nothing yet bootstraps them, which is what seeding does.)*
+(the `New→Seen` introduction, lazy card creation SEED-7, list-stack frontier, pacing, FSRS cold-start).
+The ladder is now continuous from `Seen` upward, so seeding finally feeds a **complete machine** (a
+seeded `Seen` card is now reviewable end-to-end); and/or a **React presentation** over `runReviewPass` +
+the counter (also where EDIT-7 renders the `resolveEdits` output). *(The persistence slice only persists
+cards a caller hands it — nothing yet bootstraps them, which is what seeding does.)*
 
-> **Status caveat:** all runtime slices through the **first persistence slice** (`spec/12`, atop the
-> edit-resolution algorithm, real judge + `08` failure path, SM-5 + counter) are committed. Re-confirm
-> with `git log` and re-run `npm test` (121 at time of writing) at session start — do not trust this
-> count if the tree has moved on.
+> **Status caveat:** all runtime slices through the **`Seen` on-ramp tiers** (`spec/03`, atop the first
+> persistence slice, edit-resolution algorithm, real judge + `08` failure path, SM-5 + counter) are
+> committed. Re-confirm with `git log` and re-run `npm test` (143 at time of writing) at session start —
+> do not trust this count if the tree has moved on.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 

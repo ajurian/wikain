@@ -1,9 +1,12 @@
 import { selectTier } from "../domain/tier.js";
+import { nextSeenTier } from "../domain/onRampLedger.js";
 import {
   submitCuedReview,
   type SubmitCuedReviewInput,
   type SubmitCuedReviewResult,
 } from "./submitCuedReview.js";
+import { submitRecognition, type SubmitRecognitionResult } from "./submitRecognition.js";
+import { submitCloze, type SubmitClozeResult } from "./submitCloze.js";
 import {
   submitFreeProduction,
   type SubmitFreeProductionDeps,
@@ -31,6 +34,8 @@ export type RunReviewPassDeps = SubmitFreeProductionDeps;
 
 /** Which branch ran, plus that branch's own result — so the caller (UI) can render accordingly. */
 export type RunReviewPassResult =
+  | { tier: "recognition"; outcome: SubmitRecognitionResult }
+  | { tier: "cloze"; outcome: SubmitClozeResult }
   | { tier: "cued"; outcome: SubmitCuedReviewResult }
   | { tier: "free"; outcome: SubmitFreeProductionResult };
 
@@ -58,7 +63,18 @@ export async function runReviewPass(
     throw new Error(`no card for user ${input.userId} / sense ${input.senseId}`);
   }
 
-  // LOOP-1 step 2: mastery selects the tier (SM-1).
+  // LOOP-1 step 2 (Seen on-ramp): the recognition-vs-cloze position depends on the word's ReviewLog
+  // history (SM-3 two-step + RAT-7 drop-back), not on mastery alone, so it is resolved from the logs
+  // here (onRampLedger) rather than by `selectTier`. Both branches are deterministic — no judge/LLM.
+  if (card.mastery === "Seen") {
+    const logs = await deps.cards.logsForWord(input.userId, input.senseId);
+    if (nextSeenTier(logs) === "recognition") {
+      return { tier: "recognition", outcome: await submitRecognition(input, deps) };
+    }
+    return { tier: "cloze", outcome: await submitCloze(input, deps) };
+  }
+
+  // LOOP-1 step 2: for the log-free states, mastery alone selects the tier (SM-1).
   const tier = selectTier(card.mastery);
 
   if (tier === "cued") {

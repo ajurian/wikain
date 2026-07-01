@@ -172,6 +172,70 @@ describe("runReviewPass — deterministic branch (LOOP-1, LOOP-2)", () => {
   });
 });
 
+describe("runReviewPass — Seen on-ramp (LOOP-1, SM-3, RAT-7)", () => {
+  /** A prior on-ramp ReviewLog, used to move the on-ramp ledger past the MCQ step. */
+  function onRampLog(tier: "recognition" | "cloze", rating: Rating): ReviewLog {
+    return {
+      userId: "u1",
+      senseId: SENSE,
+      tier,
+      rating,
+      reviewedAt: NOW,
+      fsrs: {
+        rating: rating === "Good" ? 3 : 1,
+        state: 0,
+        due: NOW,
+        stability: 1,
+        difficulty: 5,
+        elapsed_days: 0,
+        last_elapsed_days: 0,
+        scheduled_days: 0,
+        review: NOW,
+      },
+    };
+  }
+
+  it("SM-3: a Seen card with no history routes to the recognition MCQ; a correct pick does NOT promote (stays Seen)", async () => {
+    const { d, judge, logs, stored } = deps(card("Seen"));
+
+    const res = await runReviewPass({ userId: "u1", senseId: SENSE, response: "negotiate", now: NOW }, d);
+
+    expect(res.tier).toBe("recognition");
+    if (res.tier === "recognition") {
+      expect(res.outcome.passed).toBe(true);
+      expect(res.outcome.mastery).toBe("Seen"); // MCQ pass alone never promotes (SM-3)
+    }
+    expect(judge.calls).toHaveLength(0); // deterministic — no LLM
+    expect(stored().mastery).toBe("Seen");
+    expect(logs.at(-1)?.tier).toBe("recognition");
+  });
+
+  it("SM-3: after a prior MCQ pass, a Seen card routes to the cloze; a correct answer promotes Seen → Recognized", async () => {
+    const { d, judge, logs, stored } = deps(card("Seen"));
+    logs.push(onRampLog("recognition", "Good")); // a prior spaced MCQ pass exists
+
+    const res = await runReviewPass({ userId: "u1", senseId: SENSE, response: "negotiate", now: NOW }, d);
+
+    expect(res.tier).toBe("cloze");
+    if (res.tier === "cloze") {
+      expect(res.outcome.passed).toBe(true);
+      expect(res.outcome.mastery).toBe("Recognized"); // SM-3: promotion fires on the cloze pass
+    }
+    expect(judge.calls).toHaveLength(0);
+    expect(stored().mastery).toBe("Recognized");
+  });
+
+  it("RAT-7: after a prior MCQ pass and a first cloze fail, the next Seen presentation drops back to the MCQ", async () => {
+    const { d, logs } = deps(card("Seen"));
+    // Seeded history: MCQ pass then a first cloze fail → the next presentation drops back to the MCQ.
+    logs.push(onRampLog("recognition", "Good"), onRampLog("cloze", "Again"));
+
+    const res = await runReviewPass({ userId: "u1", senseId: SENSE, response: "negotiate", now: NOW }, d);
+
+    expect(res.tier).toBe("recognition"); // RAT-7 drop-back
+  });
+});
+
 describe("runReviewPass — judged branch (LOOP-1, LOOP-3, LOOP-4, LOOP-5)", () => {
   it("LOOP-1/LOOP-3 (INV-2): a Productive card whose response lacks the word bounces — no rating, no schedule, no log", async () => {
     const { d, judge, calls, logs, stored } = deps(card("Productive"));

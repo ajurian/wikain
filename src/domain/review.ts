@@ -16,8 +16,13 @@ export interface FsrsReviewLog {
   review: Date;
 }
 
-/** Which tier produced a review. Extends as further tiers land (recognition, cloze, …). */
-export type ReviewTier = "cued" | "free";
+/**
+ * Which tier produced a review (spec/03 TIER-1). The two `Seen` on-ramp tiers (`recognition`,
+ * `cloze`) and the deterministic `cued` tier are graded without the judge; `free` is judged. INV-4
+ * keys off `tier === "free"` — the judged-pass ledger/counter filter on it, so the deterministic
+ * tiers never count toward the counter or Fluent.
+ */
+export type ReviewTier = "recognition" | "cloze" | "cued" | "free";
 
 /**
  * One graded interaction (spec/12-data-model.md DM-1 review layer). Persisted from review #1
