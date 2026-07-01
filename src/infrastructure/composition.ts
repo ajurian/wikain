@@ -19,6 +19,7 @@ import { WinkLemmatizer } from "./winkLemmatizer.js";
 import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
 import { DeepSeekJudge } from "./deepSeekJudge.js";
 import { deepSeekConfigFromEnv } from "./deepSeekConfig.js";
+import { DrizzleCardRepository, type DrizzleDb } from "./drizzleCardRepository.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -66,6 +67,21 @@ export function composeReviewPass(
   itemsPath: string = ITEMS_PATH,
 ): RunReviewPassDeps {
   return composeFreeProduction(judge, itemsPath);
+}
+
+/**
+ * Wiring for the end-to-end loop against a REAL database (spec/12 DM-5..DM-7, STACK-3/6). Swaps only
+ * the `CardRepository` for the Drizzle adapter over the supplied `db` handle — everything else reuses
+ * `composeFreeProduction`, so this is the single place persistence enters (ARCH-3). The `db` is
+ * injected (pass `makeNeonDb(...)` for prod, `makePgliteDb()` for an offline run) so this function
+ * itself needs no network or credentials. `judge` is injected exactly as in the in-memory wirings.
+ */
+export function composeReviewPassPersistent(
+  judge: JudgePort,
+  db: DrizzleDb,
+  itemsPath: string = ITEMS_PATH,
+): RunReviewPassDeps {
+  return { ...composeFreeProduction(judge, itemsPath), cards: new DrizzleCardRepository(db) };
 }
 
 /**

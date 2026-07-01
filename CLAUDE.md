@@ -38,9 +38,10 @@ derived from the PRD, then tests are written against the specs, then runtime cod
 
 **What is implemented:** (1) the **build-time content-generation pipeline** (`build/`,
 TypeScript/Node), which realizes `docs/BUILD.md`; and (2) the **first runtime slice** (`src/`,
-started 2026-06-30) — see `### v4 runtime (src/)` below. **Most of the v4 web/multi-user runtime
-specified in `spec/` still does not exist** — no judge client, rule layer, memo, seeding, counter,
-Neon/BetterAuth adapters, or UI yet. Do not assume a runtime piece is present; scaffold it only when
+started 2026-06-30) — see `### v4 runtime (src/)` below, now spanning the review loop, the real
+DeepSeek judge, the counter, edit resolution, and a real Drizzle/Neon persistence adapter. **Parts of
+the v4 web/multi-user runtime specified in `spec/` still do not exist** — no seeding, verdict memo,
+BetterAuth adapter, or UI yet. Do not assume a runtime piece is present; scaffold it only when
 asked. *(Note: v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend —
 ignore any stale "Electron" framing elsewhere.)*
 
@@ -195,6 +196,37 @@ function + tests were added:
   color-by-`reason`, on-demand `one_line_feedback`) and the optional wink token-boundary snapping —
   the `ResolvedEdit[]` this slice returns is exactly that render's input.
 
+**Also implemented — the first persistence slice** (`spec/12` DM-5..DM-7, STACK-3/6; started
+2026-07-01). The **first slice with a real database.** It swaps `InMemoryCardRepository` for a
+Drizzle-backed adapter behind the *unchanged* `CardRepository` port — **no use-case or domain module
+changed** (the swap is confined to the composition root, ARCH-3). The **test suite stays fully
+offline**: the adapter is tested against an embedded in-process Postgres (**pglite**), never Neon or
+the network:
+- **infrastructure:** `db/schema.ts` (Drizzle schema — `cards` composite PK `(userId, senseId)` +
+  append-only `review_logs` with a `serial seq` for order; `mastery` is its **own column**, persisted
+  separately from FSRS state — DM-7/INV-3; FSRS fields are **expanded `fsrs_`-prefixed columns** with
+  `timestamptz` so `Date`s round-trip losslessly — no jsonb Date footgun), `drizzleCardRepository.ts`
+  (`DrizzleCardRepository` over a **dialect-agnostic** `DrizzleDb` handle so the *same* code runs on
+  pglite and Neon; pure row⇄domain mappers; `save` is an upsert = lazy-create + update, SM-2),
+  `db/pglite.ts` + `db/neon.ts` (the two `db` factories; `neonDbFromEnv` reads `DATABASE_URL`
+  server-side only, the NET-7/STACK-4 secret-boundary pattern — kept out of default wirings),
+  `composeReviewPassPersistent(judge, db, itemsPath?)` in `composition.ts` (reuses
+  `composeFreeProduction`, swaps only the repo).
+- **shared contract test:** `cardRepositoryContract.ts` — one conformance suite run against **both**
+  the in-memory and Drizzle repos, so their Liskov substitutability (SOLID-3) is build-enforced, not
+  asserted by hand. Drizzle runs it on a fresh migrated pglite DB per test.
+- **tooling:** `drizzle.config.ts` + generated `drizzle/0000_init.sql` (committed; the *same*
+  migrations apply to pglite in tests and Neon in prod — no hand-written DDL, no drift);
+  `npm run db:generate` / `db:migrate` scripts.
+- **Covers:** DM-5 (card persisted per user, dates round-trip), DM-6 (ReviewLog append-only from
+  review #1, append order preserved via `seq`), DM-7 (mastery persisted separately from FSRS state),
+  SM-2 (upsert = one card per word), INV-4 (`logsForWord` filters by user+word), multi-tenant
+  scoping. *(121 tests total at time of writing.)*
+- **Deferred within this slice (PRAG-1):** memo-row table (DM-8, MEMO-1 is a MAY, no consumer);
+  BetterAuth / real `userId` provisioning (STACK-4 — the adapter takes `userId` as a plain string);
+  live Neon migration/CI wiring beyond the `makeNeonDb` factory. **Note the pglite suite adds ~12s**
+  (a fresh migrated DB per test); share-one-DB-with-truncation is the optimization if it drags.
+
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
   the domain. `isLemmaMatch` now backs both cued grading (TIER-5) and the rule layer's presence
@@ -208,19 +240,22 @@ function + tests were added:
 **Deferred (do NOT build until pulled into scope — `PRAG-1`):** recognition MCQ + cloze tiers and
 their `Seen` spacing / RAT-7 drop-back; verdict memo (`05`, `MEMO-1` is a `MAY`); the failure path's
 UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block, need UI); the counter's daily
-goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); Neon + Drizzle (STACK-3/6) +
-BetterAuth (STACK-4) adapters; presentation/UI (React + TanStack + shadcn, STACK-7/2/5). *(The **real
-DeepSeek judge (`JDG-10/11`) + failure path (`08`)** and the **pure edit-resolution algorithm
-(`07` EDIT-2..6)** are now implemented — see the slices above; EDIT-7's inline render and the `Seen`
-on-ramp tiers the loop routes to are still deferred.)*
-**Natural next slice:** the first persistence slice (Neon+Drizzle repository behind the already
-`userId`-scoped `CardRepository`, STACK-3/6), then a React presentation over `runReviewPass` + the
-counter (which is also where EDIT-7 renders the `resolveEdits` output).
+goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); BetterAuth (STACK-4) adapter;
+presentation/UI (React + TanStack + shadcn, STACK-7/2/5). *(The **real DeepSeek judge (`JDG-10/11`) +
+failure path (`08`)**, the **pure edit-resolution algorithm (`07` EDIT-2..6)**, and the **first
+persistence slice (`12`, Neon + Drizzle behind `CardRepository`, STACK-3/6)** are now implemented —
+see the slices above; EDIT-7's inline render and the `Seen` on-ramp tiers the loop routes to are still
+deferred.)*
+**Natural next slice:** a **seeding slice (`09`)** — the thing that actually *creates* a user's cards
+(lazy card creation SEED-7, list-stack frontier, pacing, FSRS cold-start), now that there is a real
+store to persist them into; and/or a **React presentation** over `runReviewPass` + the counter (also
+where EDIT-7 renders the `resolveEdits` output). *(The persistence slice only persists cards a caller
+hands it — nothing yet bootstraps them, which is what seeding does.)*
 
-> **Status caveat:** all runtime slices through the edit-resolution algorithm (`spec/07`, atop the
-> real judge + `08` failure path, SM-5 + counter) are committed. Re-confirm with `git log` and re-run
-> `npm test` (103 at time of writing) at session start — do not trust this count if the tree has moved
-> on.
+> **Status caveat:** all runtime slices through the **first persistence slice** (`spec/12`, atop the
+> edit-resolution algorithm, real judge + `08` failure path, SM-5 + counter) are committed. Re-confirm
+> with `git log` and re-run `npm test` (121 at time of writing) at session start — do not trust this
+> count if the tree has moved on.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 

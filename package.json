@@ -11,16 +11,22 @@
     "ingest": "tsx build/stageB.ts ingest",
     "validate": "tsx build/stageC.ts",
     "combine": "tsx build/combine.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.3",
     "@types/node": "^22.10.2",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "drizzle-orm": "^0.45.2",
     "ts-fsrs": "^4.6.1",
     "wink-eng-lite-web-model": "^1.8.0",
     "wink-nlp": "^2.3.2"

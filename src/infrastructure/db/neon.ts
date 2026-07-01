@@ -1,0 +1,22 @@
+/**
+ * Neon (production) Drizzle handle. The connection string is read server-side from the environment
+ * (`neonDbFromEnv`), mirroring how `deepSeekConfigFromEnv` is the single place a secret is read
+ * (NET-7 / STACK-4) — never in application/domain/presentation. Kept out of the default test wirings
+ * so the suite never needs a database or the network (the pglite factory backs tests instead).
+ *
+ * The generated migrations in `drizzle/` are applied to Neon out-of-band (`drizzle-kit migrate`),
+ * not at process start.
+ */
+import { drizzle } from "drizzle-orm/neon-serverless";
+import type { DrizzleDb } from "../drizzleCardRepository.js";
+import * as schema from "./schema.js";
+
+export function makeNeonDb(connectionString: string): DrizzleDb {
+  return drizzle(connectionString, { schema });
+}
+
+export function neonDbFromEnv(): DrizzleDb {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is not set (Neon connection string required).");
+  return makeNeonDb(url);
+}
