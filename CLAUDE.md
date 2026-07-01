@@ -172,6 +172,29 @@ is never constructed in tests):
   *pre-submit* offline block are presentation; the `unavailable` result carries the reason for a future
   UI. The optional key-gated manual smoke script is not built.
 
+**Also implemented — the pure edit-resolution slice** (`spec/07` EDIT-*; still **no external
+services** — a pure domain algorithm, no infra/wiring). Completes the post-judge data path: it turns
+the judge's `verdict.replacements` (find/replace pairs) into character spans a future UI renders. It
+has **no consumer yet** (the consumer is the deferred presentation layer, PRAG-1) — only the pure
+function + tests were added:
+- **domain:** `editResolution.ts` — pure `resolveEdits(rawSentence, replacements, correctedSentence)`
+  returning a `{ kind: "inline"; edits } | { kind: "fallback"; correctedSentence }` union. Reuses the
+  existing `Replacement` from `verdict.ts` (no edit there). In-module `REASON_PRIORITY` (fixed domain
+  rule `sense > grammar > collocation > register`, **not** a `constants.ts` tunable, cf. `CONTENT_POS`
+  in `ruleLayer.ts`).
+- **Design decision (confirmed with user):** `EDIT-4` fallback is **binary** — **any** edit whose
+  `find` has 0 or ≥2 matches (empty `find` counts as unresolvable) suppresses *all* inline rendering
+  and returns the whole-sentence `corrected_sentence`. Empty `replacements` is a clean inline result,
+  not a fallback.
+- **Covers:** EDIT-3 (unique-substring span), EDIT-4 (0/≥2 → whole-sentence fallback, never guesses a
+  position), EDIT-5 (right-to-left / descending-`start` output), EDIT-6 (overlap dedup by reason
+  priority), EDIT-2 (takes no gate input, returns none — resolution never adjudicates). EDIT-1 is a
+  judge-contract constraint already met by the `Replacement` shape (cited, no code). *(103 tests total
+  at time of writing.)*
+- **Deferred within this slice (need UI, PRAG-1):** EDIT-7 inline render (strikethrough/insertion,
+  color-by-`reason`, on-demand `one_line_feedback`) and the optional wink token-boundary snapping —
+  the `ResolvedEdit[]` this slice returns is exactly that render's input.
+
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
   the domain. `isLemmaMatch` now backs both cued grading (TIER-5) and the rule layer's presence
@@ -183,20 +206,21 @@ is never constructed in tests):
 - Every test names the `spec/` ID it exercises.
 
 **Deferred (do NOT build until pulled into scope — `PRAG-1`):** recognition MCQ + cloze tiers and
-their `Seen` spacing / RAT-7 drop-back; verdict memo (`05`, `MEMO-1` is a `MAY`); edit resolution
-(`07`); the failure path's UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block, need
-UI); the counter's daily goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); Neon +
-Drizzle (STACK-3/6) + BetterAuth (STACK-4) adapters; presentation/UI (React + TanStack + shadcn,
-STACK-7/2/5). *(The **real DeepSeek judge (`JDG-10/11`) + failure path (`08`) are now implemented** —
-see the slice above; the `Seen` on-ramp tiers the loop routes to are still deferred.)*
+their `Seen` spacing / RAT-7 drop-back; verdict memo (`05`, `MEMO-1` is a `MAY`); the failure path's
+UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block, need UI); the counter's daily
+goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); Neon + Drizzle (STACK-3/6) +
+BetterAuth (STACK-4) adapters; presentation/UI (React + TanStack + shadcn, STACK-7/2/5). *(The **real
+DeepSeek judge (`JDG-10/11`) + failure path (`08`)** and the **pure edit-resolution algorithm
+(`07` EDIT-2..6)** are now implemented — see the slices above; EDIT-7's inline render and the `Seen`
+on-ramp tiers the loop routes to are still deferred.)*
 **Natural next slice:** the first persistence slice (Neon+Drizzle repository behind the already
-`userId`-scoped `CardRepository`, STACK-3/6), or the pure edit-resolution algorithm (`spec/07`
-EDIT-*, no external services — resolves `verdict.replacements` into inline spans), then a React
-presentation over `runReviewPass` + the counter.
+`userId`-scoped `CardRepository`, STACK-3/6), then a React presentation over `runReviewPass` + the
+counter (which is also where EDIT-7 renders the `resolveEdits` output).
 
-> **Status caveat:** all runtime slices through the real judge + `08` failure path (`spec/06`+`08`,
-> atop SM-5 + counter) are on `master`. Re-confirm with `git log` and re-run `npm test` (95 at time of
-> writing) at session start — do not trust this count if the tree has moved on.
+> **Status caveat:** all runtime slices through the edit-resolution algorithm (`spec/07`, atop the
+> real judge + `08` failure path, SM-5 + counter) are committed. Re-confirm with `git log` and re-run
+> `npm test` (103 at time of writing) at session start — do not trust this count if the tree has moved
+> on.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 
