@@ -315,11 +315,10 @@ render, the recognition-MCQ option assembly/shuffle, NET-2/5 affordances, CNT-7/
 "tune your level" step + live session queue). The backend machine is now continuous **New→Fluent**:
 seeding creates cards, the on-ramp walks `Seen`, the cued/judged tiers climb, the counter reads out.
 
-> **Branch/merge caveat (2026-07-02):** `master` is still only **SM-5 + counter**. Everything since
-> lives on an unmerged stack: `runtime-deepseek-judge` (+rubric `fdd012f`) → `runtime-edit-resolution`
-> → `runtime-persistence-drizzle` → `runtime-seen-onramp` → **`runtime-seeding`** (this slice, tip).
-> The stack forks at `fdd012f` (rubric tuning is only on `runtime-deepseek-judge`), so consolidating to
-> `master` is a real task, not a fast-forward. Re-confirm with `git log --all` and re-run `npm test`
+> **Status (2026-07-02):** the entire runtime stack is now merged to **`master`** as one linear
+> history (real judge + `08` → edit-resolution `07` → persistence `12` → `Seen` on-ramp `03` →
+> seeding `09`, topped by the rubric-tuning commit); the per-slice `runtime-*` branches were deleted
+> post-merge, so **`master` is again the only branch**. Re-confirm with `git log` and re-run `npm test`
 > (163 at time of writing) at session start — do not trust this count if the tree has moved on.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
