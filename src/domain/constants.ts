@@ -60,3 +60,24 @@ export const COUNTER_MIN_SPACED_PASSES = 2;
  * read time. Decoupled from REQUEST_RETENTION (0.90) so the headline metric is not jittery.
  */
 export const COUNTER_R_FLOOR = 0.7;
+
+// --- First-session seeding / placement (spec/09, `SEED`) ---
+
+/** SEED-6: first session seeds this many near-frontier words so a production win comes fast (SEED-1). */
+export const FIRST_SESSION_SEED_WORDS = 2;
+
+/** SEED-6: the steady-state daily new-introduction pace (a `Seen` interaction). */
+export const NEW_PER_DAY = 5;
+
+/**
+ * SEED-6: when a due backlog exists, new introductions are capped at this fraction OF THE SESSION
+ * (new + due), so reviews never starve. See `introductionPacing.ts` for the closed-form cap.
+ */
+export const NEW_FRACTION_UNDER_BACKLOG = 0.3;
+
+/**
+ * SEED-8: FSRS target retention for new cards. Tunable; decoupled from COUNTER_R_FLOOR (0.70). Wired
+ * into the ts-fsrs engine config in the scheduler adapter. Per-user optimization above
+ * ~PER_USER_OPT_REVIEW_THRESHOLD reviews is [v2] (deferred, PRAG-1) — v1 uses defaults below that.
+ */
+export const REQUEST_RETENTION = 0.9;

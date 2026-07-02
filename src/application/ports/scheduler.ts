@@ -7,9 +7,18 @@ import type { Rating } from "../../domain/rating.js";
  * infrastructure (ARCH-3); the application sees only the binary domain Rating in and the next card
  * state + review log out — never the scheduling library itself.
  */
+/**
+ * SEED-8 cold-start seed for a newly introduced card. `difficulty` is the CEFR×band estimate from the
+ * domain `coldStartDifficulty` policy; the adapter applies it to the fresh card. Optional so callers
+ * that don't seed (tests, pre-SEED code) get the ts-fsrs default.
+ */
+export interface ColdStart {
+  difficulty: number;
+}
+
 export interface Scheduler {
-  /** A fresh card for a newly introduced word (lazy cold-start — SEED-7, DM-5). */
-  newCard(now: Date): FsrsCardState;
+  /** A fresh card for a newly introduced word (lazy cold-start — SEED-7, SEED-8, DM-5). */
+  newCard(now: Date, coldStart?: ColdStart): FsrsCardState;
   /** Apply a rating, returning the next card state + the FSRS review log (RAT-1, RAT-8). */
   next(
     card: FsrsCardState,

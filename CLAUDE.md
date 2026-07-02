@@ -260,6 +260,35 @@ in behavior** (`submitCuedReview` was refactored onto a shared core with its pub
 - **Deferred within this slice (PRAG-1):** MCQ option assembly/shuffle + rendering (presentation, like
   EDIT-7); the `New→Seen` introduction that *creates* `Seen` cards (seeding, `09`).
 
+**Also implemented — the first-session seeding + placement slice** (`spec/09`; still **no external
+services** — real JSON catalog + ts-fsrs + in-memory repo). This is the piece that *creates* a user's
+cards, so the now-continuous ladder finally has an on-ramp: a seeded card is reviewable end-to-end.
+The three placement mechanisms (SEED-2/3) stay **structurally separate** — they are three distinct
+inputs (frontier band, per-word marks, list-stack word source), so the LexTALE scalar can never mark
+or select words (enforced by the type surface). The existing use-cases are **byte-for-byte unchanged**:
+- **domain (pure):** `entryState.ts` (`introductionState` — placement-known → `Recognized`, else
+  `Seen`, SM-11/SEED-3; flag-only, band deliberately not a param), `introductionPacing.ts`
+  (`newIntroductionsAllowed` — SEED-6/9 first-session/steady-state/under-backlog cap; the backlog cap
+  is the closed-form `floor(f/(1−f)·due)` so `new/(new+due) ≤ f` "of the session", needing only the
+  due count), `coldStart.ts` (`coldStartDifficulty(cefr, band)` — SEED-8 CEFR×band estimate in FSRS
+  [1,10]), four `constants.ts` (`FIRST_SESSION_SEED_WORDS`=2, `NEW_PER_DAY`=5,
+  `NEW_FRACTION_UNDER_BACKLOG`=0.30, `REQUEST_RETENTION`=0.90).
+- **application:** new narrow `WordSource` port (`nextFrontierWords(band, exclude, count)` — selection
+  only, SOLID-4); `Scheduler.newCard` widened with an optional `ColdStart` seed; use-case
+  `seedIntroductions.ts` (pacing → list-stack select excluding already-carded → lazy `newCard`
+  cold-started → entry state → save; reuses `CardRepository.listCards`/`save`, **no new repo method**).
+- **infrastructure:** `jsonWordSource.ts` (band bucket, list_rank order, `sense_id` tiebreak),
+  `tsFsrsScheduler` now configures `request_retention` + applies the cold-start difficulty (with a
+  note that ts-fsrs recomputes D/S on the first graded review), `composeSeeding` in `composition.ts`,
+  `seeding.smoke.test.ts` (real catalog + ts-fsrs: first-session seed, SM-11 skip, and a placement-
+  known `Recognized` card reviewed through `runReviewPass` to `Productive`).
+- **Covers:** SEED-1/2/3/5/6/7/8/9, SM-11, INV-3. *(163 tests total at time of writing.)*
+- **Deferred within this slice (PRAG-1):** the LexTALE instrument internals (SEED-4 — the scalar is
+  modeled as an input band); per-user FSRS optimization above `PER_USER_OPT_REVIEW_THRESHOLD` reviews
+  (SEED-8, needs `@open-spaced-repetition/binding`); the live session-queue that interleaves new intros
+  with due reviews + the "tune your level" UI (presentation/session-orchestration — this slice ships
+  the pure pacing *policy* + card creation, not a running queue).
+
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
   the domain. `isLemmaMatch` now backs cued grading, cloze grading (both TIER-5) and the rule layer's
@@ -272,23 +301,26 @@ in behavior** (`submitCuedReview` was refactored onto a shared core with its pub
 
 **Deferred (do NOT build until pulled into scope — `PRAG-1`):** verdict memo (`05`, `MEMO-1` is a
 `MAY`); the failure path's UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block, need
-UI); the counter's daily goal / inline-edit feedback (`CNT-7/8/9`, need UI); seeding (`09`); BetterAuth
+UI); the counter's daily goal / inline-edit feedback (`CNT-7/8/9`, need UI); the LexTALE instrument +
+per-user FSRS optimization (the two SEED-4/8 bits carved out of the seeding slice); BetterAuth
 (STACK-4) adapter; presentation/UI (React + TanStack + shadcn, STACK-7/2/5). *(The **real DeepSeek judge
 (`JDG-10/11`) + failure path (`08`)**, the **pure edit-resolution algorithm (`07` EDIT-2..6)**, the
-**first persistence slice (`12`, Neon + Drizzle behind `CardRepository`, STACK-3/6)**, and the **`Seen`
-on-ramp tiers (`03` + SM-3 + RAT-7)** are now implemented — see the slices above; EDIT-7's inline render
-and the recognition-MCQ option assembly/shuffle are the remaining presentation-only bits.)*
-**Natural next slice:** a **seeding slice (`09`)** — the thing that actually *creates* a user's cards
-(the `New→Seen` introduction, lazy card creation SEED-7, list-stack frontier, pacing, FSRS cold-start).
-The ladder is now continuous from `Seen` upward, so seeding finally feeds a **complete machine** (a
-seeded `Seen` card is now reviewable end-to-end); and/or a **React presentation** over `runReviewPass` +
-the counter (also where EDIT-7 renders the `resolveEdits` output). *(The persistence slice only persists
-cards a caller hands it — nothing yet bootstraps them, which is what seeding does.)*
+**first persistence slice (`12`, Neon + Drizzle behind `CardRepository`, STACK-3/6)**, the **`Seen`
+on-ramp tiers (`03` + SM-3 + RAT-7)**, and now **first-session seeding (`09`)** are implemented — see
+the slices above; EDIT-7's inline render and the recognition-MCQ option assembly/shuffle are the
+remaining presentation-only bits.)*
+**Natural next slice:** the **React presentation** over `runReviewPass` + `seedIntroductions` + the
+counter — the only greenfield layer left, and where the deferred UI bits land (EDIT-7's `resolveEdits`
+render, the recognition-MCQ option assembly/shuffle, NET-2/5 affordances, CNT-7/8/9, the seeding
+"tune your level" step + live session queue). The backend machine is now continuous **New→Fluent**:
+seeding creates cards, the on-ramp walks `Seen`, the cued/judged tiers climb, the counter reads out.
 
-> **Status caveat:** all runtime slices through the **`Seen` on-ramp tiers** (`spec/03`, atop the first
-> persistence slice, edit-resolution algorithm, real judge + `08` failure path, SM-5 + counter) are
-> committed. Re-confirm with `git log` and re-run `npm test` (143 at time of writing) at session start —
-> do not trust this count if the tree has moved on.
+> **Branch/merge caveat (2026-07-02):** `master` is still only **SM-5 + counter**. Everything since
+> lives on an unmerged stack: `runtime-deepseek-judge` (+rubric `fdd012f`) → `runtime-edit-resolution`
+> → `runtime-persistence-drizzle` → `runtime-seen-onramp` → **`runtime-seeding`** (this slice, tip).
+> The stack forks at `fdd012f` (rubric tuning is only on `runtime-deepseek-judge`), so consolidating to
+> `master` is a real task, not a fast-forward. Re-confirm with `git log --all` and re-run `npm test`
+> (163 at time of writing) at session start — do not trust this count if the tree has moved on.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 
@@ -396,3 +428,13 @@ item's own `_flags` (like the normalization nulls above) live **inside the commi
 not `_review.json` — grep the batch files for `_flags` to find them. (The prior flagged items —
 `aesthetic_adj_01`, `archaeology_noun_01`, `ash_noun_01` — were cleared by the 2026-06-29 reset;
 `_review.json` is now `[]`. The Americanization nulls will recur on the same lemmas when regenerated.)
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

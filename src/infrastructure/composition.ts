@@ -9,10 +9,12 @@ import type { SubmitCuedReviewDeps } from "../application/submitCuedReview.js";
 import type { SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
 import type { RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { ReadUsableCounterDeps } from "../application/readUsableCounter.js";
+import type { SeedIntroductionsDeps } from "../application/seedIntroductions.js";
 import type { JudgePort } from "../application/ports/judge.js";
 import type { CardRepository } from "../application/ports/cardRepository.js";
 import type { Scheduler } from "../application/ports/scheduler.js";
 import { JsonCatalog } from "./catalog.js";
+import { JsonWordSource } from "./jsonWordSource.js";
 import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { WinkLemmatizer } from "./winkLemmatizer.js";
@@ -97,6 +99,24 @@ export function liveJudge(): JudgePort {
 /** Wiring for the end-to-end loop against the real DeepSeek judge (NET-7). Requires `DEEPSEEK_API_KEY`. */
 export function composeReviewPassLive(itemsPath: string = ITEMS_PATH): RunReviewPassDeps {
   return composeReviewPass(liveJudge(), itemsPath);
+}
+
+/**
+ * Wiring for first-session seeding (spec/09). Creates a user's cards (New → Seen, or → Recognized for
+ * placement-known words, SM-11) from the frequency list stack. No external services (JSON catalog +
+ * word source + ts-fsrs + in-memory repo). Pass the SHARED repository so seeded cards are visible to
+ * the review pass; the default constructs a standalone in-memory repo for tests.
+ */
+export function composeSeeding(
+  cards: CardRepository = new InMemoryCardRepository(),
+  itemsPath: string = ITEMS_PATH,
+): SeedIntroductionsDeps {
+  return {
+    catalog: JsonCatalog.fromFile(itemsPath),
+    wordSource: JsonWordSource.fromFile(itemsPath),
+    cards,
+    scheduler: new TsFsrsScheduler(),
+  };
 }
 
 /**
