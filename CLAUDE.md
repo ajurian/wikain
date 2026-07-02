@@ -289,6 +289,26 @@ or select words (enforced by the type surface). The existing use-cases are **byt
   with due reviews + the "tune your level" UI (presentation/session-orchestration — this slice ships
   the pure pacing *policy* + card creation, not a running queue).
 
+**Also implemented — the session-queue / due-word surfacing slice** (`spec/11` LOOP-1 step 1; still
+**no external services** — real JSON catalog + ts-fsrs + in-memory repo). Closes the loop's last
+backend gap: `runReviewPass` previously took `senseId` as given (surfacing was out of scope). This
+slice decides *what* to review and interleaves paced new intros with due reviews. **No new ports, no
+adapter changes, no existing use-case/domain module changed** — additive:
+- **domain (pure):** `sessionQueue.ts` (`orderSessionQueue(cards, introSenseIds, now)` — due filter
+  (`fsrs.due <= now`), reviews ordered most-overdue-first (`senseId` tiebreak), fresh intros **evenly
+  interleaved** among reviews via a proportional even-merge, SEED-6). The fresh-intro set is passed
+  explicitly (the seeder returns exactly what it created — no `reps`/mastery heuristic, no INV-3 concern).
+- **application:** `startSession.ts` — the single session-start entry point: `seedIntroductions` (paced,
+  SEED-1/6/7) → `listCards` → `orderSessionQueue`, returning `{ queue, seeded }`. `StartSessionDeps =
+  SeedIntroductionsDeps` (the ordering needs only `cards`, already in that set).
+- **infrastructure:** `composeSession` in `composition.ts`; `session.smoke.test.ts` (real catalog +
+  ts-fsrs: first-session seed → ordered queue → each queued word reviewed end-to-end via `runReviewPass`).
+- **Covers:** LOOP-1 (step 1 surfacing + ordering), SEED-6 (interleave; pacing reused), SEED-7 (queue
+  surfaces only already-created cards). *(180 tests total at time of writing.)*
+- **Deferred within this slice (PRAG-1):** prompt resolution (what to render before a response — the
+  presentation slice); per-day intro dedup (`seedIntroductions` paces per-invocation, not per calendar
+  day — no day ledger yet); a due-only repo query (`listCards` + in-domain filter suffices for v1).
+
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
   the domain. `isLemmaMatch` now backs cued grading, cloze grading (both TIER-5) and the rule layer's

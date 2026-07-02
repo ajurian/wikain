@@ -10,6 +10,7 @@ import type { SubmitFreeProductionDeps } from "../application/submitFreeProducti
 import type { RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { ReadUsableCounterDeps } from "../application/readUsableCounter.js";
 import type { SeedIntroductionsDeps } from "../application/seedIntroductions.js";
+import type { StartSessionDeps } from "../application/startSession.js";
 import type { JudgePort } from "../application/ports/judge.js";
 import type { CardRepository } from "../application/ports/cardRepository.js";
 import type { Scheduler } from "../application/ports/scheduler.js";
@@ -117,6 +118,19 @@ export function composeSeeding(
     cards,
     scheduler: new TsFsrsScheduler(),
   };
+}
+
+/**
+ * Wiring for a session start (spec/11 LOOP-1 step 1). `StartSessionDeps === SeedIntroductionsDeps`
+ * (the queue ordering needs only `cards`, already in the seeding set), so this reuses the seeding
+ * wiring — named separately for intent + a stable call site. Pass the SHARED repository so the queued
+ * cards are the same ones the review pass reads/writes; the default constructs a standalone repo.
+ */
+export function composeSession(
+  cards: CardRepository = new InMemoryCardRepository(),
+  itemsPath: string = ITEMS_PATH,
+): StartSessionDeps {
+  return composeSeeding(cards, itemsPath);
 }
 
 /**
