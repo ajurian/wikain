@@ -309,6 +309,35 @@ adapter changes, no existing use-case/domain module changed** — additive:
   presentation slice); per-day intro dedup (`seedIntroductions` paces per-invocation, not per calendar
   day — no day ledger yet); a due-only repo query (`listCards` + in-domain filter suffices for v1).
 
+**Also implemented — the React review-presentation slice** (`spec/03` TIER-1/2/5 render + `spec/11`
+LOOP-1; **STACK-2/5/7**). The first `src/presentation/` layer: a **TanStack Start** (Vite 7 + React 19)
+full-stack app whose **server functions run the use-cases server-side**, so the DeepSeek key (NET-7) and
+DB (STACK-4) stay off the client. Scope = the **deterministic review screen** (recognition / cloze /
+cued); free production + the counter are deferred:
+- **backend (TDD):** `reviewRouting.ts` — extracted `resolveReviewTier(mastery, logs)` as the **single
+  source of truth** for tier routing; `runReviewPass` refactored onto it (behavior-identical, its tests
+  unchanged) so the tier the UI *shows* can never differ from the tier it *grades*.
+  `resolveReviewPrompt.ts` — application read-model returning `{ tier, …render fields }` per queued word
+  (recognition MCQ options, cloze sentence, cued meaning), **fail-loud** on a missing catalog field;
+  `composeResolvePrompt` wiring.
+- **presentation (`src/presentation/`, own `tsconfig` + `npm run typecheck:web`, EXCLUDED from the
+  NodeNext backend gate):** TanStack Start relocated under `srcDirectory: src/presentation`
+  (routes/router/generated tree); `server/` holds the three `createServerFn`s (`startSession` /
+  `resolvePrompt` / `submitReview`) over a **process-shared in-memory repo** + a **stubbed dev user**
+  (the STACK-4 auth seam — BetterAuth deferred); `routes/review.tsx` drives Start → walk queue →
+  tier-specific prompt → submit → pass/fail + mastery, with shadcn-ui + Tailwind v4 + TanStack Query.
+- **tooling:** Vite 7 / `@vitejs/plugin-react` 5 / **vitest bumped 2→3** (vitest 2 pinned Vite 5,
+  blocking Start's Vite 7); Tailwind v4 (`@tailwindcss/vite`); shadcn-ui (`components.json`, `@/*` alias
+  → `src/presentation`); `dev`/`build`/`start`/`typecheck:web` scripts; the shadcn MCP (`.mcp.json`).
+- **Covers:** the render half of TIER-1/2/5 + LOOP-1 step 2; `resolveReviewTier` guarantees
+  shown-tier == graded-tier (proven by `reviewFlow.smoke.test.ts` over the real catalog). *(194 tests.)*
+- **Verified:** `npm run build` (client `review` chunk ~72kB — server-only infra does NOT leak to the
+  client), `/review` SSR-renders, both typecheck gates + 194 tests green. **NOT** driven headlessly: the
+  literal `createServerFn` HTTP click-path (transport is framework code the build validates).
+- **Deferred within this slice (PRAG-1):** the free-production UI (real DeepSeek via `liveJudge`) +
+  NET-2/5 affordances; EDIT-7 inline edit rendering; MCQ shuffle-on-render (assembly is done, shuffle is
+  UI); the counter / daily-goal (CNT-7/8/9); real Neon + BetterAuth (swap at the one composition point).
+
 **Key design conventions established (follow them in later slices):**
 - The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
   the domain. `isLemmaMatch` now backs cued grading, cloze grading (both TIER-5) and the rule layer's
@@ -320,26 +349,30 @@ adapter changes, no existing use-case/domain module changed** — additive:
 - Every test names the `spec/` ID it exercises.
 
 **Deferred (do NOT build until pulled into scope — `PRAG-1`):** verdict memo (`05`, `MEMO-1` is a
-`MAY`); the failure path's UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block, need
-UI); the counter's daily goal / inline-edit feedback (`CNT-7/8/9`, need UI); the LexTALE instrument +
-per-user FSRS optimization (the two SEED-4/8 bits carved out of the seeding slice); BetterAuth
-(STACK-4) adapter; presentation/UI (React + TanStack + shadcn, STACK-7/2/5). *(The **real DeepSeek judge
-(`JDG-10/11`) + failure path (`08`)**, the **pure edit-resolution algorithm (`07` EDIT-2..6)**, the
-**first persistence slice (`12`, Neon + Drizzle behind `CardRepository`, STACK-3/6)**, the **`Seen`
-on-ramp tiers (`03` + SM-3 + RAT-7)**, and now **first-session seeding (`09`)** are implemented — see
-the slices above; EDIT-7's inline render and the recognition-MCQ option assembly/shuffle are the
-remaining presentation-only bits.)*
-**Natural next slice:** the **React presentation** over `runReviewPass` + `seedIntroductions` + the
-counter — the only greenfield layer left, and where the deferred UI bits land (EDIT-7's `resolveEdits`
-render, the recognition-MCQ option assembly/shuffle, NET-2/5 affordances, CNT-7/8/9, the seeding
-"tune your level" step + live session queue). The backend machine is now continuous **New→Fluent**:
-seeding creates cards, the on-ramp walks `Seen`, the cued/judged tiers climb, the counter reads out.
+`MAY`); the failure path's UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block); the
+counter's daily goal / inline-edit feedback (`CNT-7/8/9`); the LexTALE instrument + per-user FSRS
+optimization (the two SEED-4/8 bits carved out of the seeding slice); the **BetterAuth (STACK-4)
+adapter** (the presentation layer stubs a dev user at the seam); the **free-production / judged review
+UI** + **EDIT-7 inline edit render** + **recognition-MCQ shuffle-on-render** (the remaining
+presentation-only bits). *(The **real DeepSeek judge (`JDG-10/11`) + failure path (`08`)**, the **pure
+edit-resolution algorithm (`07` EDIT-2..6)**, the **first persistence slice (`12`, Neon + Drizzle behind
+`CardRepository`, STACK-3/6)**, the **`Seen` on-ramp tiers (`03` + SM-3 + RAT-7)**, **first-session
+seeding (`09`)**, the **session queue (`11` LOOP-1 step 1)**, and now the **React deterministic review
+screen (STACK-2/5/7)** are implemented — see the slices above.)*
+**Natural next slice:** extend the presentation — the **judged free-production screen + the counter**
+(wire the real DeepSeek judge via `liveJudge`, render EDIT-7 inline edits + NET-2/5 affordances, add
+MCQ shuffle-on-render and CNT-7/8/9), and/or the **Neon + BetterAuth swap** for real multi-user
+persistence (both are single-point swaps at the composition root — `composeReviewPassPersistent` +
+the `currentUser` seam). The deterministic loop now runs end-to-end in the browser: seed → queue →
+recognition/cloze/cued → pass/fail.
 
-> **Status (2026-07-02):** the entire runtime stack is now merged to **`master`** as one linear
-> history (real judge + `08` → edit-resolution `07` → persistence `12` → `Seen` on-ramp `03` →
-> seeding `09`, topped by the rubric-tuning commit); the per-slice `runtime-*` branches were deleted
-> post-merge, so **`master` is again the only branch**. Re-confirm with `git log` and re-run `npm test`
-> (163 at time of writing) at session start — do not trust this count if the tree has moved on.
+> **Status (2026-07-03):** the runtime backend + the first UI slice are on **`master`** as one linear
+> history. Recent commits: session queue (`11` LOOP-1 step 1) → React deterministic review presentation
+> (TanStack Start, STACK-2/5/7), atop the earlier real-judge/edit/persistence/on-ramp/seeding stack.
+> The presentation layer is a Vite/TanStack app under `src/presentation/` with its OWN `tsconfig`
+> (`npm run typecheck:web`); the backend gate stays `npm run typecheck` (NodeNext) + `npm test`
+> (**194 at time of writing** — do not trust this count if the tree has moved on). Re-confirm with
+> `git log`, `npm test`, and `npm run dev` (the app) at session start.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 

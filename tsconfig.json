@@ -15,5 +15,7 @@
     "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["build/**/*.ts", "src/**/*.ts"]
+  "include": ["build/**/*.ts", "src/**/*.ts"],
+  "// exclude": "The presentation layer (src/presentation) is a Vite/Bundler + DOM/JSX app with its own tsconfig; keep it out of the NodeNext backend typecheck gate. See src/presentation/tsconfig.json + `npm run typecheck:web`.",
+  "exclude": ["src/presentation"]
 }

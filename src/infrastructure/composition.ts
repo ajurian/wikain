@@ -11,6 +11,7 @@ import type { RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { ReadUsableCounterDeps } from "../application/readUsableCounter.js";
 import type { SeedIntroductionsDeps } from "../application/seedIntroductions.js";
 import type { StartSessionDeps } from "../application/startSession.js";
+import type { ResolveReviewPromptDeps } from "../application/resolveReviewPrompt.js";
 import type { JudgePort } from "../application/ports/judge.js";
 import type { CardRepository } from "../application/ports/cardRepository.js";
 import type { Scheduler } from "../application/ports/scheduler.js";
@@ -131,6 +132,17 @@ export function composeSession(
   itemsPath: string = ITEMS_PATH,
 ): StartSessionDeps {
   return composeSeeding(cards, itemsPath);
+}
+
+/**
+ * Wiring for the render-time prompt read-model (spec/03 TIER-*, spec/11 LOOP-1 step 2). Catalog + the
+ * SHARED card repository — it reads the same store the review pass writes, so pass the shared repo.
+ */
+export function composeResolvePrompt(
+  cards: CardRepository = new InMemoryCardRepository(),
+  itemsPath: string = ITEMS_PATH,
+): ResolveReviewPromptDeps {
+  return { catalog: JsonCatalog.fromFile(itemsPath), cards };
 }
 
 /**

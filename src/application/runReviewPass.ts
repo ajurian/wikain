@@ -1,5 +1,4 @@
-import { selectTier } from "../domain/tier.js";
-import { nextSeenTier } from "../domain/onRampLedger.js";
+import { resolveReviewTier } from "../domain/reviewRouting.js";
 import {
   submitCuedReview,
   type SubmitCuedReviewInput,
@@ -63,27 +62,27 @@ export async function runReviewPass(
     throw new Error(`no card for user ${input.userId} / sense ${input.senseId}`);
   }
 
-  // LOOP-1 step 2 (Seen on-ramp): the recognition-vs-cloze position depends on the word's ReviewLog
-  // history (SM-3 two-step + RAT-7 drop-back), not on mastery alone, so it is resolved from the logs
-  // here (onRampLedger) rather than by `selectTier`. Both branches are deterministic — no judge/LLM.
-  if (card.mastery === "Seen") {
-    const logs = await deps.cards.logsForWord(input.userId, input.senseId);
-    if (nextSeenTier(logs) === "recognition") {
-      return { tier: "recognition", outcome: await submitRecognition(input, deps) };
+  // LOOP-1 step 2: which tier to grade at. `Seen` depends on the word's ReviewLog history (SM-3 +
+  // RAT-7), so its logs are loaded; other states route on mastery alone (SM-1). One shared router
+  // (`resolveReviewTier`) so this grading path and the prompt shown by `resolveReviewPrompt` agree.
+  const logs =
+    card.mastery === "Seen" ? await deps.cards.logsForWord(input.userId, input.senseId) : [];
+  const tier = resolveReviewTier(card.mastery, logs);
+
+  switch (tier) {
+    // Deterministic branches — no judge/LLM is reached (LOOP-2).
+    case "recognition":
+      return { tier, outcome: await submitRecognition(input, deps) };
+    case "cloze":
+      return { tier, outcome: await submitCloze(input, deps) };
+    case "cued": {
+      const cuedInput: SubmitCuedReviewInput = input;
+      return { tier, outcome: await submitCuedReview(cuedInput, deps) };
     }
-    return { tier: "cloze", outcome: await submitCloze(input, deps) };
+    // Judged branch (free production / Fluent maintenance) — LOOP-3.
+    case "free": {
+      const freeInput: SubmitFreeProductionInput = input;
+      return { tier, outcome: await submitFreeProduction(freeInput, deps) };
+    }
   }
-
-  // LOOP-1 step 2: for the log-free states, mastery alone selects the tier (SM-1).
-  const tier = selectTier(card.mastery);
-
-  if (tier === "cued") {
-    // LOOP-2: deterministic branch — no judge/LLM is reached.
-    const cuedInput: SubmitCuedReviewInput = input;
-    return { tier, outcome: await submitCuedReview(cuedInput, deps) };
-  }
-
-  // LOOP-3: judged branch (free production / Fluent maintenance).
-  const freeInput: SubmitFreeProductionInput = input;
-  return { tier, outcome: await submitFreeProduction(freeInput, deps) };
 }
