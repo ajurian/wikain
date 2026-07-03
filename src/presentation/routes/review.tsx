@@ -1,26 +1,33 @@
 /*
- * /review — the session screen (chromeless focus mode).
+ * /review — the session screen (chromeless focus mode), WIRED to the real backend.
  *
- * DESIGN BUILD, MOCK-DRIVEN: everything here renders from src/presentation/mock/*
- * (see the MOCK headers there for the demo triggers). No server function is
- * called; when wiring, swap the mock imports for server/review.ts and delete
- * the mocks. State map: design-system/references/screen-states.md.
+ * Server-driven (STACK-2): `startSessionFn` seeds + orders the queue (LOOP-1), `resolvePromptFn`
+ * resolves each word's tier + render fields (the correct answer is withheld for MCQ/cloze/cued —
+ * grading is server-side), and grading runs through `runReviewPass` behind `submitReviewFn`
+ * (deterministic) / `ruleCheckFn` + `submitReviewFn` (judged). The judged tier is two-phase so the
+ * "checking…" indicator never precedes a bounce (NET-2): the instant rule-check decides bounces with
+ * no judge round-trip, then a rule-pass shows the indicator while the judge runs.
+ *
+ * The designed leaf components are reused unchanged — the server view-models are structurally the
+ * shapes they already accept. The New→Seen "intro" card is intentionally dropped (seeded words start
+ * at Seen; their first review is the recognition MCQ) — that surfacing is a deferred seeding concern.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowRight, CircleCheck, CircleX, CloudOff, Lightbulb, X } from "lucide-react";
+import { ArrowRight, CircleCheck, CircleX, CloudOff, Lightbulb, Loader2, X } from "lucide-react";
 
-import { mockItem, type MockLexicalItem } from "../mock/catalog";
-import { MOCK_WORDS, type MasteryState } from "../mock/learner";
-import { MOCK_SESSION, mockLemmaMatch, mockMcqOptions, type MockSessionStep } from "../mock/session";
-import { mockJudgeSubmit, mockRuleLayer, type MockBounceKind, type MockJudgeResult } from "../mock/judge";
+import { startSessionFn, resolvePromptFn, ruleCheckFn, submitReviewFn } from "../server/review";
+import type { ReviewPrompt } from "../../application/resolveReviewPrompt.js";
+import type { ReviewOutcomeView } from "../../application/presentReviewOutcome.js";
+import type { MasteryState } from "../mock/learner";
 
 import { BounceCallout } from "../components/bounce-callout";
 import { CheckingIndicator } from "../components/checking-indicator";
-import { MasteryChip } from "../components/mastery-chip";
 import { SessionSummary, type StepOutcome } from "../components/session-summary";
 import { VerdictPanel } from "../components/verdict-panel";
+import { MasteryChip } from "../components/mastery-chip";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,28 +38,35 @@ export const Route = createFileRoute("/review")({
   component: ReviewSession,
 });
 
-/** MAX_RULE_BOUNCE_RETRIES (RL-6). Mirrored from spec constants — replace when wiring. */
-const MAX_RULE_BOUNCE_RETRIES = 3;
-
-const LADDER: MasteryState[] = ["New", "Seen", "Recognized", "Productive", "Fluent"];
-
-function masteryOf(senseId: string): MasteryState {
-  return MOCK_WORDS.find((w) => w.senseId === senseId)?.mastery ?? "New";
-}
-
-function demoteOneRung(state: MasteryState): MasteryState {
-  // SM-6/SM-7: one rung down, floor at Recognized.
-  const i = LADDER.indexOf(state);
-  return LADDER[Math.max(2, i - 1)] as MasteryState;
+/** A stable random shuffle computed once per mount (real MCQ shuffle-on-render, TIER-2). */
+function useShuffled<T>(items: readonly T[]): T[] {
+  return useMemo(() => {
+    const a = [...items];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j]!, a[i]!];
+    }
+    return a;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- shuffle once per mount, not per render
+  }, []);
 }
 
 /* ------------------------------------------------------------------ shell */
 
 function ReviewSession() {
+  const session = useQuery({
+    queryKey: ["review-session"],
+    queryFn: () => startSessionFn(),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<StepOutcome[]>([]);
-  const total = MOCK_SESSION.length;
-  const step = MOCK_SESSION[index];
+
+  const queue = session.data?.queue ?? [];
+  const total = queue.length;
+  const senseId = queue[index];
 
   const handleDone = (outcome: StepOutcome) => {
     setResults((r) => [...r, outcome]);
@@ -63,35 +77,55 @@ function ReviewSession() {
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-4 pb-8">
       {/* thin session chrome: close + progress only (focus mode) */}
       <div className="mb-8 flex items-center gap-4">
-        <Link
-          to="/"
-          aria-label="End session"
-          className="rounded-md p-1 text-ink-faint hover:text-ink"
-        >
+        <Link to="/" aria-label="End session" className="rounded-md p-1 text-ink-faint hover:text-ink">
           <X className="size-5" strokeWidth={1.75} />
         </Link>
-        <Progress value={Math.min(index, total)} max={total} className="h-1.5" />
+        <Progress value={Math.min(index, total)} max={Math.max(total, 1)} className="h-1.5" />
         <span className="text-xs font-medium text-ink-faint tabular-nums">
-          {Math.min(index + 1, total)}/{total}
+          {total === 0 ? "0/0" : `${Math.min(index + 1, total)}/${total}`}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col justify-center">
-        <AnimatePresence mode="wait">
-          {step === undefined ? (
-            <SessionSummary key="summary" results={results} />
-          ) : (
-            <StepCard key={index} step={step} onDone={handleDone} />
-          )}
-        </AnimatePresence>
+        {session.isPending ? (
+          <CenteredSpinner label="Preparing your session…" />
+        ) : session.isError ? (
+          <p className="text-center text-sm text-terracotta">
+            Couldn’t start your session. Please try again.
+          </p>
+        ) : (
+          <AnimatePresence mode="wait">
+            {senseId === undefined ? (
+              <SessionSummary key="summary" results={results} />
+            ) : (
+              <StepCard key={index} senseId={senseId} onDone={handleDone} />
+            )}
+          </AnimatePresence>
+        )}
       </div>
     </div>
   );
 }
 
-function StepCard({ step, onDone }: { step: MockSessionStep; onDone: (o: StepOutcome) => void }) {
+function CenteredSpinner({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-3 text-ink-faint">
+      <Loader2 className="size-5 animate-spin" strokeWidth={1.75} />
+      <p className="text-sm">{label}</p>
+    </div>
+  );
+}
+
+/** Fetches the prompt for one queued word and routes to the matching tier card. */
+function StepCard({ senseId, onDone }: { senseId: string; onDone: (o: StepOutcome) => void }) {
   const reduced = useReducedMotion();
-  const item = mockItem(step.senseId);
+  const prompt = useQuery({
+    queryKey: ["review-prompt", senseId],
+    queryFn: () => resolvePromptFn({ data: senseId }),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+
   return (
     <motion.div
       initial={reduced ? false : { opacity: 0, y: 8 }}
@@ -100,24 +134,33 @@ function StepCard({ step, onDone }: { step: MockSessionStep; onDone: (o: StepOut
       transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
       className="w-full"
     >
-      {step.tier === "intro" ? <IntroCard item={item} onDone={onDone} /> : null}
-      {step.tier === "recognition" ? <RecognitionCard item={item} onDone={onDone} /> : null}
-      {step.tier === "cloze" || step.tier === "cued" ? (
-        <TypedCard tier={step.tier} item={item} onDone={onDone} />
-      ) : null}
-      {step.tier === "free" || step.tier === "maintenance" ? (
-        <FreeProductionCard maintenance={step.tier === "maintenance"} item={item} onDone={onDone} />
-      ) : null}
+      {prompt.isPending ? (
+        <CenteredSpinner label="Loading…" />
+      ) : prompt.isError || prompt.data === undefined ? (
+        <p className="text-center text-sm text-terracotta">Couldn’t load this one.</p>
+      ) : (
+        <PromptCard prompt={prompt.data} onDone={onDone} />
+      )}
     </motion.div>
   );
+}
+
+function PromptCard({ prompt, onDone }: { prompt: ReviewPrompt; onDone: (o: StepOutcome) => void }) {
+  switch (prompt.tier) {
+    case "recognition":
+      return <RecognitionCard prompt={prompt} onDone={onDone} />;
+    case "cloze":
+    case "cued":
+      return <TypedCard prompt={prompt} onDone={onDone} />;
+    case "free":
+      return <FreeProductionCard prompt={prompt} onDone={onDone} />;
+  }
 }
 
 /* -------------------------------------------------------- shared fragments */
 
 function TierTag({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">{children}</p>
-  );
+  return <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">{children}</p>;
 }
 
 function PromotionLine({ lemma, from, to }: { lemma: string; from: MasteryState; to: MasteryState }) {
@@ -144,9 +187,7 @@ function GradeBanner({ passed, children }: { passed: boolean; children: React.Re
       ) : (
         <CircleX className="size-5 shrink-0 text-terracotta" strokeWidth={1.75} />
       )}
-      <p className={cn("text-sm font-medium", passed ? "text-moss" : "text-terracotta")}>
-        {children}
-      </p>
+      <p className={cn("text-sm font-medium", passed ? "text-moss" : "text-terracotta")}>{children}</p>
     </div>
   );
 }
@@ -159,64 +200,63 @@ function NextButton({ onClick, label = "Next" }: { onClick: () => void; label?: 
   );
 }
 
-/* ----------------------------------------------------- intro (New → Seen) */
-
-function IntroCard({ item, onDone }: { item: MockLexicalItem; onDone: (o: StepOutcome) => void }) {
-  return (
-    <div className="space-y-6">
-      <TierTag>new word</TierTag>
-      <div>
-        <h1 className="font-serif text-4xl font-semibold text-ink">{item.lemma}</h1>
-        <p className="mt-1 text-xs tracking-wide text-ink-faint uppercase">
-          {item.pos} · {item.cefr}
-        </p>
-      </div>
-      <p className="font-serif text-xl leading-relaxed text-ink">{item.recognitionMeaning}</p>
-      <p className="text-sm leading-relaxed text-ink-soft">“{item.modelSentence}”</p>
-      <NextButton
-        label="Got it"
-        onClick={() =>
-          onDone({ lemma: item.lemma, tier: "intro", outcome: "pass", moved: { from: "New", to: "Seen" } })
-        }
-      />
-    </div>
-  );
+/** The move to record for the session summary, if the pass changed the word's rung. */
+function moveOf(
+  view: Extract<ReviewOutcomeView, { kind: "deterministic" | "judged" }>,
+): { from: MasteryState; to: MasteryState } | undefined {
+  return view.previousMastery !== view.mastery
+    ? { from: view.previousMastery, to: view.mastery }
+    : undefined;
 }
 
 /* ------------------------------------------------- recognition (MCQ, Seen) */
 
 function RecognitionCard({
-  item,
+  prompt,
   onDone,
 }: {
-  item: MockLexicalItem;
+  prompt: Extract<ReviewPrompt, { tier: "recognition" }>;
   onDone: (o: StepOutcome) => void;
 }) {
+  const options = useShuffled(prompt.options);
   const [chosen, setChosen] = useState<string | null>(null);
-  const options = mockMcqOptions(item.lemma, item.distractors);
-  const graded = chosen !== null;
-  const passed = chosen === item.lemma;
+  const [result, setResult] = useState<Extract<ReviewOutcomeView, { kind: "deterministic" }> | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const graded = result !== null;
+  const target = result?.lemma ?? null;
+
+  const pick = async (opt: string) => {
+    if (graded || busy) return;
+    setChosen(opt);
+    setBusy(true);
+    try {
+      const view = await submitReviewFn({ data: { senseId: prompt.senseId, response: opt, scaffolded: false } });
+      if (view.kind === "deterministic") setResult(view);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <TierTag>recognition · seen</TierTag>
+      <TierTag>recognition · {prompt.mastery.toLowerCase()}</TierTag>
       <p className="font-serif text-xl leading-relaxed text-ink">
-        Which word means: “{item.recognitionMeaning}”?
+        Which word means: “{prompt.meaning}”?
       </p>
       <div className="space-y-2.5">
         {options.map((opt) => {
-          const isTarget = opt === item.lemma;
+          const isTarget = target !== null && opt.toLowerCase() === target.toLowerCase();
           const isChosen = opt === chosen;
           return (
             <button
               key={opt}
               type="button"
-              disabled={graded}
-              onClick={() => setChosen(opt)}
+              disabled={graded || busy}
+              onClick={() => pick(opt)}
               className={cn(
                 "w-full rounded-lg border border-line bg-paper-raised px-4 py-3 text-left font-serif text-lg text-ink transition-colors duration-150",
                 !graded && "hover:border-ink-faint",
-                // instant deterministic grade (NET-2): color carries the outcome
                 graded && isTarget && "border-moss bg-moss-wash",
                 graded && isChosen && !isTarget && "border-terracotta bg-terracotta-wash",
                 graded && !isChosen && !isTarget && "opacity-50",
@@ -227,14 +267,16 @@ function RecognitionCard({
           );
         })}
       </div>
-      {graded ? (
+      {result ? (
         <div className="space-y-4">
-          <GradeBanner passed={passed}>
-            {passed ? "Correct." : `The word was “${item.lemma}” — it’ll come around again soon.`}
+          <GradeBanner passed={result.passed}>
+            {result.passed ? "Correct." : `The word was “${result.lemma}” — it’ll come around again soon.`}
           </GradeBanner>
           {/* MCQ pass alone never promotes (SM-3) — no ladder movement here. */}
           <NextButton
-            onClick={() => onDone({ lemma: item.lemma, tier: "recognition", outcome: passed ? "pass" : "fail" })}
+            onClick={() =>
+              onDone({ lemma: result.lemma, tier: "recognition", outcome: result.passed ? "pass" : "fail" })
+            }
           />
         </div>
       ) : null}
@@ -245,78 +287,80 @@ function RecognitionCard({
 /* ---------------------------------------- cloze + cued (typed, lemma-match) */
 
 function TypedCard({
-  tier,
-  item,
+  prompt,
   onDone,
 }: {
-  tier: "cloze" | "cued";
-  item: MockLexicalItem;
+  prompt: Extract<ReviewPrompt, { tier: "cloze" | "cued" }>;
   onDone: (o: StepOutcome) => void;
 }) {
   const [value, setValue] = useState("");
-  const [graded, setGraded] = useState<null | boolean>(null);
-  const mastery = masteryOf(item.senseId);
+  const [result, setResult] = useState<Extract<ReviewOutcomeView, { kind: "deterministic" }> | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  // Promotions on deterministic passes: cloze pass fires Seen→Recognized when a
-  // prior MCQ pass exists (SM-3); a cued pass fires Recognized→Productive (SM-4).
-  const promotion: { from: MasteryState; to: MasteryState } | undefined =
-    graded === true
-      ? tier === "cloze" && mastery === "Seen"
-        ? { from: "Seen", to: "Recognized" }
-        : tier === "cued" && mastery === "Recognized"
-          ? { from: "Recognized", to: "Productive" }
-          : undefined
-      : undefined;
+  const grade = async () => {
+    setBusy(true);
+    try {
+      const view = await submitReviewFn({
+        data: { senseId: prompt.senseId, response: value, scaffolded: false },
+      });
+      if (view.kind === "deterministic") setResult(view);
+    } finally {
+      setBusy(false);
+    }
+  };
 
-  const grade = () => setGraded(mockLemmaMatch(value, item.lemma)); // instant (NET-2)
+  const move = result ? moveOf(result) : undefined;
 
   return (
     <div className="space-y-6">
-      <TierTag>{tier === "cloze" ? "cloze · seen" : `produce the word · ${mastery.toLowerCase()}`}</TierTag>
-      {tier === "cloze" ? (
+      <TierTag>
+        {prompt.tier === "cloze"
+          ? `cloze · ${prompt.mastery.toLowerCase()}`
+          : `produce the word · ${prompt.mastery.toLowerCase()}`}
+      </TierTag>
+      {prompt.tier === "cloze" ? (
         <p className="font-serif text-xl leading-relaxed text-ink">
-          {item.clozedSentence.split("_")[0]}
+          {prompt.clozedSentence.split("_")[0]}
           <span className="mx-1 inline-block w-20 border-b-2 border-ink-faint align-baseline" />
-          {item.clozedSentence.split("_")[1]}
+          {prompt.clozedSentence.split("_")[1]}
         </p>
       ) : (
-        <p className="font-serif text-xl leading-relaxed text-ink">{item.productiveMeaning}</p>
+        <p className="font-serif text-xl leading-relaxed text-ink">{prompt.meaning}</p>
       )}
-      {graded === null ? (
+      {result === null ? (
         <form
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            grade();
+            if (!busy) grade();
           }}
         >
           <Input
             autoFocus
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder={tier === "cloze" ? "the missing word" : "type the word"}
+            disabled={busy}
+            placeholder={prompt.tier === "cloze" ? "the missing word" : "type the word"}
             className="h-12 font-serif text-xl"
           />
-          <Button type="submit" size="lg" className="w-full" disabled={value.trim().length === 0}>
-            Check
+          <Button type="submit" size="lg" className="w-full" disabled={value.trim().length === 0 || busy}>
+            {busy ? "Checking…" : "Check"}
           </Button>
         </form>
       ) : (
         <div className="space-y-4">
-          <GradeBanner passed={graded}>
-            {graded
-              ? "Correct."
-              : `It was “${item.lemma}” — we’ll show it again soon.`}
+          <GradeBanner passed={result.passed}>
+            {result.passed ? "Correct." : `It was “${result.lemma}” — we’ll show it again soon.`}
             {/* deterministic fails reschedule only; never demote (SM-6) */}
           </GradeBanner>
-          {promotion ? <PromotionLine lemma={item.lemma} from={promotion.from} to={promotion.to} /> : null}
+          {move ? <PromotionLine lemma={result.lemma} from={move.from} to={move.to} /> : null}
           <NextButton
             onClick={() =>
               onDone({
-                lemma: item.lemma,
-                tier,
-                outcome: graded ? "pass" : "fail",
-                ...(promotion ? { moved: promotion } : {}),
+                lemma: result.lemma,
+                tier: prompt.tier,
+                outcome: result.passed ? "pass" : "fail",
+                ...(move ? { moved: move } : {}),
               })
             }
           />
@@ -328,64 +372,73 @@ function TypedCard({
 
 /* -------------------------------- free production / maintenance (judged) */
 
+type JudgedView = Extract<ReviewOutcomeView, { kind: "judged" }>;
+
 type FreeState =
   | { phase: "writing" }
-  | { phase: "checking" } // NET-2, only after rule-layer pass
-  | { phase: "capped" } // RL-6 model-sentence reveal
+  | { phase: "checking" } // NET-2, only after a rule-layer pass
+  | { phase: "capped"; modelSentence: string | null } // RL-6 model-sentence reveal
   | { phase: "offline" } // NET-5
   | { phase: "unavailable" } // NET-3/4
-  | { phase: "verdict"; result: Extract<MockJudgeResult, { kind: "judged" }> };
+  | { phase: "verdict"; result: JudgedView };
 
 function FreeProductionCard({
-  item,
-  maintenance,
+  prompt,
   onDone,
 }: {
-  item: MockLexicalItem;
-  maintenance: boolean;
+  prompt: Extract<ReviewPrompt, { tier: "free" }>;
   onDone: (o: StepOutcome) => void;
 }) {
+  const { senseId, lemma, mastery } = prompt;
+  const maintenance = mastery === "Fluent";
+  const tier: StepOutcome["tier"] = maintenance ? "maintenance" : "free";
+
   const [text, setText] = useState("");
   const [state, setState] = useState<FreeState>({ phase: "writing" });
-  const [bounce, setBounce] = useState<MockBounceKind | null>(null);
+  const [bounce, setBounce] = useState<Extract<ReviewOutcomeView, { kind: "bounce" }>["reason"] | null>(null);
   const [bounceCount, setBounceCount] = useState(0);
   const [anySentence, setAnySentence] = useState(false); // TIER-7 learner-activated fallback
   const [fallbackOffered, setFallbackOffered] = useState(false);
   const [starter, setStarter] = useState(false); // SM-9 scaffolded flag
-  const mastery = masteryOf(item.senseId);
 
   const submit = async () => {
     setBounce(null);
-    // Rule layer is synchronous & instant — "checking…" must never precede a bounce (NET-2).
-    const bounced = mockRuleLayer(text, item);
-    if (bounced) {
-      const n = bounceCount + 1;
-      setBounceCount(n);
-      if (bounced === "degenerate" && !anySentence) setFallbackOffered(true); // TIER-7 offer
-      if (n >= MAX_RULE_BOUNCE_RETRIES) {
-        setState({ phase: "capped" }); // RL-6: reveal model sentence + skip
+
+    // NET-5: block the round-trip entirely when offline — never call the judge, no rating (INV-2).
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setState({ phase: "offline" });
+      return;
+    }
+
+    // Phase 1 — the instant, judge-free rule check (NET-2: no "checking…" before a bounce).
+    const check = await ruleCheckFn({ data: { senseId, response: text, priorBounces: bounceCount } });
+    if (!check.ok) {
+      setBounceCount(check.bounces);
+      if (check.reason === "degenerate" && !anySentence) setFallbackOffered(true); // TIER-7 offer
+      if (check.revealModelSentence) {
+        setState({ phase: "capped", modelSentence: check.modelSentence }); // RL-6
       } else {
-        setBounce(bounced);
+        setBounce(check.reason);
       }
       return;
     }
+
+    // Phase 2 — the judge round-trip (show "checking…" while it runs).
     setState({ phase: "checking" });
-    const result = await mockJudgeSubmit(text, item);
-    if (result.kind === "offline") setState({ phase: "offline" });
-    else if (result.kind === "unavailable") setState({ phase: "unavailable" });
-    else if (result.kind === "judged") setState({ phase: "verdict", result });
-    else setState({ phase: "writing" }); // bounce already handled above; defensive
+    const view = await submitReviewFn({ data: { senseId, response: text, scaffolded: starter } });
+    if (view.kind === "unavailable") setState({ phase: "unavailable" });
+    else if (view.kind === "judged") setState({ phase: "verdict", result: view });
+    else setState({ phase: "writing" }); // bounce handled in phase 1 — defensive
   };
 
-  const finish = (result: Extract<MockJudgeResult, { kind: "judged" }>) => {
+  const finish = (result: JudgedView) => {
+    const move = moveOf(result);
     onDone({
-      lemma: item.lemma,
-      tier: maintenance ? "maintenance" : "free",
+      lemma,
+      tier,
       outcome: result.passed ? "pass" : "fail",
       judged: true, // counts toward the daily goal (CNT-8, INV-4)
-      ...(result.passed
-        ? {}
-        : { moved: { from: mastery, to: demoteOneRung(mastery) } }),
+      ...(move ? { moved: move } : {}),
     });
   };
 
@@ -397,9 +450,10 @@ function FreeProductionCard({
         {starter ? " · scaffolded" : ""}
       </TierTag>
       <div>
-        <h1 className="font-serif text-4xl font-semibold text-ink">{item.lemma}</h1>
+        <h1 className="font-serif text-4xl font-semibold text-ink">{lemma}</h1>
         <p className="mt-1 text-xs tracking-wide text-ink-faint uppercase">
-          {item.pos} · {item.cefr}
+          {prompt.pos}
+          {prompt.cefr ? ` · ${prompt.cefr}` : ""}
         </p>
       </div>
     </>
@@ -411,15 +465,18 @@ function FreeProductionCard({
       <div className="space-y-6">
         {header}
         <p className="text-sm leading-relaxed text-ink-soft">Here’s the example to lean on:</p>
-        <blockquote className="border-l-2 border-amber pl-4 font-serif text-xl leading-relaxed text-ink">
-          {item.modelSentence}
-        </blockquote>
+        {state.modelSentence ? (
+          <blockquote className="border-l-2 border-amber pl-4 font-serif text-xl leading-relaxed text-ink">
+            {state.modelSentence}
+          </blockquote>
+        ) : null}
         <div className="space-y-3">
           <Button
             size="lg"
             className="w-full"
             onClick={() => {
               setBounceCount(0);
+              setBounce(null);
               setState({ phase: "writing" });
             }}
           >
@@ -429,9 +486,7 @@ function FreeProductionCard({
             size="lg"
             variant="outline"
             className="w-full"
-            onClick={() =>
-              onDone({ lemma: item.lemma, tier: maintenance ? "maintenance" : "free", outcome: "skip" })
-            }
+            onClick={() => onDone({ lemma, tier, outcome: "skip" })}
           >
             Skip for now
           </Button>
@@ -454,10 +509,10 @@ function FreeProductionCard({
           replacements={r.replacements}
           {...(r.correctedSentence ? { correctedSentence: r.correctedSentence } : {})}
           {...(r.detectedSense ? { detectedSense: r.detectedSense } : {})}
-          intendedSense={item.recognitionMeaning}
+          intendedSense={r.intendedSense}
           {...(r.enrichment ? { enrichment: r.enrichment } : {})}
-          lemma={item.lemma}
-          {...(r.passed ? {} : { demotedTo: demoteOneRung(mastery) })}
+          lemma={lemma}
+          {...(r.passed ? {} : { demotedTo: r.mastery })}
         />
         {!r.passed ? (
           /* SM-8: further sentences are unscored for this review */
@@ -466,7 +521,7 @@ function FreeProductionCard({
               Keep practicing if you like — this one’s already recorded.
             </p>
             <Textarea
-              placeholder={`Another sentence with “${item.lemma}”…`}
+              placeholder={`Another sentence with “${lemma}”…`}
               className="min-h-20 font-serif text-xl"
             />
           </div>
@@ -483,11 +538,11 @@ function FreeProductionCard({
       {header}
       <p className="text-sm leading-relaxed text-ink-soft">
         {anySentence ? (
-          <>Write any sentence using <span className="font-serif italic">{item.lemma}</span>.</>
+          <>Write any sentence using <span className="font-serif italic">{lemma}</span>.</>
         ) : (
           <>
-            Write a sentence using <span className="font-serif italic">{item.lemma}</span> — ideally
-            something true about you. {item.selfReferencePrompt}
+            Write a sentence using <span className="font-serif italic">{lemma}</span> — ideally
+            something true about you. {prompt.selfReferencePrompt}
           </>
         )}
       </p>
@@ -510,7 +565,7 @@ function FreeProductionCard({
           </p>
         ) : null}
 
-        {bounce ? <BounceCallout kind={bounce} lemma={item.lemma} /> : null}
+        {bounce ? <BounceCallout kind={bounce} lemma={lemma} /> : null}
 
         {/* TIER-7: the offer is surfaced; the mode switches ONLY on the tap */}
         {fallbackOffered && !anySentence ? (
@@ -540,12 +595,7 @@ function FreeProductionCard({
           <CheckingIndicator />
         ) : (
           <div className="flex items-center gap-3">
-            <Button
-              size="lg"
-              className="flex-1"
-              onClick={submit}
-              disabled={text.trim().length === 0}
-            >
+            <Button size="lg" className="flex-1" onClick={submit} disabled={text.trim().length === 0}>
               Check my sentence
             </Button>
             {!starter ? (

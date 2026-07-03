@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
 ## Collaboration Style
 - Do not make assumptions when tasked of something, unless explicitly stated.
 - Ask for clarifications before proceeding with implementation.
@@ -37,13 +47,15 @@ derived from the PRD, then tests are written against the specs, then runtime cod
   any spec/PRD conflict is flagged (`> [FLAG]`), never silently resolved.
 
 **What is implemented:** (1) the **build-time content-generation pipeline** (`build/`,
-TypeScript/Node), which realizes `docs/BUILD.md`; and (2) the **first runtime slice** (`src/`,
-started 2026-06-30) — see `### v4 runtime (src/)` below, now spanning the review loop, the real
-DeepSeek judge, the counter, edit resolution, and a real Drizzle/Neon persistence adapter. **Parts of
-the v4 web/multi-user runtime specified in `spec/` still do not exist** — no seeding, verdict memo,
-BetterAuth adapter, or UI yet. Do not assume a runtime piece is present; scaffold it only when
-asked. *(Note: v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend —
-ignore any stale "Electron" framing elsewhere.)*
+TypeScript/Node), which realizes `docs/BUILD.md`; and (2) the **v4 runtime** (`src/`, started
+2026-06-30) — see `### v4 runtime (src/)` below — now spanning the review loop, first-session seeding,
+the real DeepSeek judge, the usable-words counter, edit resolution, a real Drizzle/Neon persistence
+adapter, and a **wired** TanStack Start UI (the `/review` session + dashboard counter run on real
+use-cases). **Parts of the v4 web/multi-user runtime specified in `spec/` still do not exist** — no
+verdict memo, no BetterAuth adapter, and several dashboard/onboarding/words surfaces are still
+mock-only design (slice 12). Do not assume a runtime piece is present; scaffold it only when asked.
+*(Note: v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend — ignore any
+stale "Electron" framing elsewhere.)*
 
 ### Build pipeline commands
 
@@ -67,8 +79,9 @@ Code lives in `src/` under a **clean/onion architecture** (`.claude/rules/`, esp
 **test-first** against `spec/` IDs with **vitest** (`06-tdd.md`). Layout: `src/domain/` (pure),
 `src/application/` (use-cases + `ports/`), `src/infrastructure/` (adapters), `src/presentation/`
 (TanStack Start app — own `tsconfig`, `npm run typecheck:web`, excluded from the NodeNext backend
-gate). NodeNext ESM — relative imports carry `.js`; tests co-located `*.test.ts` (`TDD-4`). All slices
-below are on **`master`** as one linear history (only branch — re-confirm with `git log`).
+gate). NodeNext ESM — relative imports carry `.js`; tests co-located `*.test.ts` (`TDD-4`). Slices
+1–11 are on **`master`**; the UI slices — 12 (design), 13–14 (backend wiring) — live on
+**`design/brand-ui-system`** and its descendant wiring branch (re-confirm with `git log`).
 
 ```bash
 npm test               # vitest run (runtime test gate)
@@ -226,6 +239,43 @@ called out):
     is UNWIRED — the `mock/*` data must be replaced with server functions/use-cases before any of it is
     real.***
 
+13. **Wire `/review` to the real backend** (branch `design/brand-ui-system`; the first *wired* slice on
+    the mock UI). Replaces `src/presentation/mock/session.ts` with real server functions driving the whole
+    review loop — deterministic tiers AND the judged free-production flow — offline via a **key-gated dev
+    judge** (`devJudge.ts` `devVerdict`; real `liveJudge` when `DEEPSEEK_API_KEY` is set). backend (TDD):
+    extracted `checkFreeProductionRuleLayer.ts` (single source of truth for the rule-layer bounce, reused
+    by `submitFreeProduction` + the new `ruleCheckFn`); `runReviewPass` returns `previousMastery` (honest
+    from→to moves); pure `presentReviewOutcome.ts` DTO builder (result→serializable view-model, maps the
+    verdict's single feedback onto each edit); `resolveReviewPrompt` free arm reveals `lemma`/`pos`/`cefr`.
+    presentation-server: judge key-gated in `server/composition.ts`; `server/review.ts` gains `ruleCheckFn`
+    (instant judge-free rule pre-screen so "checking…" never precedes a bounce — NET-2; RL-6 model sentence
+    attached server-side only at the cap) + reworked `submitReviewFn`. `routes/review.tsx` rewritten
+    server-driven via TanStack Query (MCQ Fisher-Yates shuffle-on-render, NET-5 `navigator.onLine`
+    pre-check, dropped the New→Seen intro card per user scope). **Bug fixed:** `startSession` captured `now`
+    before `seedIntroductions` captured a later one → fresh intros fell past the queue's `due<=now` filter
+    (empty first session); now threads one `now`. **Covers (wired):** LOOP-1..5, TIER-1/2/5 grade,
+    RL-2/3/4/6, INV-2 (bounce+unavailable), NET-2/3/5, EDIT-7 (via the pure `resolveEdits`). **Verified:**
+    both typecheck gates, `npm test`, `npm run build` (no server leak in client bundle), `/review` SSR +
+    an offline click-path driver. *Deferred: verdict memo; live Neon + BetterAuth; per-calendar-day intro
+    dedup; MCQ headless click-path test.*
+
+14. **Wire the real DB + usable-words counter** (branch `design/brand-ui-system`; additive — **no new
+    domain/application logic**). (a) **DB is URL-gated** at the presentation composition root
+    (`server/composition.ts`): `DATABASE_URL` set → `new DrizzleCardRepository(neonDbFromEnv())` (durable;
+    the handle is built **synchronously** so no async composition — run `npm run db:migrate` once), unset →
+    the in-memory repo (zero-config offline dev). ONE shared binding all dep-factories close over, mirroring
+    the `DEEPSEEK_API_KEY` judge gate. (b) **Counter wired**: new `counterDeps()` + `server/counter.ts`
+    `usableCounterFn` call the existing `readUsableCounter`; `routes/index.tsx` renders it via TanStack
+    Query. **Dropped the yesterday-delta** (`previous`) — no daily snapshot is persisted, so no fabricated
+    comparison (honesty over a fake number). Correctness over the Drizzle adapter is guaranteed by the
+    shared `cardRepositoryContract` (SOLID-3 substitutability), so **no new tests**. **Covers (wired):**
+    CNT-2/3/4/6, STACK-3 (the Neon swap). **Verified:** both typecheck gates, `npm test` (206), `npm run
+    build` (no `DATABASE_URL`/`neon`/`drizzle`/`readUsableCounter` in the client bundle), `/` SSR renders
+    the **real** count (0 on a fresh store — honest; CNT-2 needs ≥2 spaced-day judged passes). *Still mock
+    (need new read-models / unstored data): goal ring CNT-8, ladder SM-1, Today/queue counts, and the
+    `app-shell` user chrome (the `132` header is the BetterAuth-deferred mock user, STACK-4); the
+    yesterday-delta needs a persisted daily snapshot.*
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -237,22 +287,26 @@ called out):
 
 **Deferred — do NOT build until pulled into scope (`PRAG-1`):** verdict memo (`05`, MEMO-1 is a MAY);
 LexTALE instrument + per-user FSRS optimization (SEED-4/8); the **BetterAuth (STACK-4) adapter** (presentation
-stubs a dev user at the seam). *Note: the judged-review UI, EDIT-7 render, NET-2/5, and counter/goal
-(CNT-7/8/9) now exist as **mock-only design** (slice 12) — the deferred work on them is **wiring to real
-use-cases**, not designing them.*
+stubs a dev user at the `currentUser` seam). *Note: `/review` is now **wired** (slices 13–14) — the judged
+loop, EDIT-7 render, NET-2/3/5, and the usable-words counter (CNT-2/3/4/6) run on real use-cases/DB. Still
+**mock-only design** (slice 12, awaiting wiring): the dashboard goal ring (CNT-8), mastery ladder (SM-1),
+Today/queue counts, the `app-shell` user chrome, and the `/onboarding`/`/words`/`/settings` routes.*
 
-**Natural next slice:** **wire slice 12's designed screens to the real backend** (replace `src/presentation/
-mock/*` with server functions): the judged screen → `liveJudge`/`submitFreeProduction` (real NET-2/5 + memo),
-the counter → the `readUsableCounter` read-model, the dashboard/session → `startSession`/`seedIntroductions`,
-plus real MCQ shuffle-on-render and per-calendar-day intro dedup. The **Neon + BetterAuth swap** (single-point
-swaps at the composition root — `composeReviewPassPersistent` + the `currentUser` seam) is the parallel track
-for real multi-user persistence.
+**Natural next slice:** **finish the dashboard read-models** — the SM-1 mastery-ladder distribution
+(group `listCards` by mastery) and the due/new Today counts are cheap/honest; the goal ring (CNT-8) needs a
+"sentences today" read-model + a persisted daily goal (a user setting), and the counter's yesterday-delta
+needs a persisted daily snapshot. Then wire `/onboarding` → `seedIntroductions` (real SEED-1/2/3) and
+`/words` → per-word read-models. The **BetterAuth swap** (only `currentUser.ts` changes) unlocks real
+multi-user persistence over the already-wired Neon DB; the **verdict memo** (DM-8/MEMO-1) is the remaining
+judged-loop piece.
 
-> **Status (2026-07-03):** runtime backend (slices 1–11) on **`master`**; the **brand + design-system + UI
-> design (slice 12) lands on branch `design/brand-ui-system`** — mock-driven, unwired. Backend gate = `npm
-> run typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves each
-> slice — do not trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm test`,
-> and `npm run dev` at session start.
+> **Status (2026-07-03):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
+> 13–14 (backend wiring)** — land on **`design/brand-ui-system`** and a descendant wiring branch (`git log`
+> to confirm). `/review` + the dashboard counter are wired to real use-cases (Neon when `DATABASE_URL` is
+> set, else in-memory; DeepSeek when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate =
+> `npm run typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves
+> each slice — do not trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm
+> test`, and `npm run dev` at session start.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 
@@ -360,13 +414,3 @@ item's own `_flags` (like the normalization nulls above) live **inside the commi
 not `_review.json` — grep the batch files for `_flags` to find them. (The prior flagged items —
 `aesthetic_adj_01`, `archaeology_noun_01`, `ash_noun_01` — were cleared by the 2026-06-29 reset;
 `_review.json` is now `[]`. The Americanization nulls will recur on the same lemmas when regenerated.)
-
-## graphify
-
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
-
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

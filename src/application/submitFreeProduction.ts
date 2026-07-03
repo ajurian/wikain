@@ -1,10 +1,8 @@
-import { checkRuleLayer, type RuleBounceReason } from "../domain/ruleLayer.js";
 import { demoteOneRung, promoteOnJudgedPass } from "../domain/mastery.js";
 import { passesGate, type JudgeVerdict } from "../domain/verdict.js";
 import { deriveRating, type Rating } from "../domain/rating.js";
 import { distinctPassDays, mostRecentPassScaffolded } from "../domain/judgedPassLedger.js";
 import { qualifiesForFluent } from "../domain/fluentGate.js";
-import { MAX_RULE_BOUNCE_RETRIES } from "../domain/constants.js";
 import type { Card, MasteryState } from "../domain/card.js";
 import type { ReviewLog } from "../domain/review.js";
 import type { Catalog } from "./ports/catalog.js";
@@ -13,6 +11,13 @@ import type { Scheduler } from "./ports/scheduler.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";
 import { JudgeUnavailableError, type JudgePort, type JudgeUnavailableReason } from "./ports/judge.js";
+import {
+  checkFreeProductionRuleLayer,
+  type BounceResult,
+} from "./checkFreeProductionRuleLayer.js";
+
+// Re-exported so existing consumers (runReviewPass, presentation) keep importing it from here.
+export type { BounceResult } from "./checkFreeProductionRuleLayer.js";
 
 export interface SubmitFreeProductionInput {
   userId: string;
@@ -38,16 +43,6 @@ export interface SubmitFreeProductionDeps {
   judge: JudgePort;
   /** Shipped Tagalog lexicon, lowercased (RL-4). */
   tagalogLexicon: ReadonlySet<string>;
-}
-
-/** A rule-layer bounce: no rating, no scheduler call, no ReviewLog, card stays due (INV-2). */
-export interface BounceResult {
-  kind: "bounce";
-  reason: RuleBounceReason;
-  /** Bounces accrued on this presentation including this one. */
-  bounces: number;
-  /** RL-6: at the cap, reveal the model sentence + offer skip (still no rating). */
-  revealModelSentence: boolean;
 }
 
 /** A judged outcome: exactly one rating, one ReviewLog, and at most one demotion (INV-1). */
@@ -104,33 +99,14 @@ export async function submitFreeProduction(
     throw new Error(`no card for user ${input.userId} / sense ${input.senseId}`);
   }
 
-  const modelSentenceWords =
-    item.model_sentence === null
-      ? null
-      : deps.analyzer
-          .analyze(item.model_sentence)
-          .filter((t) => t.isWord)
-          .map((t) => t.normal);
-
-  const rule = checkRuleLayer({
-    targetLemma: item.lemma,
-    responseForms: deps.lemmatizer.formsOf(input.response),
-    responseTokens: deps.analyzer.analyze(input.response),
-    modelSentenceWords,
-    tagalogLexicon: deps.tagalogLexicon,
-  });
-
-  // INV-2 / RAT-2: a bounce never derives a rating, never calls the scheduler, never logs. The card
-  // is left untouched (stays due). RL-6: at the cap, surface the model sentence.
-  if (!rule.ok) {
-    const bounces = (input.priorBounces ?? 0) + 1;
-    return {
-      kind: "bounce",
-      reason: rule.reason,
-      bounces,
-      revealModelSentence: bounces >= MAX_RULE_BOUNCE_RETRIES,
-    };
-  }
+  // RL-1..4 / RL-6: the shared rule-layer pre-screen (one source of truth with the presentation's
+  // instant rule-check, NET-2). INV-2 / RAT-2: a bounce never derives a rating, never calls the
+  // scheduler, never logs — the card is left untouched (stays due).
+  const rule = checkFreeProductionRuleLayer(
+    { senseId: input.senseId, response: input.response, priorBounces: input.priorBounces },
+    deps,
+  );
+  if (!rule.ok) return rule.bounce;
 
   // RL-1: the judge runs only on a rule-layer pass. (Memo lookup, spec/05, is deferred.)
   // INV-2 / NET-3/4/5: a transport failure (timeout/5xx/429/offline, after the adapter's one retry —

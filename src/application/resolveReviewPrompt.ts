@@ -1,4 +1,5 @@
 import type { LexicalItem } from "../domain/lexicalItem.js";
+import type { MasteryState } from "../domain/card.js";
 import { resolveReviewTier } from "../domain/reviewRouting.js";
 import type { Catalog } from "./ports/catalog.js";
 import type { CardRepository } from "./ports/cardRepository.js";
@@ -16,14 +17,33 @@ export interface ResolveReviewPromptDeps {
 /**
  * What the UI renders for a queued word BEFORE the learner responds. The tier is resolved by the same
  * `resolveReviewTier` the grading path uses, so the prompt shown always matches the tier graded. Each
- * arm carries only the fields that tier renders; the correct answer is NOT sent for MCQ/cloze — grading
- * happens server-side on submit (`runReviewPass`).
+ * arm carries only the fields that tier renders; the correct answer is NOT sent for MCQ/cloze/cued —
+ * grading happens server-side on submit (`runReviewPass`). `mastery` (the word's pre-review state) is
+ * carried on every arm for the tier sub-label (e.g. "· productive", or "maintenance" at Fluent).
+ *
+ * Note the asymmetry between `cued` and `free`: cued **withholds** the target word (the learner must
+ * produce it from the gloss), whereas free production **reveals** it (`lemma`/`pos`/`cefr`) — the
+ * learner is asked to use that specific word in a sentence, and the rule layer requires its presence.
  */
 export type ReviewPrompt =
-  | { tier: "recognition"; senseId: string; meaning: string; options: string[] }
-  | { tier: "cloze"; senseId: string; clozedSentence: string }
-  | { tier: "cued"; senseId: string; meaning: string; selfReferencePrompt: string | null }
-  | { tier: "free"; senseId: string; meaning: string; selfReferencePrompt: string | null };
+  | { tier: "recognition"; senseId: string; mastery: MasteryState; meaning: string; options: string[] }
+  | { tier: "cloze"; senseId: string; mastery: MasteryState; clozedSentence: string }
+  | {
+      tier: "cued";
+      senseId: string;
+      mastery: MasteryState;
+      meaning: string;
+      selfReferencePrompt: string | null;
+    }
+  | {
+      tier: "free";
+      senseId: string;
+      mastery: MasteryState;
+      lemma: string;
+      pos: string;
+      cefr: string | null;
+      selfReferencePrompt: string | null;
+    };
 
 /**
  * Resolve the render-time prompt for one queued word (spec/03 TIER-1/2/5, spec/11 LOOP-1 step 2).
@@ -49,11 +69,13 @@ export async function resolveReviewPrompt(
   const logs = card.mastery === "Seen" ? await deps.cards.logsForWord(userId, senseId) : [];
   const tier = resolveReviewTier(card.mastery, logs);
 
+  const mastery = card.mastery;
   switch (tier) {
     case "recognition":
       return {
         tier,
         senseId,
+        mastery,
         meaning: required(item.recognition_meaning, "recognition_meaning", item),
         options: assembleOptions(item),
       };
@@ -61,16 +83,27 @@ export async function resolveReviewPrompt(
       return {
         tier,
         senseId,
+        mastery,
         clozedSentence: required(item.clozed_sentence, "clozed_sentence", item),
       };
     case "cued":
-    case "free":
-      // Both prompt for a self-produced form/sentence from the productive gloss; they differ only in
-      // how the response is graded downstream (deterministic vs judged), not in what is shown.
+      // Withholds the target word — the learner produces it from the productive gloss.
       return {
         tier,
         senseId,
+        mastery,
         meaning: required(item.productive_meaning, "productive_meaning", item),
+        selfReferencePrompt: item.self_reference_prompt,
+      };
+    case "free":
+      // Reveals the target word — the learner is asked to use *this* word in a sentence.
+      return {
+        tier,
+        senseId,
+        mastery,
+        lemma: item.lemma,
+        pos: item.part_of_speech,
+        cefr: item.cefr,
         selfReferencePrompt: item.self_reference_prompt,
       };
   }

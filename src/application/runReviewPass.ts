@@ -31,12 +31,19 @@ export interface RunReviewPassInput {
  */
 export type RunReviewPassDeps = SubmitFreeProductionDeps;
 
-/** Which branch ran, plus that branch's own result — so the caller (UI) can render accordingly. */
-export type RunReviewPassResult =
+import type { MasteryState } from "../domain/card.js";
+
+/**
+ * Which branch ran, plus that branch's own result — so the caller (UI) can render accordingly.
+ * `previousMastery` is the card's mastery *before* this pass (read once here for routing), so the
+ * presentation can render an honest promotion/demotion line (`from → to`) without a redundant load.
+ */
+export type RunReviewPassResult = { previousMastery: MasteryState } & (
   | { tier: "recognition"; outcome: SubmitRecognitionResult }
   | { tier: "cloze"; outcome: SubmitClozeResult }
   | { tier: "cued"; outcome: SubmitCuedReviewResult }
-  | { tier: "free"; outcome: SubmitFreeProductionResult };
+  | { tier: "free"; outcome: SubmitFreeProductionResult }
+);
 
 /**
  * The end-to-end loop, one pass (spec/11-end-to-end-loop.md). This is the single entry point the
@@ -68,21 +75,22 @@ export async function runReviewPass(
   const logs =
     card.mastery === "Seen" ? await deps.cards.logsForWord(input.userId, input.senseId) : [];
   const tier = resolveReviewTier(card.mastery, logs);
+  const previousMastery = card.mastery;
 
   switch (tier) {
     // Deterministic branches — no judge/LLM is reached (LOOP-2).
     case "recognition":
-      return { tier, outcome: await submitRecognition(input, deps) };
+      return { tier, previousMastery, outcome: await submitRecognition(input, deps) };
     case "cloze":
-      return { tier, outcome: await submitCloze(input, deps) };
+      return { tier, previousMastery, outcome: await submitCloze(input, deps) };
     case "cued": {
       const cuedInput: SubmitCuedReviewInput = input;
-      return { tier, outcome: await submitCuedReview(cuedInput, deps) };
+      return { tier, previousMastery, outcome: await submitCuedReview(cuedInput, deps) };
     }
     // Judged branch (free production / Fluent maintenance) — LOOP-3.
     case "free": {
       const freeInput: SubmitFreeProductionInput = input;
-      return { tier, outcome: await submitFreeProduction(freeInput, deps) };
+      return { tier, previousMastery, outcome: await submitFreeProduction(freeInput, deps) };
     }
   }
 }

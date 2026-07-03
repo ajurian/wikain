@@ -40,8 +40,12 @@ export async function startSession(
   input: StartSessionInput,
   deps: StartSessionDeps,
 ): Promise<StartSessionResult> {
+  // Thread ONE `now` through both steps: a freshly-seeded card gets `due = now`, and the queue's
+  // `due <= now` filter must see that same instant. Letting `seedIntroductions` capture its own (later)
+  // `new Date()` would set the seed's due microseconds ahead of the ordering `now`, intermittently
+  // dropping every fresh intro from the queue (an empty first session).
   const now = input.now ?? new Date();
-  const seeded = await seedIntroductions(input, deps);
+  const seeded = await seedIntroductions({ ...input, now }, deps);
   const all = await deps.cards.listCards(input.userId);
   const queue = orderSessionQueue(
     all,

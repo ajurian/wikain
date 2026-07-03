@@ -170,6 +170,18 @@ describe("runReviewPass — deterministic branch (LOOP-1, LOOP-2)", () => {
     expect(logs).toHaveLength(1);
     expect(logs[0]?.tier).toBe("cued");
   });
+
+  it("reports previousMastery (pre-pass state) so the UI can render an honest from → to move", async () => {
+    const { d } = deps(card("Recognized"));
+
+    const res = await runReviewPass(
+      { userId: "u1", senseId: SENSE, response: "negotiate", now: NOW },
+      d,
+    );
+
+    expect(res.previousMastery).toBe("Recognized"); // pre-pass
+    if (res.tier === "cued") expect(res.outcome.mastery).toBe("Productive"); // post-pass
+  });
 });
 
 describe("runReviewPass — Seen on-ramp (LOOP-1, SM-3, RAT-7)", () => {

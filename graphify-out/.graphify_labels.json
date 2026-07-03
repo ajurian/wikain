@@ -194,5 +194,17 @@
   "192": "router.tsx",
   "193": "index.tsx",
   "194": "__root.tsx",
-  "195": "vite.config.ts"
+  "195": "vite.config.ts",
+  "196": "Catalog",
+  "197": "session-summary.tsx",
+  "198": "Wikain voice — microcopy catalog",
+  "199": "Wikain — Brand",
+  "200": "Screen-state map — every spec-mandated UI state",
+  "201": "DeepSeekJudge",
+  "202": "Wikain palette — full values & usage rules",
+  "203": "Motion — durations, easings, patterns",
+  "204": "Wikain — Design System",
+  "205": "deepSeekRubric.ts",
+  "206": "edited-sentence.tsx",
+  "207": "Component inventory"
 }

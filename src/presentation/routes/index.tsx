@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { AppShell } from "../components/app-shell";
@@ -7,7 +8,8 @@ import { GoalRing } from "../components/goal-ring";
 import { MasteryChip } from "../components/mastery-chip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-// MOCK DATA — replace with server functions when wiring.
+import { usableCounterFn } from "../server/counter";
+// MOCK DATA — the goal ring (CNT-8), ladder (SM-1), and Today/queue counts still lack read-models.
 import { MOCK_LADDER, MOCK_LEARNER, MOCK_QUEUE } from "../mock/learner";
 
 export const Route = createFileRoute("/")({
@@ -18,6 +20,13 @@ function Dashboard() {
   const reduced = useReducedMotion();
   const ladderTotal = MOCK_LADDER.reduce((n, r) => n + r.count, 0);
   const goalMet = MOCK_LEARNER.sentencesToday >= MOCK_LEARNER.dailyGoal;
+
+  // The one wired datum: the honest usable-words counter (CNT-2/3/4). No `previous` — a yesterday
+  // delta needs a persisted daily snapshot we don't store, so we show the real count without a fake one.
+  const { data: counter } = useQuery({
+    queryKey: ["usable-counter"],
+    queryFn: () => usableCounterFn(),
+  });
 
   return (
     <AppShell>
@@ -30,10 +39,7 @@ function Dashboard() {
         {/* headline: honest counter (CNT-2/3/4) + daily goal (CNT-8) */}
         <Card>
           <CardContent className="flex items-center justify-between gap-4 p-6">
-            <CounterStat
-              value={MOCK_LEARNER.usableWords}
-              previous={MOCK_LEARNER.usableWordsYesterday}
-            />
+            <CounterStat value={counter?.count ?? 0} />
             <div className="flex flex-col items-center gap-1">
               <GoalRing done={MOCK_LEARNER.sentencesToday} goal={MOCK_LEARNER.dailyGoal} />
               {goalMet ? <p className="text-xs font-medium text-moss">Goal met.</p> : null}

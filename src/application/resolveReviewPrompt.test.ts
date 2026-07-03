@@ -126,9 +126,20 @@ describe("resolveReviewPrompt (the read-model the UI renders before a response)"
     }
   });
 
-  it("SM-1: a Productive word resolves the free-production prompt", async () => {
+  it("SM-1: a Productive word resolves the free-production prompt, revealing the target word", async () => {
     const prompt = await resolveReviewPrompt({ userId: "u1", senseId }, makeDeps("Productive"));
     expect(prompt.tier).toBe("free");
+    if (prompt.tier === "free") {
+      expect(prompt.lemma).toBe("abandon"); // free production reveals the word to use
+      expect(prompt.pos).toBe("verb");
+      expect(prompt.cefr).toBe("B2");
+      expect(prompt.mastery).toBe("Productive");
+    }
+  });
+
+  it("carries the pre-review mastery on every arm (for the tier sub-label)", async () => {
+    const prompt = await resolveReviewPrompt({ userId: "u1", senseId }, makeDeps("Recognized"));
+    expect(prompt.mastery).toBe("Recognized");
   });
 
   it("fails loud when a field the resolved tier needs is missing (halt, don't guess)", async () => {

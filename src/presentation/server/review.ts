@@ -1,7 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { startSession } from "../../application/startSession.js";
-import { runReviewPass, type RunReviewPassResult } from "../../application/runReviewPass.js";
+import { runReviewPass } from "../../application/runReviewPass.js";
 import { resolveReviewPrompt } from "../../application/resolveReviewPrompt.js";
+import { checkFreeProductionRuleLayer } from "../../application/checkFreeProductionRuleLayer.js";
+import {
+  presentReviewOutcome,
+  type ReviewOutcomeView,
+} from "../../application/presentReviewOutcome.js";
+import type { RuleBounceReason } from "../../domain/ruleLayer.js";
 import { currentUserId } from "./currentUser.js";
 import { promptDeps, reviewDeps, sessionDeps } from "./composition.js";
 
@@ -32,44 +38,89 @@ export const resolvePromptFn = createServerFn({ method: "GET" })
     resolveReviewPrompt({ userId: currentUserId(), senseId: data }, promptDeps()),
   );
 
+export interface RuleCheckInput {
+  senseId: string;
+  response: string;
+  priorBounces: number;
+}
+
+/**
+ * The instant, judge-free rule-layer pre-screen for the judged tier (spec/04 RL-1..4, RL-6). It exists
+ * as its own call so the "checking…" indicator never precedes a bounce (NET-2): a bounce is decided
+ * here with no judge round-trip and no persistence (INV-2). On a pass the client then shows "checking…"
+ * and calls `submitReviewFn`. At the RL-6 cap the model sentence is attached server-side so it is not in
+ * the page until the reveal.
+ */
+export type RuleCheckResult =
+  | { ok: true }
+  | {
+      ok: false;
+      reason: RuleBounceReason;
+      bounces: number;
+      revealModelSentence: boolean;
+      /** Present only when `revealModelSentence` — the RL-6 example to lean on. */
+      modelSentence: string | null;
+    };
+
+export const ruleCheckFn = createServerFn({ method: "POST" })
+  .validator((input: unknown): RuleCheckInput => {
+    const o = input as Partial<RuleCheckInput> | null;
+    if (!o || typeof o.senseId !== "string" || typeof o.response !== "string") {
+      throw new Error("ruleCheckFn: { senseId, response } (strings) required");
+    }
+    return {
+      senseId: o.senseId,
+      response: o.response,
+      priorBounces: typeof o.priorBounces === "number" ? o.priorBounces : 0,
+    };
+  })
+  .handler(async ({ data }): Promise<RuleCheckResult> => {
+    const deps = reviewDeps();
+    const check = checkFreeProductionRuleLayer(
+      { senseId: data.senseId, response: data.response, priorBounces: data.priorBounces },
+      deps,
+    );
+    if (check.ok) return { ok: true };
+    const { reason, bounces, revealModelSentence } = check.bounce;
+    // RL-6: only ship the example when it is actually being revealed (keeps it out of the page until then).
+    const modelSentence = revealModelSentence
+      ? (deps.catalog.get(data.senseId)?.model_sentence ?? null)
+      : null;
+    return { ok: false, reason, bounces, revealModelSentence, modelSentence };
+  });
+
 export interface SubmitReviewInput {
   senseId: string;
   response: string;
+  /** RAT-5 / SM-9: the learner used a starter scaffold. Only the judged branch reads it. */
+  scaffolded: boolean;
 }
 
-/** A serializable summary of one graded pass for the UI (full FSRS state stays server-side). */
-export interface ReviewOutcome {
-  tier: RunReviewPassResult["tier"];
-  passed: boolean;
-  mastery: string;
-  /** Set only for the free tier, which is not interactive in the deterministic slice. */
-  note?: string;
-}
-
-/** Grade one response through the loop and return a display summary (spec/11 LOOP-2/4/5). */
+/**
+ * Grade one response through the loop and return a serializable display view (spec/11 LOOP-2/4/5).
+ * The judged branch here runs the rule layer again (cheap/deterministic) before judging + persisting;
+ * the client only reaches this after `ruleCheckFn` returned `ok`, so it will not bounce in practice.
+ */
 export const submitReviewFn = createServerFn({ method: "POST" })
   .validator((input: unknown): SubmitReviewInput => {
     const o = input as Partial<SubmitReviewInput> | null;
     if (!o || typeof o.senseId !== "string" || typeof o.response !== "string") {
       throw new Error("submitReviewFn: { senseId, response } (strings) required");
     }
-    return { senseId: o.senseId, response: o.response };
+    return { senseId: o.senseId, response: o.response, scaffolded: o.scaffolded === true };
   })
-  .handler(async ({ data }) =>
-    summarize(
-      await runReviewPass(
-        { userId: currentUserId(), senseId: data.senseId, response: data.response },
-        reviewDeps(),
-      ),
-    ),
-  );
-
-function summarize(res: RunReviewPassResult): ReviewOutcome {
-  if (res.tier === "free") {
-    // Free production is not wired into this deterministic slice; a fresh user's queue never reaches
-    // it. Surface a neutral marker rather than fabricate a pass/fail.
-    return { tier: res.tier, passed: false, mastery: "Productive", note: "free tier not yet interactive" };
-  }
-  // recognition | cloze | cued all resolve to the same DeterministicReviewResult shape.
-  return { tier: res.tier, passed: res.outcome.passed, mastery: res.outcome.mastery };
-}
+  .handler(async ({ data }): Promise<ReviewOutcomeView> => {
+    const deps = reviewDeps();
+    const item = deps.catalog.get(data.senseId);
+    if (item === undefined) throw new Error(`submitReviewFn: unknown sense_id ${data.senseId}`);
+    const result = await runReviewPass(
+      {
+        userId: currentUserId(),
+        senseId: data.senseId,
+        response: data.response,
+        scaffolded: data.scaffolded,
+      },
+      deps,
+    );
+    return presentReviewOutcome(result, item.lemma);
+  });
