@@ -63,316 +63,169 @@ npm run combine     # concat all batch_*.json → build/out/items.json
 
 ## v4 runtime (`src/`) — STARTED 2026-06-30
 
-The runtime phase has begun. Code lives in `src/` under a **clean/onion architecture** (governed by
-`.claude/rules/`, esp. `ARCH-1..4`), built **test-first** against `spec/` IDs with **vitest**
-(`06-tdd.md`). Layout: `src/domain/` (pure, imports nothing outward), `src/application/` (use-cases +
-`ports/` interfaces), `src/infrastructure/` (adapters). `src/presentation/` does not exist yet.
-NodeNext ESM — relative imports carry `.js` extensions; tests are co-located `*.test.ts` (`TDD-4`).
+Code lives in `src/` under a **clean/onion architecture** (`.claude/rules/`, esp. `ARCH-1..4`), built
+**test-first** against `spec/` IDs with **vitest** (`06-tdd.md`). Layout: `src/domain/` (pure),
+`src/application/` (use-cases + `ports/`), `src/infrastructure/` (adapters), `src/presentation/`
+(TanStack Start app — own `tsconfig`, `npm run typecheck:web`, excluded from the NodeNext backend
+gate). NodeNext ESM — relative imports carry `.js`; tests co-located `*.test.ts` (`TDD-4`). All slices
+below are on **`master`** as one linear history (only branch — re-confirm with `git log`).
 
 ```bash
-npm test            # vitest run (the runtime test gate)
-npm run test:watch  # vitest watch
+npm test               # vitest run (runtime test gate)
+npm run test:watch     # vitest watch
+npm run typecheck      # NodeNext backend gate (build/** + src/** minus presentation)
+npm run typecheck:web  # presentation tsconfig
+npm run dev            # the TanStack Start app
 ```
 
-**All four runtime slices below are now merged to `master`** as one linear history (the per-slice
-`runtime-*` branches were deleted post-merge, 2026-06-30) — `master` is the only branch. Re-confirm
-with `git log` at session start.
+**Implemented slices** (each byte-preserving the earlier use-cases unless noted; external services
+called out):
 
-**Implemented — the deterministic cued-production review slice.** This is the architecture-proving
-vertical slice; it needs **no external services** (no DeepSeek/Neon/BetterAuth/network):
-- **domain:** `lexicalItem.ts` (DM-2 read-only contract; its `.test.ts` type-asserts conformance to
-  `build/types.ts` so producer/consumer drift fails typecheck — DM-12/DM-4), `card.ts`
-  (`MasteryState`, `Card`, `FsrsCardState`), `review.ts`, `rating.ts` (RAT-1), `mastery.ts` (SM-4),
-  `grading.ts` (TIER-5 **pure** lemma-match over port-supplied forms).
-- **application:** ports `catalog`/`cardRepository`/`scheduler`/`lemmatizer`; use-case
-  `submitCuedReview.ts` (grade → rate → schedule → promote → persist).
-- **infrastructure:** `winkLemmatizer` (en-US, mirrors `stageC` wink setup — DM-9), `tsFsrsScheduler`
-  (ts-fsrs; library types confined to the adapter, one boundary cast), `inMemoryCardRepository`
-  (Neon deferred), `JsonCatalog` (reads `build/out/items.json`), `composition.ts` (single wiring
-  root). A smoke test runs a real `items.json` item through real wink + ts-fsrs.
-- **Covers:** INV-1, INV-3, SM-4, SM-6 (deterministic fail reschedules, never demotes), RAT-1, RAT-8.
+1. **Deterministic cued-production review** (architecture-proving; no external services). domain:
+   `lexicalItem.ts` (DM-2; `.test.ts` type-asserts vs `build/types.ts` — DM-12/DM-4), `card.ts`
+   (`MasteryState`/`Card`/`FsrsCardState`), `review.ts`, `rating.ts` (RAT-1), `mastery.ts` (SM-4),
+   `grading.ts` (TIER-5 pure lemma-match). application: ports `catalog`/`cardRepository`/`scheduler`/
+   `lemmatizer`; `submitCuedReview.ts` (grade→rate→schedule→promote→persist). infra: `winkLemmatizer`
+   (DM-9), `tsFsrsScheduler` (ts-fsrs confined to adapter), `inMemoryCardRepository`, `JsonCatalog`,
+   `composition.ts`. **Covers:** INV-1/3, SM-4, SM-6, RAT-1/8.
 
-**Also implemented — the judged free-production slice** (still **no external services** —
-the cloud judge is **faked**, no DeepSeek/network). Mirrors the cued skeleton, proving INV-2:
-- **domain:** `constants.ts` (RL named tunables — `DEGENERATE_MIN_CONTENT_TOKENS`,
-  `VERBATIM_SIMILARITY_THRESHOLD`, `MAX_RULE_BOUNCE_RETRIES`), `verdict.ts` (JDG-4 contract +
-  **pure** `passesGate` = sense AND grammar, JDG-2/5), `ruleLayer.ts` (RL-2/3/4 **pure** checks +
-  `NlpToken` data shape; reuses `isLemmaMatch`), `mastery.ts` `demoteOneRung` (SM-6/7, floors at
-  Recognized).
-- **application:** ports `judge` (`JudgePort`) + `sentenceAnalyzer` (kept separate from `lemmatizer`,
-  SOLID-4); use-case `submitFreeProduction.ts` (rule-layer → judge → rate → demote-on-fail → persist;
-  returns a `bounce | judged` union). `ReviewTier` widened to `"cued" | "free"`; `ReviewLog.scaffolded`
-  instrumented (RAT-5).
-- **infrastructure:** `fakeJudge.ts` (records calls; `passingVerdict` helper), `winkLemmatizer` now
-  also implements `SentenceAnalyzer.analyze` (wink UPOS + stopword), `tagalogLexicon.ts` (**stub**
-  shipped lexicon for RL-4), `composeFreeProduction` in `composition.ts`. A smoke test runs real
-  `items.json` + real wink through a gate-pass (one rating) and a word-absent bounce (no rating).
-- **Covers:** INV-2 (bounce → no rating/scheduler/log, card stays due), INV-1, RL-1/2/3/4, RL-6,
-  JDG-2/5, SM-6/7, RAT-1/4/5.
+2. **Judged free-production** (cloud judge **faked**). domain: `constants.ts` (RL tunables), `verdict.ts`
+   (JDG-4 + pure `passesGate` = sense AND grammar, JDG-2/5), `ruleLayer.ts` (RL-2/3/4 pure + `NlpToken`),
+   `mastery.ts` `demoteOneRung` (SM-6/7). application: ports `judge` + `sentenceAnalyzer` (separate from
+   `lemmatizer`, SOLID-4); `submitFreeProduction.ts` (rule-layer→judge→rate→demote-on-fail→persist;
+   `bounce | judged`). `ReviewTier`=`cued|free`; `ReviewLog.scaffolded` (RAT-5). infra: `fakeJudge.ts`,
+   `winkLemmatizer.analyze`, `tagalogLexicon.ts` (stub RL-4), `composeFreeProduction`. **Covers:** INV-2
+   (bounce→no rating/schedule/log), INV-1, RL-1/2/3/4/6, JDG-2/5, SM-6/7, RAT-1/4/5.
 
-**Also implemented — the end-to-end loop orchestration slice** (`spec/11`; still **no external
-services** — in-memory repo + faked judge). This is the integration layer that composes the two slices above into the single entry
-point the UI will call. The two existing use-cases stay **byte-for-byte unchanged**:
-- **domain:** `tier.ts` — **pure** `selectTier(mastery)` realizing the `SM-1` table (`Recognized→cued`,
-  `Productive`/`Fluent→free`; `Seen`/`New` throw — on-ramp tiers deferred, PRAG-1). Reuses the
-  existing `ReviewTier` type; it is a **pure function, not a port** (no I/O — ARCH-2/COMP-3).
-- **application:** `runReviewPass.ts` — loads the card once to read mastery, routes via `selectTier`,
-  dispatches to `submitCuedReview` or `submitFreeProduction`, returns a `{ tier, outcome }`
-  discriminated union. Deps `RunReviewPassDeps = SubmitFreeProductionDeps` (the judged set is a
-  structural superset of the cued one, so one dependency object forwards to both).
-- **infrastructure:** `composeReviewPass(judge, itemsPath?)` in `composition.ts` (delegates to
-  `composeFreeProduction`); `reviewPass.smoke.test.ts` drives the real catalog + wink + ts-fsrs + fake
-  judge through a `Recognized→cued` pass (zero judge calls) and a `Productive→free` pass.
-- **Covers:** LOOP-1 (mastery selects tier), LOOP-2 (cued = no LLM), LOOP-3/INV-2 (bounce → no
-  rating/schedule/log), LOOP-4 (pass rates Good / fail rates Again + demotes), LOOP-5 (rated branch
-  persists one log, bounce none), SM-1, SM-6 (Fluent maintenance demotes `Fluent→Productive`).
-  *(51 tests total at time of writing.)*
+3. **End-to-end loop orchestration** (`spec/11`; in-memory + faked judge). domain: `tier.ts` pure
+   `selectTier(mastery)` (SM-1 table; pure fn not port — ARCH-2/COMP-3). application: `runReviewPass.ts`
+   (load card→route→dispatch; `{tier, outcome}` union; `RunReviewPassDeps = SubmitFreeProductionDeps`).
+   infra: `composeReviewPass`; `reviewPass.smoke.test.ts`. **Covers:** LOOP-1..5, SM-1, SM-6.
 
-**Also implemented — the SM-5 Fluent promotion + counter slice** (`spec/01` SM-5 + `spec/10`; still
-**no external services**). Completes the ladder's productive top end + the headline metric. SM-5 and the counter
-share one primitive — *distinct calendar days bearing a passing free judged production* — derived
-from the persisted `ReviewLog`s (no Card-field drift, INV-4 filters cued/recognition):
-- **domain:** `judgedPassLedger.ts` (`distinctPassDays` w/ injectable UTC-offset day boundary +
-  `mostRecentPassScaffolded`), `fluentGate.ts` (`qualifiesForFluent` = SM-5's four-condition
-  conjunction), `mastery.ts` `promoteOnJudgedPass` (Productive→Fluent iff gate; Fluent stays Fluent),
-  `counter.ts` `isCounted` (CNT-2/3/6), four new `constants.ts` (`FLUENT_JUDGED_PASSES`=3,
-  `FLUENT_MIN_STABILITY_DAYS`=21, `COUNTER_MIN_SPACED_PASSES`=2, `COUNTER_R_FLOOR`=0.70).
-- **application:** `Scheduler.getRetrievability` + `CardRepository.logsForWord`/`listCards` ports;
-  `submitFreeProduction` passing branch promotes from the ledger (fail/bounce + single-save
-  unchanged); new `readUsableCounter.ts` read-model (live retrievability gate at read time).
-- **infrastructure:** ts-fsrs `get_retrievability` behind the port, in-memory query impls,
-  `composeUsableCounter`, `fluentCounter.smoke.test.ts` (real wink + ts-fsrs + fake judge:
-  3-spaced-pass promotion + counter membership/decay).
-- **Covers:** SM-5 (a/b/c/d), SM-6/7, SM-9, INV-4, CNT-2/3/4/6. *(81 tests total at time of writing.)*
+4. **SM-5 Fluent promotion + counter** (`spec/01` SM-5 + `spec/10`). Shared primitive = *distinct
+   calendar days with a passing free judged production*, derived from persisted `ReviewLog`s (no
+   Card-field drift; INV-4 filters non-free). domain: `judgedPassLedger.ts`, `fluentGate.ts`,
+   `mastery.ts` `promoteOnJudgedPass`, `counter.ts` `isCounted` (CNT-2/3/6), 4 constants
+   (`FLUENT_JUDGED_PASSES`=3, `FLUENT_MIN_STABILITY_DAYS`=21, `COUNTER_MIN_SPACED_PASSES`=2,
+   `COUNTER_R_FLOOR`=0.70). application: `Scheduler.getRetrievability` + `CardRepository.logsForWord`/
+   `listCards` ports; `readUsableCounter.ts` (live retrievability gate at read time). infra: ts-fsrs
+   `get_retrievability`, `composeUsableCounter`. **Covers:** SM-5(a-d), SM-6/7/9, INV-4, CNT-2/3/4/6.
 
-**Also implemented — the real DeepSeek cloud-judge + failure-path slice** (`spec/06` JDG-10/11/6/4 +
-`spec/08` NET-*; started 2026-07-01). The **first slice that touches an external service** — it swaps
-`FakeJudge` for a real DeepSeek V4 Flash HTTPS adapter behind the *unchanged* `JudgePort`, closing the
-**cloud-failure half of INV-2** (only the rule-layer half was proven before). **`runReviewPass` needed
-no code change** — the widened result union threads through its types. The **test suite stays fully
-offline** (the adapter is tested via an injected fake `http`; smoke tests keep `FakeJudge`; `liveJudge`
-is never constructed in tests):
-- **application:** `ports/judge.ts` gains `JudgeUnavailableError` + `JudgeUnavailableReason`
-  (`transient`/`rate_limited`/`offline`/`invalid_response`) — thrown by infra, caught by the use-case
-  (dependency points inward, ARCH-1); the `judge()` signature is unchanged (a verdict stays its only
-  success shape — SOLID-3). `submitFreeProduction` gains a third `UnavailableResult` arm
-  (`bounce | judged | unavailable`): a transport failure derives **no** rating/scheduler/log and leaves
-  the card due (INV-2/RAT-2) — it is **not** a bounce. `constants.ts` `CLOUD_RETRY_COUNT`=1 (NET-3).
-- **infrastructure:** `deepSeekJudge.ts` (`DeepSeekJudge`; injectable `http` seam defaulting to `fetch`;
-  JDG-6 JSON mode — *not* GBNF; the single backed-off retry lives here, NET-3/6; error classification
-  NET-3/4/5; **never fabricates a gate** — a 2xx body missing a gate boolean throws `invalid_response`,
-  JDG-3/INV-2; other-4xx like 401 fails loud as a plain `Error`), `deepSeekConfig.ts`
-  (`deepSeekConfigFromEnv`, the **only** place `DEEPSEEK_API_KEY` is read — server-side, NET-7),
-  `deepSeekRubric.ts` (system prompt + 2 few-shots + `RUBRIC_VERSION`, the JDG-9/11 cache/version
-  lever), `liveJudge()`/`composeReviewPassLive()` in `composition.ts` (kept out of default wirings so
-  tests need no key/network).
-- **Covers:** INV-2 (cloud-failure half — no rating/scheduler/log, card stays due), NET-3/4/5/6/7,
-  JDG-4/6/10/11, JDG-2/5 (parse maps to the pure `passesGate`, unchanged). *(95 tests total at time of
-  writing.)*
-- **Deferred within this slice (need UI, PRAG-1):** NET-2 "checking…" affordance and the NET-5
-  *pre-submit* offline block are presentation; the `unavailable` result carries the reason for a future
-  UI. The optional key-gated manual smoke script is not built.
+5. **Real DeepSeek cloud-judge + failure path** (`spec/06` JDG-10/11/6/4 + `spec/08` NET-*; **first
+   external service**). Swaps `FakeJudge` for a DeepSeek V4 Flash HTTPS adapter behind the unchanged
+   `JudgePort`; closes the cloud-failure half of INV-2. Tests stay offline (injected fake `http`).
+   application: `ports/judge.ts` + `JudgeUnavailableError`/`JudgeUnavailableReason`
+   (`transient`/`rate_limited`/`offline`/`invalid_response`, caught by use-case — ARCH-1);
+   `submitFreeProduction` gains `unavailable` arm (transport failure → no rating/schedule/log, card stays
+   due, ≠ bounce). `CLOUD_RETRY_COUNT`=1. infra: `deepSeekJudge.ts` (injectable `http`; JDG-6 JSON mode;
+   backed-off retry NET-3/6; error classify NET-3/4/5; **never fabricates a gate** — 2xx missing gate →
+   `invalid_response`; other-4xx → loud `Error`), `deepSeekConfig.ts` (**only** reader of
+   `DEEPSEEK_API_KEY`, server-side NET-7), `deepSeekRubric.ts` (`RUBRIC_VERSION`, JDG-9/11), `liveJudge()`/
+   `composeReviewPassLive()` (kept out of default wirings). **Covers:** INV-2 (cloud half), NET-3/4/5/6/7,
+   JDG-2/4/5/6/10/11. *Deferred (UI): NET-2 "checking…", NET-5 pre-submit offline block.*
 
-**Also implemented — the pure edit-resolution slice** (`spec/07` EDIT-*; still **no external
-services** — a pure domain algorithm, no infra/wiring). Completes the post-judge data path: it turns
-the judge's `verdict.replacements` (find/replace pairs) into character spans a future UI renders. It
-has **no consumer yet** (the consumer is the deferred presentation layer, PRAG-1) — only the pure
-function + tests were added:
-- **domain:** `editResolution.ts` — pure `resolveEdits(rawSentence, replacements, correctedSentence)`
-  returning a `{ kind: "inline"; edits } | { kind: "fallback"; correctedSentence }` union. Reuses the
-  existing `Replacement` from `verdict.ts` (no edit there). In-module `REASON_PRIORITY` (fixed domain
-  rule `sense > grammar > collocation > register`, **not** a `constants.ts` tunable, cf. `CONTENT_POS`
-  in `ruleLayer.ts`).
-- **Design decision (confirmed with user):** `EDIT-4` fallback is **binary** — **any** edit whose
-  `find` has 0 or ≥2 matches (empty `find` counts as unresolvable) suppresses *all* inline rendering
-  and returns the whole-sentence `corrected_sentence`. Empty `replacements` is a clean inline result,
-  not a fallback.
-- **Covers:** EDIT-3 (unique-substring span), EDIT-4 (0/≥2 → whole-sentence fallback, never guesses a
-  position), EDIT-5 (right-to-left / descending-`start` output), EDIT-6 (overlap dedup by reason
-  priority), EDIT-2 (takes no gate input, returns none — resolution never adjudicates). EDIT-1 is a
-  judge-contract constraint already met by the `Replacement` shape (cited, no code). *(103 tests total
-  at time of writing.)*
-- **Deferred within this slice (need UI, PRAG-1):** EDIT-7 inline render (strikethrough/insertion,
-  color-by-`reason`, on-demand `one_line_feedback`) and the optional wink token-boundary snapping —
-  the `ResolvedEdit[]` this slice returns is exactly that render's input.
+6. **Pure edit-resolution** (`spec/07` EDIT-*; pure domain, no consumer yet). domain: `editResolution.ts`
+   pure `resolveEdits(rawSentence, replacements, correctedSentence)` → `{kind:"inline";edits} |
+   {kind:"fallback";correctedSentence}`; reuses `Replacement`; in-module `REASON_PRIORITY`
+   (`sense>grammar>collocation>register`, fixed domain rule not a constant). **Design (user-confirmed):**
+   EDIT-4 fallback is **binary** — any edit whose `find` has 0 or ≥2 matches (empty=unresolvable)
+   suppresses all inline render → whole-sentence fallback; empty `replacements` = clean inline.
+   **Covers:** EDIT-2/3/4/5/6 (EDIT-1 met by `Replacement` shape). *Deferred (UI): EDIT-7 inline render +
+   wink token-boundary snapping.*
 
-**Also implemented — the first persistence slice** (`spec/12` DM-5..DM-7, STACK-3/6; started
-2026-07-01). The **first slice with a real database.** It swaps `InMemoryCardRepository` for a
-Drizzle-backed adapter behind the *unchanged* `CardRepository` port — **no use-case or domain module
-changed** (the swap is confined to the composition root, ARCH-3). The **test suite stays fully
-offline**: the adapter is tested against an embedded in-process Postgres (**pglite**), never Neon or
-the network:
-- **infrastructure:** `db/schema.ts` (Drizzle schema — `cards` composite PK `(userId, senseId)` +
-  append-only `review_logs` with a `serial seq` for order; `mastery` is its **own column**, persisted
-  separately from FSRS state — DM-7/INV-3; FSRS fields are **expanded `fsrs_`-prefixed columns** with
-  `timestamptz` so `Date`s round-trip losslessly — no jsonb Date footgun), `drizzleCardRepository.ts`
-  (`DrizzleCardRepository` over a **dialect-agnostic** `DrizzleDb` handle so the *same* code runs on
-  pglite and Neon; pure row⇄domain mappers; `save` is an upsert = lazy-create + update, SM-2),
-  `db/pglite.ts` + `db/neon.ts` (the two `db` factories; `neonDbFromEnv` reads `DATABASE_URL`
-  server-side only, the NET-7/STACK-4 secret-boundary pattern — kept out of default wirings),
-  `composeReviewPassPersistent(judge, db, itemsPath?)` in `composition.ts` (reuses
-  `composeFreeProduction`, swaps only the repo).
-- **shared contract test:** `cardRepositoryContract.ts` — one conformance suite run against **both**
-  the in-memory and Drizzle repos, so their Liskov substitutability (SOLID-3) is build-enforced, not
-  asserted by hand. Drizzle runs it on a fresh migrated pglite DB per test.
-- **tooling:** `drizzle.config.ts` + generated `drizzle/0000_init.sql` (committed; the *same*
-  migrations apply to pglite in tests and Neon in prod — no hand-written DDL, no drift);
-  `npm run db:generate` / `db:migrate` scripts.
-- **Covers:** DM-5 (card persisted per user, dates round-trip), DM-6 (ReviewLog append-only from
-  review #1, append order preserved via `seq`), DM-7 (mastery persisted separately from FSRS state),
-  SM-2 (upsert = one card per word), INV-4 (`logsForWord` filters by user+word), multi-tenant
-  scoping. *(121 tests total at time of writing.)*
-- **Deferred within this slice (PRAG-1):** memo-row table (DM-8, MEMO-1 is a MAY, no consumer);
-  BetterAuth / real `userId` provisioning (STACK-4 — the adapter takes `userId` as a plain string);
-  live Neon migration/CI wiring beyond the `makeNeonDb` factory. **Note the pglite suite adds ~12s**
-  (a fresh migrated DB per test); share-one-DB-with-truncation is the optimization if it drags.
+7. **First persistence** (`spec/12` DM-5..DM-7, STACK-3/6; **first real DB**). Swaps
+   `InMemoryCardRepository` for a Drizzle adapter behind the unchanged `CardRepository` (swap confined to
+   composition root). Tests use embedded **pglite**, never Neon. infra: `db/schema.ts` (`cards` PK
+   `(userId, senseId)`; append-only `review_logs` with `serial seq`; `mastery` its own column — DM-7/INV-3;
+   FSRS = expanded `fsrs_`-prefixed `timestamptz` columns, no jsonb Date footgun),
+   `drizzleCardRepository.ts` (dialect-agnostic `DrizzleDb`, same code on pglite+Neon; `save`=upsert, SM-2),
+   `db/pglite.ts` + `db/neon.ts` (`neonDbFromEnv` reads `DATABASE_URL` server-side, NET-7/STACK-4),
+   `composeReviewPassPersistent`. **Shared contract test** `cardRepositoryContract.ts` runs against both
+   repos (SOLID-3 build-enforced). tooling: `drizzle.config.ts` + committed `drizzle/0000_init.sql` (same
+   migrations pglite+Neon); `db:generate`/`db:migrate`. **Covers:** DM-5/6/7, SM-2, INV-4, multi-tenant.
+   *Note: pglite suite adds ~12s (fresh DB/test). Deferred: memo table (DM-8); BetterAuth `userId` (STACK-4);
+   live Neon CI wiring.*
 
-**Also implemented — the `Seen` on-ramp tiers slice** (`spec/03` TIER-1/2/5 + `spec/01` SM-3 +
-`spec/02` RAT-7; started 2026-07-01). This is the **missing rung** between introduction and the
-existing loop: it makes the ladder continuous by wiring the two `Seen` on-ramp tiers the loop
-previously threw on. Still **no external services** — both tiers are deterministic (recognition = exact
-match, cloze = the same lemma-match as cued), mirroring the cued slice; **no use-case above was changed
-in behavior** (`submitCuedReview` was refactored onto a shared core with its public API byte-identical):
-- **domain:** `onRampLedger.ts` (`nextSeenTier` — the recognition-vs-cloze position is **derived from
-  the persisted `ReviewLog`s**, not a new Card field, mirroring `judgedPassLedger`'s no-drift
-  convention; a pure fold encoding SM-3's two-step + RAT-7's capped drop-back via a sticky
-  `dropbackUsed` flag); `isRecognitionCorrect` in `grading.ts` (TIER-2 **exact identity**, not
-  lemma-match — the MCQ is pick-the-word); `promoteOnClozePass` in `mastery.ts` (SM-3 `Seen→Recognized`
-  on a cloze pass; an MCQ pass alone never promotes); `ReviewTier` widened to
-  `recognition | cloze | cued | free` (INV-4 preserved — the ledger/counter still filter `tier==="free"`);
-  two constants (`RECOGNITION_MCQ_OPTIONS`=4, `SEEN_CLOZE_DROPBACK_CAP`=1).
-- **application:** `submitDeterministicReview.ts` — the **shared grade→rate→schedule→promote→log core**
-  extracted once the third deterministic tier appeared (rule-of-three, PRAG-3), strategy-injected by
-  `{ tier, grade, promote }` (SOLID-2 — new tiers are config, not core edits). `submitCuedReview` was
-  refactored onto it; thin `submitCloze` + `submitRecognition` are new configs. `runReviewPass` routes
-  `Seen` via `nextSeenTier` **before** `selectTier` (which was narrowed to return `cued | free`, since
-  `Seen` is routed upstream and `New` throws — `New→Seen` intro is seeding). The `RunReviewPassResult`
-  union gained `recognition`/`cloze` arms; `RunReviewPassDeps` is **unchanged** (the deterministic tiers
-  need only a subset of the existing superset).
-- **infrastructure:** **no new adapters** (composition wirings unchanged). `onRamp.smoke.test.ts` drives
-  a real `items.json` word `Seen → Recognized → Productive` through real wink + ts-fsrs with the
-  FakeJudge recording **zero calls** — the acceptance proof that the loop no longer dead-ends on `Seen`.
-- **Key insight — the RAT-7 drop-back is pure *routing*** (which tier to show next), never a mastery
-  change, so nothing about it lives in the use-cases; it is entirely in `nextSeenTier`.
-- **Covers:** TIER-1/2/5, SM-3 (spaced two-step, promotion on the cloze pass), RAT-7 (first cloze fail →
-  one MCQ drop-back, capped, no ping-pong), SM-6 (deterministic fails never demote), RAT-1/8 + DM-6,
-  INV-1/INV-3. *(143 tests total at time of writing.)*
-- **Deferred within this slice (PRAG-1):** MCQ option assembly/shuffle + rendering (presentation, like
-  EDIT-7); the `New→Seen` introduction that *creates* `Seen` cards (seeding, `09`).
+8. **`Seen` on-ramp tiers** (`spec/03` TIER-1/2/5 + `spec/01` SM-3 + `spec/02` RAT-7). The missing rung;
+   both tiers deterministic (recognition=exact match, cloze=lemma-match). domain: `onRampLedger.ts`
+   (`nextSeenTier` — position derived from `ReviewLog`s, no new Card field; pure fold of SM-3's two-step +
+   RAT-7's capped drop-back via sticky `dropbackUsed`); `grading.ts` `isRecognitionCorrect` (TIER-2 **exact
+   identity**, not lemma-match); `mastery.ts` `promoteOnClozePass` (SM-3 `Seen→Recognized`, MCQ pass alone
+   never promotes); `ReviewTier`=`recognition|cloze|cued|free` (INV-4 still filters `free`); 2 constants
+   (`RECOGNITION_MCQ_OPTIONS`=4, `SEEN_CLOZE_DROPBACK_CAP`=1). application: `submitDeterministicReview.ts`
+   — shared grade→rate→schedule→promote→log core (rule-of-three, PRAG-3), strategy-injected by
+   `{tier, grade, promote}` (SOLID-2); `submitCuedReview` refactored onto it (API byte-identical); thin
+   `submitCloze`/`submitRecognition` configs. `runReviewPass` routes `Seen` via `nextSeenTier` **before**
+   `selectTier` (narrowed to `cued|free`). **Key insight:** RAT-7 drop-back is pure *routing* (which tier
+   next), never a mastery change — lives entirely in `nextSeenTier`. infra: no new adapters;
+   `onRamp.smoke.test.ts` (`Seen→Recognized→Productive`, FakeJudge zero calls). **Covers:** TIER-1/2/5,
+   SM-3, RAT-7, SM-6, RAT-1/8, DM-6, INV-1/3. *Deferred (UI): MCQ assembly/shuffle; `New→Seen` intro
+   (seeding).*
 
-**Also implemented — the first-session seeding + placement slice** (`spec/09`; still **no external
-services** — real JSON catalog + ts-fsrs + in-memory repo). This is the piece that *creates* a user's
-cards, so the now-continuous ladder finally has an on-ramp: a seeded card is reviewable end-to-end.
-The three placement mechanisms (SEED-2/3) stay **structurally separate** — they are three distinct
-inputs (frontier band, per-word marks, list-stack word source), so the LexTALE scalar can never mark
-or select words (enforced by the type surface). The existing use-cases are **byte-for-byte unchanged**:
-- **domain (pure):** `entryState.ts` (`introductionState` — placement-known → `Recognized`, else
-  `Seen`, SM-11/SEED-3; flag-only, band deliberately not a param), `introductionPacing.ts`
-  (`newIntroductionsAllowed` — SEED-6/9 first-session/steady-state/under-backlog cap; the backlog cap
-  is the closed-form `floor(f/(1−f)·due)` so `new/(new+due) ≤ f` "of the session", needing only the
-  due count), `coldStart.ts` (`coldStartDifficulty(cefr, band)` — SEED-8 CEFR×band estimate in FSRS
-  [1,10]), four `constants.ts` (`FIRST_SESSION_SEED_WORDS`=2, `NEW_PER_DAY`=5,
-  `NEW_FRACTION_UNDER_BACKLOG`=0.30, `REQUEST_RETENTION`=0.90).
-- **application:** new narrow `WordSource` port (`nextFrontierWords(band, exclude, count)` — selection
-  only, SOLID-4); `Scheduler.newCard` widened with an optional `ColdStart` seed; use-case
-  `seedIntroductions.ts` (pacing → list-stack select excluding already-carded → lazy `newCard`
-  cold-started → entry state → save; reuses `CardRepository.listCards`/`save`, **no new repo method**).
-- **infrastructure:** `jsonWordSource.ts` (band bucket, list_rank order, `sense_id` tiebreak),
-  `tsFsrsScheduler` now configures `request_retention` + applies the cold-start difficulty (with a
-  note that ts-fsrs recomputes D/S on the first graded review), `composeSeeding` in `composition.ts`,
-  `seeding.smoke.test.ts` (real catalog + ts-fsrs: first-session seed, SM-11 skip, and a placement-
-  known `Recognized` card reviewed through `runReviewPass` to `Productive`).
-- **Covers:** SEED-1/2/3/5/6/7/8/9, SM-11, INV-3. *(163 tests total at time of writing.)*
-- **Deferred within this slice (PRAG-1):** the LexTALE instrument internals (SEED-4 — the scalar is
-  modeled as an input band); per-user FSRS optimization above `PER_USER_OPT_REVIEW_THRESHOLD` reviews
-  (SEED-8, needs `@open-spaced-repetition/binding`); the live session-queue that interleaves new intros
-  with due reviews + the "tune your level" UI (presentation/session-orchestration — this slice ships
-  the pure pacing *policy* + card creation, not a running queue).
+9. **First-session seeding + placement** (`spec/09`). *Creates* a user's cards. The three placement
+   mechanisms (SEED-2/3) stay **structurally separate** (frontier band, per-word marks, list-stack source)
+   — the LexTALE scalar can never mark/select words (type-enforced). domain (pure): `entryState.ts`
+   (`introductionState` — placement-known→`Recognized` else `Seen`, SM-11/SEED-3), `introductionPacing.ts`
+   (`newIntroductionsAllowed` — SEED-6/9; backlog cap = closed-form `floor(f/(1−f)·due)`), `coldStart.ts`
+   (`coldStartDifficulty(cefr, band)`, SEED-8, FSRS[1,10]), 4 constants (`FIRST_SESSION_SEED_WORDS`=2,
+   `NEW_PER_DAY`=5, `NEW_FRACTION_UNDER_BACKLOG`=0.30, `REQUEST_RETENTION`=0.90). application: narrow
+   `WordSource` port; `Scheduler.newCard` + optional `ColdStart`; `seedIntroductions.ts` (pacing→select
+   excluding carded→`newCard` cold-started→entry state→save; no new repo method). infra: `jsonWordSource.ts`
+   (band bucket, list_rank, `sense_id` tiebreak), `tsFsrsScheduler` request_retention + cold-start,
+   `composeSeeding`. **Covers:** SEED-1/2/3/5/6/7/8/9, SM-11, INV-3. *Deferred: LexTALE internals (SEED-4);
+   per-user FSRS optimization (SEED-8, needs `@open-spaced-repetition/binding`); live session queue + UI.*
 
-**Also implemented — the session-queue / due-word surfacing slice** (`spec/11` LOOP-1 step 1; still
-**no external services** — real JSON catalog + ts-fsrs + in-memory repo). Closes the loop's last
-backend gap: `runReviewPass` previously took `senseId` as given (surfacing was out of scope). This
-slice decides *what* to review and interleaves paced new intros with due reviews. **No new ports, no
-adapter changes, no existing use-case/domain module changed** — additive:
-- **domain (pure):** `sessionQueue.ts` (`orderSessionQueue(cards, introSenseIds, now)` — due filter
-  (`fsrs.due <= now`), reviews ordered most-overdue-first (`senseId` tiebreak), fresh intros **evenly
-  interleaved** among reviews via a proportional even-merge, SEED-6). The fresh-intro set is passed
-  explicitly (the seeder returns exactly what it created — no `reps`/mastery heuristic, no INV-3 concern).
-- **application:** `startSession.ts` — the single session-start entry point: `seedIntroductions` (paced,
-  SEED-1/6/7) → `listCards` → `orderSessionQueue`, returning `{ queue, seeded }`. `StartSessionDeps =
-  SeedIntroductionsDeps` (the ordering needs only `cards`, already in that set).
-- **infrastructure:** `composeSession` in `composition.ts`; `session.smoke.test.ts` (real catalog +
-  ts-fsrs: first-session seed → ordered queue → each queued word reviewed end-to-end via `runReviewPass`).
-- **Covers:** LOOP-1 (step 1 surfacing + ordering), SEED-6 (interleave; pacing reused), SEED-7 (queue
-  surfaces only already-created cards). *(180 tests total at time of writing.)*
-- **Deferred within this slice (PRAG-1):** prompt resolution (what to render before a response — the
-  presentation slice); per-day intro dedup (`seedIntroductions` paces per-invocation, not per calendar
-  day — no day ledger yet); a due-only repo query (`listCards` + in-domain filter suffices for v1).
+10. **Session-queue / due-word surfacing** (`spec/11` LOOP-1 step 1; additive — no new ports/adapters).
+    domain (pure): `sessionQueue.ts` (`orderSessionQueue(cards, introSenseIds, now)` — due filter, reviews
+    most-overdue-first (`senseId` tiebreak), fresh intros evenly interleaved via proportional even-merge,
+    SEED-6; intro set passed explicitly). application: `startSession.ts` (`seedIntroductions`→`listCards`→
+    `orderSessionQueue`, returns `{queue, seeded}`). infra: `composeSession`; `session.smoke.test.ts`.
+    **Covers:** LOOP-1 (step 1), SEED-6/7. *Deferred: prompt resolution; per-calendar-day intro dedup;
+    due-only repo query.*
 
-**Also implemented — the React review-presentation slice** (`spec/03` TIER-1/2/5 render + `spec/11`
-LOOP-1; **STACK-2/5/7**). The first `src/presentation/` layer: a **TanStack Start** (Vite 7 + React 19)
-full-stack app whose **server functions run the use-cases server-side**, so the DeepSeek key (NET-7) and
-DB (STACK-4) stay off the client. Scope = the **deterministic review screen** (recognition / cloze /
-cued); free production + the counter are deferred:
-- **backend (TDD):** `reviewRouting.ts` — extracted `resolveReviewTier(mastery, logs)` as the **single
-  source of truth** for tier routing; `runReviewPass` refactored onto it (behavior-identical, its tests
-  unchanged) so the tier the UI *shows* can never differ from the tier it *grades*.
-  `resolveReviewPrompt.ts` — application read-model returning `{ tier, …render fields }` per queued word
-  (recognition MCQ options, cloze sentence, cued meaning), **fail-loud** on a missing catalog field;
-  `composeResolvePrompt` wiring.
-- **presentation (`src/presentation/`, own `tsconfig` + `npm run typecheck:web`, EXCLUDED from the
-  NodeNext backend gate):** TanStack Start relocated under `srcDirectory: src/presentation`
-  (routes/router/generated tree); `server/` holds the three `createServerFn`s (`startSession` /
-  `resolvePrompt` / `submitReview`) over a **process-shared in-memory repo** + a **stubbed dev user**
-  (the STACK-4 auth seam — BetterAuth deferred); `routes/review.tsx` drives Start → walk queue →
-  tier-specific prompt → submit → pass/fail + mastery, with shadcn-ui + Tailwind v4 + TanStack Query.
-- **tooling:** Vite 7 / `@vitejs/plugin-react` 5 / **vitest bumped 2→3** (vitest 2 pinned Vite 5,
-  blocking Start's Vite 7); Tailwind v4 (`@tailwindcss/vite`); shadcn-ui (`components.json`, `@/*` alias
-  → `src/presentation`); `dev`/`build`/`start`/`typecheck:web` scripts; the shadcn MCP (`.mcp.json`).
-- **Covers:** the render half of TIER-1/2/5 + LOOP-1 step 2; `resolveReviewTier` guarantees
-  shown-tier == graded-tier (proven by `reviewFlow.smoke.test.ts` over the real catalog). *(194 tests.)*
-- **Verified:** `npm run build` (client `review` chunk ~72kB — server-only infra does NOT leak to the
-  client), `/review` SSR-renders, both typecheck gates + 194 tests green. **NOT** driven headlessly: the
-  literal `createServerFn` HTTP click-path (transport is framework code the build validates).
-- **Deferred within this slice (PRAG-1):** the free-production UI (real DeepSeek via `liveJudge`) +
-  NET-2/5 affordances; EDIT-7 inline edit rendering; MCQ shuffle-on-render (assembly is done, shuffle is
-  UI); the counter / daily-goal (CNT-7/8/9); real Neon + BetterAuth (swap at the one composition point).
+11. **React deterministic review presentation** (`spec/03` TIER-1/2/5 render + `spec/11` LOOP-1;
+    **STACK-2/5/7**). First `src/presentation/` layer: **TanStack Start** (Vite 7 + React 19) full-stack
+    app; server functions run use-cases server-side so the DeepSeek key (NET-7) + DB (STACK-4) stay off the
+    client. Scope = deterministic screen (recognition/cloze/cued). backend (TDD): `reviewRouting.ts` —
+    extracted `resolveReviewTier(mastery, logs)` as **single source of truth** for routing (`runReviewPass`
+    refactored onto it, behavior-identical) so shown-tier == graded-tier; `resolveReviewPrompt.ts` read-model
+    (`{tier, …render fields}`, fail-loud on missing catalog field); `composeResolvePrompt`. presentation:
+    TanStack Start under `srcDirectory: src/presentation`; `server/` = 3 `createServerFn`s (`startSession`/
+    `resolvePrompt`/`submitReview`) over a process-shared in-memory repo + stubbed dev user (STACK-4 seam,
+    BetterAuth deferred); `routes/review.tsx` drives the flow with shadcn-ui + Tailwind v4 + TanStack Query.
+    tooling: Vite 7 / plugin-react 5 / **vitest 2→3** (vitest 2 pinned Vite 5); Tailwind v4; shadcn-ui
+    (`@/*`→`src/presentation`); `dev`/`build`/`start`/`typecheck:web`; shadcn MCP (`.mcp.json`).
+    **Covers:** render half of TIER-1/2/5 + LOOP-1 step 2. **Verified:** `npm run build` (server infra does
+    NOT leak to client), `/review` SSR-renders, both typecheck gates + tests green. *NOT driven headlessly
+    (the `createServerFn` HTTP click-path). Deferred (UI): free-production screen (real `liveJudge`) +
+    NET-2/5; EDIT-7 inline render; MCQ shuffle-on-render; counter/daily-goal (CNT-7/8/9); real Neon +
+    BetterAuth.*
 
-**Key design conventions established (follow them in later slices):**
-- The **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of
-  the domain. `isLemmaMatch` now backs cued grading, cloze grading (both TIER-5) and the rule layer's
-  presence check (RL-2); the degeneracy check (RL-3) uses a **separate** `SentenceAnalyzer` port (POS tags),
-  not bolted onto `Lemmatizer` (SOLID-4). One wink adapter implements both.
+**Key design conventions (follow in later slices):**
+- **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
+  domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
+  a **separate** `SentenceAnalyzer` port (SOLID-4). One wink adapter implements both.
 - **Scheduling types** (`FsrsCardState`/`FsrsReviewLog`) are declared **structurally in the domain**;
-  ts-fsrs's own `Card`/`ReviewLog` are mapped only inside `tsFsrsScheduler`. Don't leak ts-fsrs (or
-  any library) into application/domain — put it behind a port (`ARCH-3`).
+  ts-fsrs's own types are mapped only inside `tsFsrsScheduler`. Never leak a library into app/domain — put
+  it behind a port (ARCH-3).
 - Every test names the `spec/` ID it exercises.
 
-**Deferred (do NOT build until pulled into scope — `PRAG-1`):** verdict memo (`05`, `MEMO-1` is a
-`MAY`); the failure path's UI affordances (NET-2 "checking…" + NET-5 pre-submit offline block); the
-counter's daily goal / inline-edit feedback (`CNT-7/8/9`); the LexTALE instrument + per-user FSRS
-optimization (the two SEED-4/8 bits carved out of the seeding slice); the **BetterAuth (STACK-4)
-adapter** (the presentation layer stubs a dev user at the seam); the **free-production / judged review
-UI** + **EDIT-7 inline edit render** + **recognition-MCQ shuffle-on-render** (the remaining
-presentation-only bits). *(The **real DeepSeek judge (`JDG-10/11`) + failure path (`08`)**, the **pure
-edit-resolution algorithm (`07` EDIT-2..6)**, the **first persistence slice (`12`, Neon + Drizzle behind
-`CardRepository`, STACK-3/6)**, the **`Seen` on-ramp tiers (`03` + SM-3 + RAT-7)**, **first-session
-seeding (`09`)**, the **session queue (`11` LOOP-1 step 1)**, and now the **React deterministic review
-screen (STACK-2/5/7)** are implemented — see the slices above.)*
-**Natural next slice:** extend the presentation — the **judged free-production screen + the counter**
-(wire the real DeepSeek judge via `liveJudge`, render EDIT-7 inline edits + NET-2/5 affordances, add
-MCQ shuffle-on-render and CNT-7/8/9), and/or the **Neon + BetterAuth swap** for real multi-user
-persistence (both are single-point swaps at the composition root — `composeReviewPassPersistent` +
-the `currentUser` seam). The deterministic loop now runs end-to-end in the browser: seed → queue →
-recognition/cloze/cued → pass/fail.
+**Deferred — do NOT build until pulled into scope (`PRAG-1`):** verdict memo (`05`, MEMO-1 is a MAY); the
+failure path's UI affordances (NET-2 + NET-5 pre-submit block); counter daily-goal / inline-edit feedback
+(CNT-7/8/9); LexTALE instrument + per-user FSRS optimization (SEED-4/8); the **BetterAuth (STACK-4) adapter**
+(presentation stubs a dev user at the seam); the **free-production / judged review UI** + **EDIT-7 inline
+render** + **recognition-MCQ shuffle-on-render**.
 
-> **Status (2026-07-03):** the runtime backend + the first UI slice are on **`master`** as one linear
-> history. Recent commits: session queue (`11` LOOP-1 step 1) → React deterministic review presentation
-> (TanStack Start, STACK-2/5/7), atop the earlier real-judge/edit/persistence/on-ramp/seeding stack.
-> The presentation layer is a Vite/TanStack app under `src/presentation/` with its OWN `tsconfig`
-> (`npm run typecheck:web`); the backend gate stays `npm run typecheck` (NodeNext) + `npm test`
-> (**194 at time of writing** — do not trust this count if the tree has moved on). Re-confirm with
-> `git log`, `npm test`, and `npm run dev` (the app) at session start.
+**Natural next slice:** extend the presentation — the **judged free-production screen + counter** (wire
+`liveJudge`, render EDIT-7, add NET-2/5, MCQ shuffle, CNT-7/8/9), and/or the **Neon + BetterAuth swap** for
+real multi-user persistence (both single-point swaps at the composition root — `composeReviewPassPersistent`
++ the `currentUser` seam). The deterministic loop runs end-to-end in the browser: seed→queue→
+recognition/cloze/cued→pass/fail.
+
+> **Status (2026-07-03):** runtime backend + first UI slice on **`master`**, one linear history. Backend
+> gate = `npm run typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test
+> count moves each slice — do not trust any number written here; run `npm test`. Re-confirm state with
+> `git log`, `npm test`, and `npm run dev` at session start.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 
