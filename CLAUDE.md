@@ -201,6 +201,31 @@ called out):
     NET-2/5; EDIT-7 inline render; MCQ shuffle-on-render; counter/daily-goal (CNT-7/8/9); real Neon +
     BetterAuth.*
 
+12. **Brand + design system + full mock-driven UI** (design deliverable; renders `spec/` §3/§7/§9/§10/§11
+    surfaces). **NOT a TDD runtime slice and NOT wired to infrastructure** — a complete UI/UX *design*; all
+    data comes from `src/presentation/mock/*` (every module carries a `MOCK DATA — TO BE REPLACED` header;
+    designed components never import `server/`). Brand = **warm editorial** (paper/ink neutrals, Manila-sun
+    **amber** accent, **Fraunces** serif for words/sentences + **Inter** UI; honest counter, no
+    confetti/streaks — encodes CNT-4/7/9). **Two skills authored** (leverage before UI work):
+    `.claude/skills/brand/` (positioning, voice **microcopy catalog keyed to spec IDs**, palette) +
+    `.claude/skills/design-system/` (tokens↔`styles.css`, component inventory, motion rules via
+    `motion/react`, **spec-state→UI map** in `references/screen-states.md`). `styles.css` rewritten (brand
+    oklch tokens + shadcn remap; `@fontsource-variable/fraunces|inter`). Routes: `/` dashboard (counter
+    CNT-2/3/4, goal ring CNT-8, ladder SM-1), `/review` **chromeless** session covering **all 5 tiers + the
+    full judged flow** (bounces RL-2/3/4, fallback offer TIER-7, cap-reveal+skip RL-6, "checking…" NET-2,
+    pass/fail verdict, **inline edits EDIT-7 via the real pure `resolveEdits`**, unscored practice SM-8,
+    offline NET-5, transient NET-3), `/onboarding` (SEED-1 win-before-calibration + per-word marking
+    SEED-2/3), `/words`+`/words/$wordId` (retrievability vs `COUNTER_R_FLOOR`, equal-weight
+    promotion/demotion history), `/signin`/`/signup`/`/settings` (visual-only; BetterAuth deferred). New ui
+    primitives `textarea`/`badge`/`progress` + composites (`app-shell`, `counter-stat`, `goal-ring`,
+    `mastery-chip`, `bounce-callout`, `checking-indicator`, `edited-sentence`, `verdict-panel`,
+    `session-summary`, `wordmark`). Dep: **motion**. **Only cross-layer reuse:** `edited-sentence.tsx` calls
+    the pure domain `resolveEdits` (presentation→domain, spec-true — not infra). **Verified:** `npm run
+    build`, both typecheck gates, `npm test` (194) green; all 8 routes SSR-render. *Design liberty: `/review`
+    compresses SM-3 spacing (a word's MCQ follows its intro same-session — commented). **The whole screen set
+    is UNWIRED — the `mock/*` data must be replaced with server functions/use-cases before any of it is
+    real.***
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -210,22 +235,24 @@ called out):
   it behind a port (ARCH-3).
 - Every test names the `spec/` ID it exercises.
 
-**Deferred — do NOT build until pulled into scope (`PRAG-1`):** verdict memo (`05`, MEMO-1 is a MAY); the
-failure path's UI affordances (NET-2 + NET-5 pre-submit block); counter daily-goal / inline-edit feedback
-(CNT-7/8/9); LexTALE instrument + per-user FSRS optimization (SEED-4/8); the **BetterAuth (STACK-4) adapter**
-(presentation stubs a dev user at the seam); the **free-production / judged review UI** + **EDIT-7 inline
-render** + **recognition-MCQ shuffle-on-render**.
+**Deferred — do NOT build until pulled into scope (`PRAG-1`):** verdict memo (`05`, MEMO-1 is a MAY);
+LexTALE instrument + per-user FSRS optimization (SEED-4/8); the **BetterAuth (STACK-4) adapter** (presentation
+stubs a dev user at the seam). *Note: the judged-review UI, EDIT-7 render, NET-2/5, and counter/goal
+(CNT-7/8/9) now exist as **mock-only design** (slice 12) — the deferred work on them is **wiring to real
+use-cases**, not designing them.*
 
-**Natural next slice:** extend the presentation — the **judged free-production screen + counter** (wire
-`liveJudge`, render EDIT-7, add NET-2/5, MCQ shuffle, CNT-7/8/9), and/or the **Neon + BetterAuth swap** for
-real multi-user persistence (both single-point swaps at the composition root — `composeReviewPassPersistent`
-+ the `currentUser` seam). The deterministic loop runs end-to-end in the browser: seed→queue→
-recognition/cloze/cued→pass/fail.
+**Natural next slice:** **wire slice 12's designed screens to the real backend** (replace `src/presentation/
+mock/*` with server functions): the judged screen → `liveJudge`/`submitFreeProduction` (real NET-2/5 + memo),
+the counter → the `readUsableCounter` read-model, the dashboard/session → `startSession`/`seedIntroductions`,
+plus real MCQ shuffle-on-render and per-calendar-day intro dedup. The **Neon + BetterAuth swap** (single-point
+swaps at the composition root — `composeReviewPassPersistent` + the `currentUser` seam) is the parallel track
+for real multi-user persistence.
 
-> **Status (2026-07-03):** runtime backend + first UI slice on **`master`**, one linear history. Backend
-> gate = `npm run typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test
-> count moves each slice — do not trust any number written here; run `npm test`. Re-confirm state with
-> `git log`, `npm test`, and `npm run dev` at session start.
+> **Status (2026-07-03):** runtime backend (slices 1–11) on **`master`**; the **brand + design-system + UI
+> design (slice 12) lands on branch `design/brand-ui-system`** — mock-driven, unwired. Backend gate = `npm
+> run typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves each
+> slice — do not trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm test`,
+> and `npm run dev` at session start.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 

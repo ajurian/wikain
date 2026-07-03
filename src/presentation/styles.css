@@ -1,56 +1,100 @@
 @import "tailwindcss";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
 
-/* shadcn-ui design tokens (neutral base, Tailwind v4). STACK-5. */
+/*
+ * Wikain brand tokens (warm editorial) — see .claude/skills/brand + design-system.
+ * shadcn variables are kept and remapped so components/ui/* keep working (STACK-5).
+ */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.6 0.145 150);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-}
+  --radius: 0.75rem;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.696 0.17 162.48);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* paper & ink */
+  --paper: oklch(0.977 0.008 84);
+  --paper-raised: oklch(0.993 0.004 84);
+  --paper-sunken: oklch(0.955 0.01 84);
+  --ink: oklch(0.27 0.02 55);
+  --ink-soft: oklch(0.45 0.015 55);
+  --ink-faint: oklch(0.58 0.012 55);
+  --line: oklch(0.9 0.01 84);
+
+  /* accents */
+  --amber: oklch(0.75 0.14 75);
+  --amber-deep: oklch(0.62 0.13 70);
+  --amber-wash: oklch(0.95 0.035 85);
+  --moss: oklch(0.58 0.1 145);
+  --moss-wash: oklch(0.95 0.03 145);
+  --terracotta: oklch(0.55 0.16 30);
+  --terracotta-wash: oklch(0.95 0.025 30);
+
+  /* edit-reason colors (EDIT-7 / CNT-7) */
+  --reason-sense: var(--terracotta);
+  --reason-grammar: oklch(0.6 0.14 45);
+  --reason-collocation: var(--amber-deep);
+  --reason-register: oklch(0.55 0.06 320);
+
+  /* mastery ladder (SM-1) */
+  --mastery-new: var(--ink-faint);
+  --mastery-seen: oklch(0.68 0.08 80);
+  --mastery-recognized: var(--amber-deep);
+  --mastery-productive: var(--moss);
+  --mastery-fluent: oklch(0.45 0.08 195);
+
+  /* shadcn remap */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper-raised);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper-raised);
+  --secondary: var(--paper-sunken);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-sunken);
+  --muted-foreground: var(--ink-faint);
+  --accent: var(--paper-sunken);
+  --accent-foreground: var(--ink);
+  --destructive: var(--terracotta);
+  --destructive-foreground: var(--paper-raised);
+  --success: var(--moss);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--amber-deep);
 }
 
 @theme inline {
+  --font-sans: "Inter Variable", system-ui, -apple-system, sans-serif;
+  --font-serif: "Fraunces Variable", Georgia, serif;
+
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunken: var(--paper-sunken);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-amber: var(--amber);
+  --color-amber-deep: var(--amber-deep);
+  --color-amber-wash: var(--amber-wash);
+  --color-moss: var(--moss);
+  --color-moss-wash: var(--moss-wash);
+  --color-terracotta: var(--terracotta);
+  --color-terracotta-wash: var(--terracotta-wash);
+
+  --color-reason-sense: var(--reason-sense);
+  --color-reason-grammar: var(--reason-grammar);
+  --color-reason-collocation: var(--reason-collocation);
+  --color-reason-register: var(--reason-register);
+
+  --color-mastery-new: var(--mastery-new);
+  --color-mastery-seen: var(--mastery-seen);
+  --color-mastery-recognized: var(--mastery-recognized);
+  --color-mastery-productive: var(--mastery-productive);
+  --color-mastery-fluent: var(--mastery-fluent);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -84,5 +128,6 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-family: var(--font-sans);
   }
 }
