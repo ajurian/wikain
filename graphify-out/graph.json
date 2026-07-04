@@ -868,7 +868,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_test",
-      "community": 179,
+      "community": 4,
       "norm_label": "checkfreeproductionrulelayer.test.ts"
     },
     {
@@ -878,7 +878,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_test_makeitem",
-      "community": 179,
+      "community": 4,
       "norm_label": "makeitem()"
     },
     {
@@ -888,7 +888,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_test_catalog",
-      "community": 179,
+      "community": 4,
       "norm_label": "catalog"
     },
     {
@@ -898,7 +898,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_test_lemmatizer",
-      "community": 179,
+      "community": 4,
       "norm_label": "lemmatizer"
     },
     {
@@ -908,7 +908,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_test_healthyanalyzer",
-      "community": 179,
+      "community": 4,
       "norm_label": "healthyanalyzer"
     },
     {
@@ -918,7 +918,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_test_deps",
-      "community": 179,
+      "community": 4,
       "norm_label": "deps()"
     },
     {
@@ -928,7 +928,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer",
-      "community": 179,
+      "community": 4,
       "norm_label": "checkfreeproductionrulelayer.ts"
     },
     {
@@ -938,7 +938,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_checkfreeproductionrulelayerinput",
-      "community": 179,
+      "community": 4,
       "norm_label": "checkfreeproductionrulelayerinput"
     },
     {
@@ -948,7 +948,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_checkfreeproductionrulelayerdeps",
-      "community": 179,
+      "community": 4,
       "norm_label": "checkfreeproductionrulelayerdeps"
     },
     {
@@ -958,7 +958,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_bounceresult",
-      "community": 179,
+      "community": 4,
       "norm_label": "bounceresult"
     },
     {
@@ -968,7 +968,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_rulelayercheck",
-      "community": 179,
+      "community": 4,
       "norm_label": "rulelayercheck"
     },
     {
@@ -978,7 +978,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_application_checkfreeproductionrulelayer_checkfreeproductionrulelayer",
-      "community": 183,
+      "community": 62,
       "norm_label": "checkfreeproductionrulelayer()"
     },
     {
@@ -988,7 +988,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_ports_cardrepository",
-      "community": 196,
+      "community": 177,
       "norm_label": "cardrepository.ts"
     },
     {
@@ -998,7 +998,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_application_ports_cardrepository_cardrepository",
-      "community": 196,
+      "community": 177,
       "norm_label": "cardrepository"
     },
     {
@@ -1008,7 +1008,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_application_ports_cardrepository_cardrepository_load",
-      "community": 196,
+      "community": 177,
       "norm_label": ".load()"
     },
     {
@@ -1018,7 +1018,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_application_ports_cardrepository_cardrepository_save",
-      "community": 196,
+      "community": 177,
       "norm_label": ".save()"
     },
     {
@@ -1028,7 +1028,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_application_ports_cardrepository_cardrepository_appendreviewlog",
-      "community": 196,
+      "community": 177,
       "norm_label": ".appendreviewlog()"
     },
     {
@@ -1038,7 +1038,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_application_ports_cardrepository_cardrepository_logsforword",
-      "community": 196,
+      "community": 177,
       "norm_label": ".logsforword()"
     },
     {
@@ -1048,7 +1048,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_application_ports_cardrepository_cardrepository_listcards",
-      "community": 196,
+      "community": 177,
       "norm_label": ".listcards()"
     },
     {
@@ -1058,7 +1058,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_ports_catalog",
-      "community": 179,
+      "community": 196,
       "norm_label": "catalog.ts"
     },
     {
@@ -1068,7 +1068,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_application_ports_catalog_catalog",
-      "community": 179,
+      "community": 196,
       "norm_label": "catalog"
     },
     {
@@ -1078,7 +1078,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_application_ports_catalog_catalog_get",
-      "community": 179,
+      "community": 196,
       "norm_label": ".get()"
     },
     {
@@ -1088,7 +1088,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_ports_judge",
-      "community": 185,
+      "community": 179,
       "norm_label": "judge.ts"
     },
     {
@@ -1128,7 +1128,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_application_ports_judge_judgeunavailablereason",
-      "community": 183,
+      "community": 62,
       "norm_label": "judgeunavailablereason"
     },
     {
@@ -1138,7 +1138,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_application_ports_judge_judgeunavailableerror",
-      "community": 185,
+      "community": 206,
       "norm_label": "judgeunavailableerror"
     },
     {
@@ -1148,7 +1148,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_application_ports_judge_judgeunavailableerror_constructor",
-      "community": 185,
+      "community": 206,
       "norm_label": ".constructor()"
     },
     {
@@ -1158,7 +1158,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_ports_lemmatizer",
-      "community": 179,
+      "community": 4,
       "norm_label": "lemmatizer.ts"
     },
     {
@@ -1168,7 +1168,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_application_ports_lemmatizer_lemmatizer",
-      "community": 179,
+      "community": 4,
       "norm_label": "lemmatizer"
     },
     {
@@ -1178,7 +1178,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_application_ports_lemmatizer_lemmatizer_formsof",
-      "community": 179,
+      "community": 4,
       "norm_label": ".formsof()"
     },
     {
@@ -1248,7 +1248,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_ports_sentenceanalyzer",
-      "community": 173,
+      "community": 4,
       "norm_label": "sentenceanalyzer.ts"
     },
     {
@@ -1258,7 +1258,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_application_ports_sentenceanalyzer_sentenceanalyzer",
-      "community": 179,
+      "community": 4,
       "norm_label": "sentenceanalyzer"
     },
     {
@@ -1268,7 +1268,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_application_ports_sentenceanalyzer_sentenceanalyzer_analyze",
-      "community": 179,
+      "community": 4,
       "norm_label": ".analyze()"
     },
     {
@@ -1308,7 +1308,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_presentreviewoutcome_test",
-      "community": 170,
+      "community": 179,
       "norm_label": "presentreviewoutcome.test.ts"
     },
     {
@@ -1318,7 +1318,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_application_presentreviewoutcome_test_verdict",
-      "community": 170,
+      "community": 179,
       "norm_label": "verdict()"
     },
     {
@@ -1328,7 +1328,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_application_presentreviewoutcome_test_due",
-      "community": 170,
+      "community": 179,
       "norm_label": "due"
     },
     {
@@ -1338,7 +1338,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_presentreviewoutcome",
-      "community": 170,
+      "community": 179,
       "norm_label": "presentreviewoutcome.ts"
     },
     {
@@ -1348,7 +1348,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_application_presentreviewoutcome_revieweditview",
-      "community": 187,
+      "community": 179,
       "norm_label": "revieweditview"
     },
     {
@@ -1358,7 +1358,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_application_presentreviewoutcome_reviewoutcomeview",
-      "community": 170,
+      "community": 179,
       "norm_label": "reviewoutcomeview"
     },
     {
@@ -1368,7 +1368,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "src_application_presentreviewoutcome_presentreviewoutcome",
-      "community": 170,
+      "community": 179,
       "norm_label": "presentreviewoutcome()"
     },
     {
@@ -1642,6 +1642,286 @@
       "norm_label": "readusablecounter()"
     },
     {
+      "label": "readWordDetail.test.ts",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_test",
+      "community": 205,
+      "norm_label": "readworddetail.test.ts"
+    },
+    {
+      "label": "NOW",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_test_now",
+      "community": 205,
+      "norm_label": "now"
+    },
+    {
+      "label": "FSRS_STUB",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_test_fsrs_stub",
+      "community": 205,
+      "norm_label": "fsrs_stub"
+    },
+    {
+      "label": "fsrs()",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L27",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_test_fsrs",
+      "community": 205,
+      "norm_label": "fsrs()"
+    },
+    {
+      "label": "card()",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_test_card",
+      "community": 205,
+      "norm_label": "card()"
+    },
+    {
+      "label": "log()",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L35",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_test_log",
+      "community": 205,
+      "norm_label": "log()"
+    },
+    {
+      "label": "item()",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L39",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_test_item",
+      "community": 205,
+      "norm_label": "item()"
+    },
+    {
+      "label": "makeDeps()",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L63",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_test_makedeps",
+      "community": 205,
+      "norm_label": "makedeps()"
+    },
+    {
+      "label": "readWordDetail.ts",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_application_readworddetail",
+      "community": 62,
+      "norm_label": "readworddetail.ts"
+    },
+    {
+      "label": "ReadWordDetailInput",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L10",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_readworddetailinput",
+      "community": 62,
+      "norm_label": "readworddetailinput"
+    },
+    {
+      "label": "ReadWordDetailDeps",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_readworddetaildeps",
+      "community": 196,
+      "norm_label": "readworddetaildeps"
+    },
+    {
+      "label": "WordDetail",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_worddetail",
+      "community": 62,
+      "norm_label": "worddetail"
+    },
+    {
+      "label": "readWordDetail()",
+      "file_type": "code",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L49",
+      "_origin": "ast",
+      "id": "src_application_readworddetail_readworddetail",
+      "community": 62,
+      "norm_label": "readworddetail()"
+    },
+    {
+      "label": "readWordsList.test.ts",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_test",
+      "community": 188,
+      "norm_label": "readwordslist.test.ts"
+    },
+    {
+      "label": "NOW",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L12",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_test_now",
+      "community": 188,
+      "norm_label": "now"
+    },
+    {
+      "label": "FSRS_STUB",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_test_fsrs_stub",
+      "community": 188,
+      "norm_label": "fsrs_stub"
+    },
+    {
+      "label": "fsrs()",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L27",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_test_fsrs",
+      "community": 188,
+      "norm_label": "fsrs()"
+    },
+    {
+      "label": "card()",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_test_card",
+      "community": 188,
+      "norm_label": "card()"
+    },
+    {
+      "label": "log()",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L35",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_test_log",
+      "community": 188,
+      "norm_label": "log()"
+    },
+    {
+      "label": "twoSpacedPasses()",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L39",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_test_twospacedpasses",
+      "community": 188,
+      "norm_label": "twospacedpasses()"
+    },
+    {
+      "label": "item()",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L46",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_test_item",
+      "community": 188,
+      "norm_label": "item()"
+    },
+    {
+      "label": "makeDeps()",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L69",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_test_makedeps",
+      "community": 188,
+      "norm_label": "makedeps()"
+    },
+    {
+      "label": "readWordsList.ts",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_application_readwordslist",
+      "community": 62,
+      "norm_label": "readwordslist.ts"
+    },
+    {
+      "label": "ReadWordsListInput",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_readwordslistinput",
+      "community": 62,
+      "norm_label": "readwordslistinput"
+    },
+    {
+      "label": "ReadWordsListDeps",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L17",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_readwordslistdeps",
+      "community": 172,
+      "norm_label": "readwordslistdeps"
+    },
+    {
+      "label": "WordSummary",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_wordsummary",
+      "community": 62,
+      "norm_label": "wordsummary"
+    },
+    {
+      "label": "ReadWordsListResult",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L38",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_readwordslistresult",
+      "community": 62,
+      "norm_label": "readwordslistresult"
+    },
+    {
+      "label": "readWordsList()",
+      "file_type": "code",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L51",
+      "_origin": "ast",
+      "id": "src_application_readwordslist_readwordslist",
+      "community": 62,
+      "norm_label": "readwordslist()"
+    },
+    {
       "label": "resolveReviewPrompt.test.ts",
       "file_type": "code",
       "source_file": "src/application/resolveReviewPrompt.test.ts",
@@ -1718,7 +1998,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_application_resolvereviewprompt_resolvereviewpromptdeps",
-      "community": 2,
+      "community": 196,
       "norm_label": "resolvereviewpromptdeps"
     },
     {
@@ -1918,7 +2198,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_application_runreviewpass_runreviewpassresult",
-      "community": 170,
+      "community": 179,
       "norm_label": "runreviewpassresult"
     },
     {
@@ -2038,7 +2318,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_seedintroductions",
-      "community": 10,
+      "community": 177,
       "norm_label": "seedintroductions.ts"
     },
     {
@@ -2048,7 +2328,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_application_seedintroductions_seedintroductionsinput",
-      "community": 10,
+      "community": 2,
       "norm_label": "seedintroductionsinput"
     },
     {
@@ -2068,7 +2348,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_application_seedintroductions_empty",
-      "community": 10,
+      "community": 177,
       "norm_label": "empty"
     },
     {
@@ -2088,7 +2368,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_startsession_test",
-      "community": 10,
+      "community": 183,
       "norm_label": "startsession.test.ts"
     },
     {
@@ -2098,7 +2378,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_application_startsession_test_now",
-      "community": 10,
+      "community": 183,
       "norm_label": "now"
     },
     {
@@ -2108,7 +2388,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_application_startsession_test_fsrs",
-      "community": 10,
+      "community": 183,
       "norm_label": "fsrs()"
     },
     {
@@ -2118,7 +2398,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_application_startsession_test_makeitem",
-      "community": 10,
+      "community": 183,
       "norm_label": "makeitem()"
     },
     {
@@ -2128,7 +2408,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_application_startsession_test_catalog",
-      "community": 10,
+      "community": 183,
       "norm_label": "catalog"
     },
     {
@@ -2138,7 +2418,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "src_application_startsession_test_makewordsource",
-      "community": 10,
+      "community": 183,
       "norm_label": "makewordsource()"
     },
     {
@@ -2148,7 +2428,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "src_application_startsession_test_scheduler",
-      "community": 10,
+      "community": 183,
       "norm_label": "scheduler"
     },
     {
@@ -2158,7 +2438,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_application_startsession_test_makerepo",
-      "community": 10,
+      "community": 183,
       "norm_label": "makerepo()"
     },
     {
@@ -2168,7 +2448,7 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "src_application_startsession_test_reviewcard",
-      "community": 10,
+      "community": 183,
       "norm_label": "reviewcard()"
     },
     {
@@ -2178,7 +2458,7 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "src_application_startsession_test_makedeps",
-      "community": 10,
+      "community": 183,
       "norm_label": "makedeps()"
     },
     {
@@ -2538,7 +2818,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_submitdeterministicreview",
-      "community": 188,
+      "community": 177,
       "norm_label": "submitdeterministicreview.ts"
     },
     {
@@ -2548,7 +2828,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_application_submitdeterministicreview_deterministicreviewinput",
-      "community": 188,
+      "community": 177,
       "norm_label": "deterministicreviewinput"
     },
     {
@@ -2568,7 +2848,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_application_submitdeterministicreview_deterministicreviewresult",
-      "community": 188,
+      "community": 4,
       "norm_label": "deterministicreviewresult"
     },
     {
@@ -2578,7 +2858,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_application_submitdeterministicreview_deterministicreviewstrategy",
-      "community": 188,
+      "community": 177,
       "norm_label": "deterministicreviewstrategy"
     },
     {
@@ -2708,7 +2988,7 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "src_application_submitfreeproduction_test_unavailablejudge_constructor",
-      "community": 185,
+      "community": 206,
       "norm_label": ".constructor()"
     },
     {
@@ -2798,7 +3078,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_submitfreeproduction",
-      "community": 183,
+      "community": 62,
       "norm_label": "submitfreeproduction.ts"
     },
     {
@@ -2808,7 +3088,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_application_submitfreeproduction_submitfreeproductioninput",
-      "community": 183,
+      "community": 62,
       "norm_label": "submitfreeproductioninput"
     },
     {
@@ -2818,7 +3098,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_application_submitfreeproduction_submitfreeproductiondeps",
-      "community": 179,
+      "community": 2,
       "norm_label": "submitfreeproductiondeps"
     },
     {
@@ -2828,7 +3108,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_application_submitfreeproduction_judgedresult",
-      "community": 183,
+      "community": 177,
       "norm_label": "judgedresult"
     },
     {
@@ -2838,7 +3118,7 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "src_application_submitfreeproduction_unavailableresult",
-      "community": 183,
+      "community": 62,
       "norm_label": "unavailableresult"
     },
     {
@@ -2848,7 +3128,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_application_submitfreeproduction_submitfreeproductionresult",
-      "community": 183,
+      "community": 62,
       "norm_label": "submitfreeproductionresult"
     },
     {
@@ -2858,7 +3138,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "src_application_submitfreeproduction_submitfreeproduction",
-      "community": 183,
+      "community": 62,
       "norm_label": "submitfreeproduction()"
     },
     {
@@ -2868,7 +3148,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_submitrecognition_test",
-      "community": 172,
+      "community": 201,
       "norm_label": "submitrecognition.test.ts"
     },
     {
@@ -2878,7 +3158,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_application_submitrecognition_test_now",
-      "community": 172,
+      "community": 201,
       "norm_label": "now"
     },
     {
@@ -2888,7 +3168,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_application_submitrecognition_test_makeitem",
-      "community": 172,
+      "community": 201,
       "norm_label": "makeitem()"
     },
     {
@@ -2898,7 +3178,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_application_submitrecognition_test_catalog",
-      "community": 172,
+      "community": 201,
       "norm_label": "catalog"
     },
     {
@@ -2908,7 +3188,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_application_submitrecognition_test_makefsrs",
-      "community": 172,
+      "community": 201,
       "norm_label": "makefsrs()"
     },
     {
@@ -2918,7 +3198,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_application_submitrecognition_test_makescheduler",
-      "community": 172,
+      "community": 201,
       "norm_label": "makescheduler()"
     },
     {
@@ -2928,7 +3208,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "src_application_submitrecognition_test_makerepo",
-      "community": 172,
+      "community": 201,
       "norm_label": "makerepo()"
     },
     {
@@ -2938,7 +3218,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "src_application_submitrecognition_test_seencard",
-      "community": 172,
+      "community": 201,
       "norm_label": "seencard()"
     },
     {
@@ -2948,7 +3228,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "src_application_submitrecognition_test_deps",
-      "community": 172,
+      "community": 201,
       "norm_label": "deps()"
     },
     {
@@ -3008,7 +3288,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_card",
-      "community": 172,
+      "community": 177,
       "norm_label": "card.ts"
     },
     {
@@ -3018,7 +3298,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_domain_card_masterystate",
-      "community": 188,
+      "community": 177,
       "norm_label": "masterystate"
     },
     {
@@ -3038,7 +3318,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_domain_card_card",
-      "community": 196,
+      "community": 177,
       "norm_label": "card"
     },
     {
@@ -3048,7 +3328,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_coldstart_test",
-      "community": 10,
+      "community": 208,
       "norm_label": "coldstart.test.ts"
     },
     {
@@ -3058,7 +3338,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_coldstart",
-      "community": 10,
+      "community": 208,
       "norm_label": "coldstart.ts"
     },
     {
@@ -3068,7 +3348,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_domain_coldstart_cefr_difficulty",
-      "community": 10,
+      "community": 208,
       "norm_label": "cefr_difficulty"
     },
     {
@@ -3078,7 +3358,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_domain_coldstart_bandbasedifficulty",
-      "community": 10,
+      "community": 208,
       "norm_label": "bandbasedifficulty()"
     },
     {
@@ -3088,7 +3368,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_domain_coldstart_clamp",
-      "community": 10,
+      "community": 208,
       "norm_label": "clamp()"
     },
     {
@@ -3098,7 +3378,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_domain_coldstart_coldstartdifficulty",
-      "community": 10,
+      "community": 208,
       "norm_label": "coldstartdifficulty()"
     },
     {
@@ -3108,7 +3388,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_constants",
-      "community": 183,
+      "community": 62,
       "norm_label": "constants.ts"
     },
     {
@@ -3258,7 +3538,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_entrystate_test",
-      "community": 10,
+      "community": 177,
       "norm_label": "entrystate.test.ts"
     },
     {
@@ -3268,7 +3548,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_entrystate",
-      "community": 10,
+      "community": 177,
       "norm_label": "entrystate.ts"
     },
     {
@@ -3278,7 +3558,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_domain_entrystate_introductionstate",
-      "community": 10,
+      "community": 177,
       "norm_label": "introductionstate()"
     },
     {
@@ -3288,7 +3568,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_fluentgate_test",
-      "community": 183,
+      "community": 62,
       "norm_label": "fluentgate.test.ts"
     },
     {
@@ -3298,7 +3578,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_fluentgate",
-      "community": 183,
+      "community": 62,
       "norm_label": "fluentgate.ts"
     },
     {
@@ -3308,7 +3588,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_domain_fluentgate_fluentgateinput",
-      "community": 183,
+      "community": 62,
       "norm_label": "fluentgateinput"
     },
     {
@@ -3318,7 +3598,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_domain_fluentgate_qualifiesforfluent",
-      "community": 183,
+      "community": 62,
       "norm_label": "qualifiesforfluent()"
     },
     {
@@ -3368,7 +3648,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_introductionpacing_test",
-      "community": 10,
+      "community": 62,
       "norm_label": "introductionpacing.test.ts"
     },
     {
@@ -3378,7 +3658,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_introductionpacing",
-      "community": 10,
+      "community": 62,
       "norm_label": "introductionpacing.ts"
     },
     {
@@ -3388,7 +3668,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_domain_introductionpacing_pacinginput",
-      "community": 10,
+      "community": 62,
       "norm_label": "pacinginput"
     },
     {
@@ -3398,7 +3678,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_domain_introductionpacing_newintroductionsallowed",
-      "community": 10,
+      "community": 62,
       "norm_label": "newintroductionsallowed()"
     },
     {
@@ -3408,7 +3688,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_judgedpassledger_test",
-      "community": 62,
+      "community": 171,
       "norm_label": "judgedpassledger.test.ts"
     },
     {
@@ -3418,7 +3698,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_domain_judgedpassledger_test_fsrs_stub",
-      "community": 62,
+      "community": 171,
       "norm_label": "fsrs_stub"
     },
     {
@@ -3428,7 +3708,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_domain_judgedpassledger_test_log",
-      "community": 62,
+      "community": 171,
       "norm_label": "log()"
     },
     {
@@ -3498,7 +3778,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_lexicalitem_test",
-      "community": 2,
+      "community": 10,
       "norm_label": "lexicalitem.test.ts"
     },
     {
@@ -3508,7 +3788,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_lexicalitem",
-      "community": 2,
+      "community": 10,
       "norm_label": "lexicalitem.ts"
     },
     {
@@ -3518,7 +3798,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_domain_lexicalitem_controlledpos",
-      "community": 2,
+      "community": 10,
       "norm_label": "controlledpos"
     },
     {
@@ -3538,7 +3818,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_domain_lexicalitem_itemsource",
-      "community": 2,
+      "community": 10,
       "norm_label": "itemsource"
     },
     {
@@ -3548,7 +3828,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_domain_lexicalitem_lexicalitem",
-      "community": 2,
+      "community": 10,
       "norm_label": "lexicalitem"
     },
     {
@@ -3558,7 +3838,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_mastery_test",
-      "community": 4,
+      "community": 62,
       "norm_label": "mastery.test.ts"
     },
     {
@@ -3568,7 +3848,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_mastery",
-      "community": 4,
+      "community": 62,
       "norm_label": "mastery.ts"
     },
     {
@@ -3578,7 +3858,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_domain_mastery_promoteoncuedpass",
-      "community": 4,
+      "community": 62,
       "norm_label": "promoteoncuedpass()"
     },
     {
@@ -3588,7 +3868,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_domain_mastery_demoteonerung",
-      "community": 4,
+      "community": 62,
       "norm_label": "demoteonerung()"
     },
     {
@@ -3598,7 +3878,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_domain_mastery_promoteonjudgedpass",
-      "community": 4,
+      "community": 62,
       "norm_label": "promoteonjudgedpass()"
     },
     {
@@ -3608,8 +3888,108 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_domain_mastery_promoteonclozepass",
-      "community": 4,
+      "community": 62,
       "norm_label": "promoteonclozepass()"
+    },
+    {
+      "label": "masteryHistory.test.ts",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory_test",
+      "community": 171,
+      "norm_label": "masteryhistory.test.ts"
+    },
+    {
+      "label": "fsrsLog()",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L10",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory_test_fsrslog",
+      "community": 171,
+      "norm_label": "fsrslog()"
+    },
+    {
+      "label": "log()",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory_test_log",
+      "community": 171,
+      "norm_label": "log()"
+    },
+    {
+      "label": "firstOf()",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory_test_firstof",
+      "community": 62,
+      "norm_label": "firstof()"
+    },
+    {
+      "label": "masteryHistory.ts",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory",
+      "community": 62,
+      "norm_label": "masteryhistory.ts"
+    },
+    {
+      "label": "MasteryMove",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory_masterymove",
+      "community": 62,
+      "norm_label": "masterymove"
+    },
+    {
+      "label": "MasteryHistoryEntry",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L27",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory_masteryhistoryentry",
+      "community": 62,
+      "norm_label": "masteryhistoryentry"
+    },
+    {
+      "label": "initialStateFromTier()",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L43",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory_initialstatefromtier",
+      "community": 62,
+      "norm_label": "initialstatefromtier()"
+    },
+    {
+      "label": "applyTransition()",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L61",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory_applytransition",
+      "community": 62,
+      "norm_label": "applytransition()"
+    },
+    {
+      "label": "deriveMasteryHistory()",
+      "file_type": "code",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L87",
+      "_origin": "ast",
+      "id": "src_domain_masteryhistory_derivemasteryhistory",
+      "community": 62,
+      "norm_label": "derivemasteryhistory()"
     },
     {
       "label": "masteryLadder.test.ts",
@@ -3618,7 +3998,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_masteryladder_test",
-      "community": 62,
+      "community": 177,
       "norm_label": "masteryladder.test.ts"
     },
     {
@@ -3628,7 +4008,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_domain_masteryladder_test_fsrs",
-      "community": 62,
+      "community": 177,
       "norm_label": "fsrs()"
     },
     {
@@ -3638,7 +4018,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_domain_masteryladder_test_card",
-      "community": 62,
+      "community": 177,
       "norm_label": "card()"
     },
     {
@@ -3648,7 +4028,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_masteryladder",
-      "community": 62,
+      "community": 177,
       "norm_label": "masteryladder.ts"
     },
     {
@@ -3658,7 +4038,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_domain_masteryladder_ladderentry",
-      "community": 62,
+      "community": 177,
       "norm_label": "ladderentry"
     },
     {
@@ -3668,7 +4048,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_domain_masteryladder_ladder",
-      "community": 62,
+      "community": 177,
       "norm_label": "ladder"
     },
     {
@@ -3748,7 +4128,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_rating_test",
-      "community": 188,
+      "community": 62,
       "norm_label": "rating.test.ts"
     },
     {
@@ -3758,7 +4138,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_rating",
-      "community": 188,
+      "community": 171,
       "norm_label": "rating.ts"
     },
     {
@@ -3768,7 +4148,7 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "src_domain_rating_rating",
-      "community": 172,
+      "community": 171,
       "norm_label": "rating"
     },
     {
@@ -3778,7 +4158,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_domain_rating_deriverating",
-      "community": 188,
+      "community": 62,
       "norm_label": "deriverating()"
     },
     {
@@ -3868,7 +4248,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_rulelayer_test",
-      "community": 173,
+      "community": 4,
       "norm_label": "rulelayer.test.ts"
     },
     {
@@ -3878,7 +4258,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_domain_rulelayer_test_no_tagalog",
-      "community": 173,
+      "community": 4,
       "norm_label": "no_tagalog"
     },
     {
@@ -3888,7 +4268,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_domain_rulelayer_test_tok",
-      "community": 173,
+      "community": 4,
       "norm_label": "tok()"
     },
     {
@@ -3898,7 +4278,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_domain_rulelayer_test_input",
-      "community": 173,
+      "community": 4,
       "norm_label": "input()"
     },
     {
@@ -3908,7 +4288,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_domain_rulelayer_test_healthytokens",
-      "community": 173,
+      "community": 4,
       "norm_label": "healthytokens()"
     },
     {
@@ -3918,7 +4298,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_rulelayer",
-      "community": 173,
+      "community": 4,
       "norm_label": "rulelayer.ts"
     },
     {
@@ -3928,7 +4308,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_domain_rulelayer_nlptoken",
-      "community": 173,
+      "community": 4,
       "norm_label": "nlptoken"
     },
     {
@@ -3938,7 +4318,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_domain_rulelayer_rulebouncereason",
-      "community": 179,
+      "community": 4,
       "norm_label": "rulebouncereason"
     },
     {
@@ -3948,7 +4328,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_domain_rulelayer_ruleresult",
-      "community": 173,
+      "community": 4,
       "norm_label": "ruleresult"
     },
     {
@@ -3958,7 +4338,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_domain_rulelayer_content_pos",
-      "community": 173,
+      "community": 4,
       "norm_label": "content_pos"
     },
     {
@@ -3968,7 +4348,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_domain_rulelayer_rulelayerinput",
-      "community": 173,
+      "community": 4,
       "norm_label": "rulelayerinput"
     },
     {
@@ -3978,7 +4358,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_domain_rulelayer_checkrulelayer",
-      "community": 173,
+      "community": 4,
       "norm_label": "checkrulelayer()"
     },
     {
@@ -3988,7 +4368,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "src_domain_rulelayer_isdegenerate",
-      "community": 173,
+      "community": 4,
       "norm_label": "isdegenerate()"
     },
     {
@@ -3998,7 +4378,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "src_domain_rulelayer_jaccardsimilarity",
-      "community": 173,
+      "community": 4,
       "norm_label": "jaccardsimilarity()"
     },
     {
@@ -4008,7 +4388,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_sessionqueue_test",
-      "community": 188,
+      "community": 2,
       "norm_label": "sessionqueue.test.ts"
     },
     {
@@ -4018,7 +4398,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_domain_sessionqueue_test_card",
-      "community": 188,
+      "community": 2,
       "norm_label": "card()"
     },
     {
@@ -4028,7 +4408,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_domain_sessionqueue_test_now",
-      "community": 188,
+      "community": 2,
       "norm_label": "now"
     },
     {
@@ -4118,7 +4498,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_domain_verdict",
-      "community": 185,
+      "community": 179,
       "norm_label": "verdict.ts"
     },
     {
@@ -4128,7 +4508,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_domain_verdict_replacement",
-      "community": 187,
+      "community": 179,
       "norm_label": "replacement"
     },
     {
@@ -4148,7 +4528,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_domain_verdict_passesgate",
-      "community": 185,
+      "community": 62,
       "norm_label": "passesgate()"
     },
     {
@@ -4208,7 +4588,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_infrastructure_cardrepositorycontract_describecardrepositorycontract",
-      "community": 177,
+      "community": 23,
       "norm_label": "describecardrepositorycontract()"
     },
     {
@@ -4285,7 +4665,7 @@
       "label": "HERE",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L29",
+      "source_location": "L31",
       "_origin": "ast",
       "id": "src_infrastructure_composition_here",
       "community": 2,
@@ -4295,7 +4675,7 @@
       "label": "ITEMS_PATH",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L32",
+      "source_location": "L34",
       "_origin": "ast",
       "id": "src_infrastructure_composition_items_path",
       "community": 2,
@@ -4305,7 +4685,7 @@
       "label": "composeCuedReview()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L34",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composecuedreview",
       "community": 2,
@@ -4315,7 +4695,7 @@
       "label": "composeFreeProduction()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L48",
+      "source_location": "L50",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composefreeproduction",
       "community": 2,
@@ -4325,7 +4705,7 @@
       "label": "composeReviewPass()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L70",
+      "source_location": "L72",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composereviewpass",
       "community": 2,
@@ -4335,7 +4715,7 @@
       "label": "composeReviewPassPersistent()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L84",
+      "source_location": "L86",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composereviewpasspersistent",
       "community": 2,
@@ -4345,7 +4725,7 @@
       "label": "liveJudge()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L98",
+      "source_location": "L100",
       "_origin": "ast",
       "id": "src_infrastructure_composition_livejudge",
       "community": 2,
@@ -4355,7 +4735,7 @@
       "label": "composeReviewPassLive()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L103",
+      "source_location": "L105",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composereviewpasslive",
       "community": 2,
@@ -4365,7 +4745,7 @@
       "label": "composeSeeding()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L113",
+      "source_location": "L115",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composeseeding",
       "community": 2,
@@ -4375,7 +4755,7 @@
       "label": "composeSession()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L131",
+      "source_location": "L133",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composesession",
       "community": 2,
@@ -4385,7 +4765,7 @@
       "label": "composeResolvePrompt()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L142",
+      "source_location": "L144",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composeresolveprompt",
       "community": 2,
@@ -4395,7 +4775,7 @@
       "label": "composeUsableCounter()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L154",
+      "source_location": "L156",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composeusablecounter",
       "community": 2,
@@ -4405,11 +4785,21 @@
       "label": "composeDashboardSummary()",
       "file_type": "code",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L167",
+      "source_location": "L169",
       "_origin": "ast",
       "id": "src_infrastructure_composition_composedashboardsummary",
       "community": 2,
       "norm_label": "composedashboardsummary()"
+    },
+    {
+      "label": "composeWords()",
+      "file_type": "code",
+      "source_file": "src/infrastructure/composition.ts",
+      "source_location": "L181",
+      "_origin": "ast",
+      "id": "src_infrastructure_composition_composewords",
+      "community": 2,
+      "norm_label": "composewords()"
     },
     {
       "label": "neon.ts",
@@ -4448,7 +4838,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_infrastructure_db_pglite",
-      "community": 177,
+      "community": 23,
       "norm_label": "pglite.ts"
     },
     {
@@ -4458,7 +4848,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_infrastructure_db_pglite_migrations_folder",
-      "community": 177,
+      "community": 23,
       "norm_label": "migrations_folder"
     },
     {
@@ -4468,7 +4858,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_infrastructure_db_pglite_makepglitedb",
-      "community": 177,
+      "community": 23,
       "norm_label": "makepglitedb()"
     },
     {
@@ -4478,7 +4868,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_infrastructure_db_schema",
-      "community": 23,
+      "community": 171,
       "norm_label": "schema.ts"
     },
     {
@@ -4538,7 +4928,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test",
-      "community": 1,
+      "community": 173,
       "norm_label": "deepseekjudge.test.ts"
     },
     {
@@ -4548,7 +4938,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_request",
-      "community": 1,
+      "community": 173,
       "norm_label": "request"
     },
     {
@@ -4558,7 +4948,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_config",
-      "community": 1,
+      "community": 173,
       "norm_label": "config()"
     },
     {
@@ -4568,7 +4958,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_nosleep",
-      "community": 1,
+      "community": 173,
       "norm_label": "nosleep()"
     },
     {
@@ -4578,7 +4968,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_okresponse",
-      "community": 1,
+      "community": 173,
       "norm_label": "okresponse()"
     },
     {
@@ -4588,7 +4978,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_statusresponse",
-      "community": 1,
+      "community": 173,
       "norm_label": "statusresponse()"
     },
     {
@@ -4598,7 +4988,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_passing_verdict_json",
-      "community": 1,
+      "community": 173,
       "norm_label": "passing_verdict_json"
     },
     {
@@ -4608,7 +4998,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_outcome",
-      "community": 1,
+      "community": 173,
       "norm_label": "outcome"
     },
     {
@@ -4618,7 +5008,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_fakehttp",
-      "community": 1,
+      "community": 173,
       "norm_label": "fakehttp"
     },
     {
@@ -4628,7 +5018,7 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_fakehttp_constructor",
-      "community": 1,
+      "community": 173,
       "norm_label": ".constructor()"
     },
     {
@@ -4638,7 +5028,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_test_fakehttp_post",
-      "community": 1,
+      "community": 173,
       "norm_label": ".post()"
     },
     {
@@ -4678,7 +5068,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_infrastructure_deepseekjudge_httppost",
-      "community": 1,
+      "community": 173,
       "norm_label": "httppost"
     },
     {
@@ -4908,7 +5298,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_infrastructure_devjudge",
-      "community": 185,
+      "community": 206,
       "norm_label": "devjudge.ts"
     },
     {
@@ -4918,7 +5308,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_infrastructure_devjudge_devverdict",
-      "community": 185,
+      "community": 206,
       "norm_label": "devverdict()"
     },
     {
@@ -4928,7 +5318,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_infrastructure_devjudge_escaperegexp",
-      "community": 185,
+      "community": 206,
       "norm_label": "escaperegexp()"
     },
     {
@@ -4938,7 +5328,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_infrastructure_drizzlecardrepository_test",
-      "community": 177,
+      "community": 23,
       "norm_label": "drizzlecardrepository.test.ts"
     },
     {
@@ -5318,7 +5708,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_infrastructure_jsonwordsource",
-      "community": 2,
+      "community": 10,
       "norm_label": "jsonwordsource.ts"
     },
     {
@@ -5328,7 +5718,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_infrastructure_jsonwordsource_jsonwordsource",
-      "community": 2,
+      "community": 10,
       "norm_label": "jsonwordsource"
     },
     {
@@ -5338,7 +5728,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_infrastructure_jsonwordsource_jsonwordsource_constructor",
-      "community": 2,
+      "community": 10,
       "norm_label": ".constructor()"
     },
     {
@@ -5348,7 +5738,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_infrastructure_jsonwordsource_jsonwordsource_fromfile",
-      "community": 2,
+      "community": 10,
       "norm_label": ".fromfile()"
     },
     {
@@ -5358,7 +5748,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_infrastructure_jsonwordsource_jsonwordsource_nextfrontierwords",
-      "community": 2,
+      "community": 10,
       "norm_label": ".nextfrontierwords()"
     },
     {
@@ -5568,8 +5958,18 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_infrastructure_winklemmatizer_winklemmatizer_analyze",
-      "community": 173,
+      "community": 4,
       "norm_label": ".analyze()"
+    },
+    {
+      "label": "words.smoke.test.ts",
+      "file_type": "code",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_infrastructure_words_smoke_test",
+      "community": 2,
+      "norm_label": "words.smoke.test.ts"
     },
     {
       "label": "app-shell.tsx",
@@ -5628,7 +6028,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_components_checking_indicator",
-      "community": 0,
+      "community": 170,
       "norm_label": "checking-indicator.tsx"
     },
     {
@@ -5638,7 +6038,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_presentation_components_checking_indicator_checkingindicator",
-      "community": 0,
+      "community": 170,
       "norm_label": "checkingindicator()"
     },
     {
@@ -5648,7 +6048,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_components_counter_stat",
-      "community": 201,
+      "community": 193,
       "norm_label": "counter-stat.tsx"
     },
     {
@@ -5658,7 +6058,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_presentation_components_counter_stat_counterstat",
-      "community": 201,
+      "community": 193,
       "norm_label": "counterstat()"
     },
     {
@@ -5668,7 +6068,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_components_edited_sentence",
-      "community": 206,
+      "community": 187,
       "norm_label": "edited-sentence.tsx"
     },
     {
@@ -5678,7 +6078,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_presentation_components_edited_sentence_reason_text",
-      "community": 206,
+      "community": 187,
       "norm_label": "reason_text"
     },
     {
@@ -5688,7 +6088,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_presentation_components_edited_sentence_editedsentence",
-      "community": 206,
+      "community": 197,
       "norm_label": "editedsentence()"
     },
     {
@@ -5698,7 +6098,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_components_goal_ring",
-      "community": 201,
+      "community": 193,
       "norm_label": "goal-ring.tsx"
     },
     {
@@ -5708,7 +6108,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_presentation_components_goal_ring_goalring",
-      "community": 201,
+      "community": 193,
       "norm_label": "goalring()"
     },
     {
@@ -5718,7 +6118,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_components_mastery_chip",
-      "community": 193,
+      "community": 197,
       "norm_label": "mastery-chip.tsx"
     },
     {
@@ -5728,7 +6128,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_presentation_components_mastery_chip_styles",
-      "community": 193,
+      "community": 197,
       "norm_label": "styles"
     },
     {
@@ -5738,7 +6138,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_presentation_components_mastery_chip_masterychip",
-      "community": 193,
+      "community": 197,
       "norm_label": "masterychip()"
     },
     {
@@ -6048,7 +6448,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_components_verdict_panel",
-      "community": 206,
+      "community": 197,
       "norm_label": "verdict-panel.tsx"
     },
     {
@@ -6058,7 +6458,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_presentation_components_verdict_panel_verdictpanel",
-      "community": 206,
+      "community": 197,
       "norm_label": "verdictpanel()"
     },
     {
@@ -6068,7 +6468,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_components_wordmark",
-      "community": 193,
+      "community": 176,
       "norm_label": "wordmark.tsx"
     },
     {
@@ -6078,7 +6478,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_presentation_components_wordmark_wordmark",
-      "community": 193,
+      "community": 176,
       "norm_label": "wordmark()"
     },
     {
@@ -6088,7 +6488,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_lib_utils",
-      "community": 193,
+      "community": 178,
       "norm_label": "utils.ts"
     },
     {
@@ -6168,7 +6568,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_presentation_mock_judge_mockreplacement",
-      "community": 206,
+      "community": 197,
       "norm_label": "mockreplacement"
     },
     {
@@ -6238,78 +6638,28 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_mock_learner",
-      "community": 193,
+      "community": 197,
       "norm_label": "learner.ts"
     },
     {
       "label": "MasteryState",
       "file_type": "code",
       "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L11",
+      "source_location": "L13",
       "_origin": "ast",
       "id": "src_presentation_mock_learner_masterystate",
       "community": 197,
       "norm_label": "masterystate"
     },
     {
-      "label": "MockHistoryEntry",
-      "file_type": "code",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L13",
-      "_origin": "ast",
-      "id": "src_presentation_mock_learner_mockhistoryentry",
-      "community": 193,
-      "norm_label": "mockhistoryentry"
-    },
-    {
-      "label": "MockLearnerWord",
-      "file_type": "code",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L23",
-      "_origin": "ast",
-      "id": "src_presentation_mock_learner_mocklearnerword",
-      "community": 193,
-      "norm_label": "mocklearnerword"
-    },
-    {
       "label": "MOCK_LEARNER",
       "file_type": "code",
       "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L38",
+      "source_location": "L15",
       "_origin": "ast",
       "id": "src_presentation_mock_learner_mock_learner",
-      "community": 193,
+      "community": 197,
       "norm_label": "mock_learner"
-    },
-    {
-      "label": "MOCK_WORDS",
-      "file_type": "code",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L51",
-      "_origin": "ast",
-      "id": "src_presentation_mock_learner_mock_words",
-      "community": 193,
-      "norm_label": "mock_words"
-    },
-    {
-      "label": "MOCK_LADDER",
-      "file_type": "code",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L175",
-      "_origin": "ast",
-      "id": "src_presentation_mock_learner_mock_ladder",
-      "community": 193,
-      "norm_label": "mock_ladder"
-    },
-    {
-      "label": "MOCK_QUEUE",
-      "file_type": "code",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L182",
-      "_origin": "ast",
-      "id": "src_presentation_mock_learner_mock_queue",
-      "community": 193,
-      "norm_label": "mock_queue"
     },
     {
       "label": "router.tsx",
@@ -6378,7 +6728,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_routes_index",
-      "community": 201,
+      "community": 193,
       "norm_label": "index.tsx"
     },
     {
@@ -6388,7 +6738,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_presentation_routes_index_route",
-      "community": 201,
+      "community": 193,
       "norm_label": "route"
     },
     {
@@ -6398,7 +6748,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_presentation_routes_index_dashboard",
-      "community": 201,
+      "community": 193,
       "norm_label": "dashboard()"
     },
     {
@@ -6795,7 +7145,7 @@
       "label": "Route",
       "file_type": "code",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L17",
+      "source_location": "L19",
       "_origin": "ast",
       "id": "src_presentation_routes_words_wordid_route",
       "community": 193,
@@ -6805,17 +7155,27 @@
       "label": "TIER_LABEL",
       "file_type": "code",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L21",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "src_presentation_routes_words_wordid_tier_label",
       "community": 193,
       "norm_label": "tier_label"
     },
     {
+      "label": "BackLink()",
+      "file_type": "code",
+      "source_file": "src/presentation/routes/words.$wordId.tsx",
+      "source_location": "L30",
+      "_origin": "ast",
+      "id": "src_presentation_routes_words_wordid_backlink",
+      "community": 193,
+      "norm_label": "backlink()"
+    },
+    {
       "label": "WordDetail()",
       "file_type": "code",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L28",
+      "source_location": "L41",
       "_origin": "ast",
       "id": "src_presentation_routes_words_wordid_worddetail",
       "community": 193,
@@ -6835,7 +7195,7 @@
       "label": "Route",
       "file_type": "code",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L17",
+      "source_location": "L18",
       "_origin": "ast",
       "id": "src_presentation_routes_words_index_route",
       "community": 193,
@@ -6845,7 +7205,7 @@
       "label": "FILTERS",
       "file_type": "code",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L21",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "src_presentation_routes_words_index_filters",
       "community": 193,
@@ -6855,7 +7215,7 @@
       "label": "WordsBrowser()",
       "file_type": "code",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L23",
+      "source_location": "L24",
       "_origin": "ast",
       "id": "src_presentation_routes_words_index_wordsbrowser",
       "community": 193,
@@ -6875,7 +7235,7 @@
       "label": "sessionDeps()",
       "file_type": "code",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L52",
+      "source_location": "L55",
       "_origin": "ast",
       "id": "src_presentation_server_composition_sessiondeps",
       "community": 2,
@@ -6885,7 +7245,7 @@
       "label": "reviewDeps()",
       "file_type": "code",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L56",
+      "source_location": "L59",
       "_origin": "ast",
       "id": "src_presentation_server_composition_reviewdeps",
       "community": 2,
@@ -6895,7 +7255,7 @@
       "label": "promptDeps()",
       "file_type": "code",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L60",
+      "source_location": "L63",
       "_origin": "ast",
       "id": "src_presentation_server_composition_promptdeps",
       "community": 2,
@@ -6905,7 +7265,7 @@
       "label": "counterDeps()",
       "file_type": "code",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L66",
+      "source_location": "L69",
       "_origin": "ast",
       "id": "src_presentation_server_composition_counterdeps",
       "community": 2,
@@ -6915,11 +7275,21 @@
       "label": "dashboardDeps()",
       "file_type": "code",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L72",
+      "source_location": "L75",
       "_origin": "ast",
       "id": "src_presentation_server_composition_dashboarddeps",
       "community": 2,
       "norm_label": "dashboarddeps()"
+    },
+    {
+      "label": "wordsDeps()",
+      "file_type": "code",
+      "source_file": "src/presentation/server/composition.ts",
+      "source_location": "L81",
+      "_origin": "ast",
+      "id": "src_presentation_server_composition_wordsdeps",
+      "community": 2,
+      "norm_label": "wordsdeps()"
     },
     {
       "label": "counter.ts",
@@ -6938,7 +7308,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_presentation_server_counter_usablecounterfn",
-      "community": 201,
+      "community": 193,
       "norm_label": "usablecounterfn"
     },
     {
@@ -6988,7 +7358,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_presentation_server_review",
-      "community": 170,
+      "community": 2,
       "norm_label": "review.ts"
     },
     {
@@ -6998,7 +7368,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_presentation_server_review_startsessionfn",
-      "community": 170,
+      "community": 2,
       "norm_label": "startsessionfn"
     },
     {
@@ -7008,7 +7378,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_presentation_server_review_resolvepromptfn",
-      "community": 170,
+      "community": 2,
       "norm_label": "resolvepromptfn"
     },
     {
@@ -7018,7 +7388,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_presentation_server_review_rulecheckinput",
-      "community": 170,
+      "community": 2,
       "norm_label": "rulecheckinput"
     },
     {
@@ -7028,7 +7398,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "src_presentation_server_review_rulecheckresult",
-      "community": 170,
+      "community": 2,
       "norm_label": "rulecheckresult"
     },
     {
@@ -7038,7 +7408,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "src_presentation_server_review_rulecheckfn",
-      "community": 170,
+      "community": 2,
       "norm_label": "rulecheckfn"
     },
     {
@@ -7048,7 +7418,7 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "src_presentation_server_review_submitreviewinput",
-      "community": 170,
+      "community": 2,
       "norm_label": "submitreviewinput"
     },
     {
@@ -7058,8 +7428,38 @@
       "source_location": "L104",
       "_origin": "ast",
       "id": "src_presentation_server_review_submitreviewfn",
-      "community": 170,
+      "community": 2,
       "norm_label": "submitreviewfn"
+    },
+    {
+      "label": "words.ts",
+      "file_type": "code",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_presentation_server_words",
+      "community": 62,
+      "norm_label": "words.ts"
+    },
+    {
+      "label": "wordsListFn",
+      "file_type": "code",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L12",
+      "_origin": "ast",
+      "id": "src_presentation_server_words_wordslistfn",
+      "community": 62,
+      "norm_label": "wordslistfn"
+    },
+    {
+      "label": "wordDetailFn",
+      "file_type": "code",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "src_presentation_server_words_worddetailfn",
+      "community": 62,
+      "norm_label": "worddetailfn"
     },
     {
       "label": "tsconfig.json",
@@ -9265,7 +9665,7 @@
       "label": "Build pipeline architecture (`build/`, docs/BUILD.md)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L311",
+      "source_location": "L370",
       "_origin": "ast",
       "id": "claude_build_pipeline_architecture_build_docs_build_md",
       "community": 64,
@@ -9275,7 +9675,7 @@
       "label": "Stage B generation loop \u2014 ACTIVE WORK (this is the task in progress)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L339",
+      "source_location": "L398",
       "_origin": "ast",
       "id": "claude_stage_b_generation_loop_active_work_this_is_the_task_in_progress",
       "community": 64,
@@ -12012,7 +12412,7 @@
       "contributor": null,
       "community": 133,
       "norm_label": "graphify trigger (project claude.md)",
-      "id": "claude_claude_claude_claude_claude_claude_claude_claude_graphify_trigger"
+      "id": "claude_claude_claude_claude_claude_claude_claude_claude_claude_graphify_trigger"
     },
     {
       "label": "Engineering Rules Overview",
@@ -14919,6 +15319,50 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_ports_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_ports_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_ports_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_ports_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/application/resolveReviewPrompt.ts",
       "source_location": "L5",
       "weight": 1.0,
@@ -15063,7 +15507,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L17",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_ports_cardrepository",
@@ -15096,7 +15540,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_ports_cardrepository",
@@ -15215,6 +15659,72 @@
       "source_location": "L6",
       "weight": 1.0,
       "source": "src_application_readusablecounter_test",
+      "target": "src_application_ports_cardrepository_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_ports_cardrepository_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_readworddetaildeps",
+      "target": "src_application_ports_cardrepository_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_ports_cardrepository_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_ports_cardrepository_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_readwordslistdeps",
+      "target": "src_application_ports_cardrepository_cardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
       "target": "src_application_ports_cardrepository_cardrepository",
       "confidence_score": 1.0
     },
@@ -15410,7 +15920,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L17",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_ports_cardrepository_cardrepository",
@@ -15465,7 +15975,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_ports_cardrepository_cardrepository",
@@ -15556,6 +16066,50 @@
       "weight": 1.0,
       "source": "src_application_ports_catalog",
       "target": "src_domain_lexicalitem_lexicalitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_ports_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_ports_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_ports_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_ports_catalog",
       "confidence_score": 1.0
     },
     {
@@ -15709,6 +16263,72 @@
       "weight": 1.0,
       "source": "src_application_ports_catalog_catalog",
       "target": "src_application_ports_catalog_catalog_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_ports_catalog_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_readworddetaildeps",
+      "target": "src_application_ports_catalog_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_ports_catalog_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_ports_catalog_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_readwordslistdeps",
+      "target": "src_application_ports_catalog_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_ports_catalog_catalog",
       "confidence_score": 1.0
     },
     {
@@ -16031,7 +16651,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L16",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_ports_judge",
@@ -16097,7 +16717,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_ports_judge",
@@ -16338,7 +16958,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L16",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_ports_judge_judgeport",
@@ -16393,7 +17013,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_ports_judge_judgeport",
@@ -16893,6 +17513,50 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_ports_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_ports_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_ports_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_ports_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/application/runReviewPass.test.ts",
       "source_location": "L15",
       "weight": 1.0,
@@ -17004,7 +17668,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L18",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_ports_scheduler",
@@ -17114,6 +17778,72 @@
       "source_location": "L7",
       "weight": 1.0,
       "source": "src_application_readusablecounter_test",
+      "target": "src_application_ports_scheduler_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_ports_scheduler_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_readworddetaildeps",
+      "target": "src_application_ports_scheduler_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_ports_scheduler_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_ports_scheduler_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_readwordslistdeps",
+      "target": "src_application_ports_scheduler_scheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
       "target": "src_application_ports_scheduler_scheduler",
       "confidence_score": 1.0
     },
@@ -17265,7 +17995,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L18",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_ports_scheduler_scheduler",
@@ -18300,7 +19030,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_readdashboardsummary",
@@ -18333,7 +19063,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_readdashboardsummary_readdashboardsummarydeps",
@@ -18751,7 +19481,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_readusablecounter",
@@ -18784,7 +19514,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_readusablecounter_readusablecounterdeps",
@@ -18843,6 +19573,1093 @@
       "weight": 1.0,
       "source": "src_presentation_server_counter",
       "target": "src_application_readusablecounter_readusablecounter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail_readworddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail_readworddetaildeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail_test_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail_test_fsrs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail_test_fsrs_stub",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail_test_item",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail_test_log",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail_test_makedeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_application_readworddetail_test_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_card_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_card_fsrscardstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_card_masterystate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_lexicalitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_lexicalitem_lexicalitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_rating",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_rating_rating",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_review",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_review_fsrsreviewlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_review_reviewlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test",
+      "target": "src_domain_review_reviewtier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.test.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_test_card",
+      "target": "src_application_readworddetail_test_fsrs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_readworddetail_readworddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_readworddetail_readworddetaildeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_readworddetail_readworddetailinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_application_readworddetail_worddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_card_masterystate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_constants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_counter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_counter_iscounted",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_judgedpassledger",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_judgedpassledger_distinctpassdays",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_masteryhistory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_masteryhistory_derivemasteryhistory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readworddetail",
+      "target": "src_domain_masteryhistory_masteryhistoryentry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/composition.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "src_infrastructure_composition",
+      "target": "src_application_readworddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_application_readworddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/composition.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "src_presentation_server_composition",
+      "target": "src_application_readworddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_application_readworddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/composition.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "src_infrastructure_composition",
+      "target": "src_application_readworddetail_readworddetaildeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/composition.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "src_presentation_server_composition",
+      "target": "src_application_readworddetail_readworddetaildeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_worddetail",
+      "target": "src_domain_card_masterystate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_worddetail",
+      "target": "src_domain_masteryhistory_masteryhistoryentry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_application_readworddetail_worddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_readworddetail",
+      "target": "src_domain_counter_iscounted"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_readworddetail",
+      "target": "src_domain_judgedpassledger_distinctpassdays"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/application/readWordDetail.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "src_application_readworddetail_readworddetail",
+      "target": "src_domain_masteryhistory_derivemasteryhistory"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_application_readworddetail_readworddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_application_readworddetail_readworddetail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_readwordslist",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_readwordslistdeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_test_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_test_fsrs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_test_fsrs_stub",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_test_item",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_test_log",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_test_makedeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_test_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_application_readwordslist_test_twospacedpasses",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_card_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_card_fsrscardstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_card_masterystate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_constants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_lexicalitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_lexicalitem_lexicalitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_rating",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_rating_rating",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_review",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_review_fsrsreviewlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_review_reviewlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test",
+      "target": "src_domain_review_reviewtier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test_card",
+      "target": "src_application_readwordslist_test_fsrs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.test.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_test_twospacedpasses",
+      "target": "src_application_readwordslist_test_log",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_readwordslist_readwordslist",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_readwordslist_readwordslistdeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_readwordslist_readwordslistinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_readwordslist_readwordslistresult",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_application_readwordslist_wordsummary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_domain_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_domain_card_masterystate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_domain_constants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_domain_counter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_domain_counter_iscounted",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_domain_judgedpassledger",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_application_readwordslist",
+      "target": "src_domain_judgedpassledger_distinctpassdays",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/composition.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "src_infrastructure_composition",
+      "target": "src_application_readwordslist",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_application_readwordslist",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/composition.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "src_presentation_server_composition",
+      "target": "src_application_readwordslist",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_application_readwordslist",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/composition.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "src_infrastructure_composition",
+      "target": "src_application_readwordslist_readwordslistdeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/composition.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "src_presentation_server_composition",
+      "target": "src_application_readwordslist_readwordslistdeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_wordsummary",
+      "target": "src_domain_card_masterystate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_application_readwordslist_readwordslistresult",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_readwordslist",
+      "target": "src_domain_counter_iscounted"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/application/readWordsList.ts",
+      "source_location": "L62",
+      "weight": 1.0,
+      "source": "src_application_readwordslist_readwordslist",
+      "target": "src_domain_judgedpassledger_distinctpassdays"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_application_readwordslist_readwordslist",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_application_readwordslist_readwordslist",
       "confidence_score": 1.0
     },
     {
@@ -19148,7 +20965,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L15",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_resolvereviewprompt",
@@ -19181,7 +20998,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_resolvereviewprompt",
@@ -19203,7 +21020,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L15",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_resolvereviewprompt_resolvereviewpromptdeps",
@@ -19225,7 +21042,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_resolvereviewprompt_resolvereviewpromptdeps",
@@ -20012,8 +21829,19 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_application_runreviewpass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_runreviewpass",
@@ -20111,8 +21939,19 @@
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_application_runreviewpass_runreviewpassdeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_runreviewpass_runreviewpassdeps",
@@ -20247,6 +22086,17 @@
       "source_location": "L6",
       "weight": 1.0,
       "source": "src_infrastructure_session_smoke_test",
+      "target": "src_application_runreviewpass_runreviewpass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
       "target": "src_application_runreviewpass_runreviewpass",
       "confidence_score": 1.0
     },
@@ -20682,7 +22532,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L13",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_seedintroductions",
@@ -20726,7 +22576,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L13",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_seedintroductions_seedintroductionsdeps",
@@ -21142,7 +22992,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L14",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_startsession",
@@ -21174,8 +23024,19 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_application_startsession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_startsession",
@@ -21197,7 +23058,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L14",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_application_startsession_startsessiondeps",
@@ -21208,7 +23069,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_application_startsession_startsessiondeps",
@@ -21255,6 +23116,17 @@
       "source_location": "L5",
       "weight": 1.0,
       "source": "src_infrastructure_session_smoke_test",
+      "target": "src_application_startsession_startsession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
       "target": "src_application_startsession_startsession",
       "confidence_score": 1.0
     },
@@ -23721,6 +25593,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/domain/masteryLadder.ts",
       "source_location": "L1",
       "weight": 1.0,
@@ -23879,6 +25762,28 @@
       "source_location": "L1",
       "weight": 1.0,
       "source": "src_domain_mastery",
+      "target": "src_domain_card_masterystate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_card_masterystate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_masterymove",
       "target": "src_domain_card_masterystate",
       "confidence_score": 1.0
     },
@@ -24377,6 +26282,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_constants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/domain/ruleLayer.ts",
       "source_location": "L9",
       "weight": 1.0,
@@ -24425,6 +26341,17 @@
       "source_location": "L12",
       "weight": 1.0,
       "source": "src_infrastructure_tsfsrsscheduler",
+      "target": "src_domain_constants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/routes/words.index.tsx",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "src_presentation_routes_words_index",
       "target": "src_domain_constants",
       "confidence_score": 1.0
     },
@@ -24764,6 +26691,39 @@
       "source_location": "L19",
       "weight": 1.0,
       "source": "src_domain_fluentgate",
+      "target": "src_domain_fluentgate_qualifiesforfluent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_fluentgate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_fluentgate_qualifiesforfluent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_applytransition",
       "target": "src_domain_fluentgate_qualifiesforfluent",
       "confidence_score": 1.0
     },
@@ -25120,6 +27080,17 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_judgedpassledger",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
@@ -25173,6 +27144,28 @@
       "source": "src_domain_judgedpassledger_judgedusesonday",
       "target": "src_domain_judgedpassledger_localdaykey",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_judgedpassledger_localdaykey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L104",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_derivemasteryhistory",
+      "target": "src_domain_judgedpassledger_localdaykey"
     },
     {
       "relation": "imports_from",
@@ -25538,6 +27531,361 @@
       "weight": 1.0,
       "source": "src_domain_mastery",
       "target": "src_domain_mastery_promoteonjudgedpass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_mastery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_mastery_promoteoncuedpass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_applytransition",
+      "target": "src_domain_mastery_promoteoncuedpass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_mastery_demoteonerung",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_applytransition",
+      "target": "src_domain_mastery_demoteonerung",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_mastery_promoteonjudgedpass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_applytransition",
+      "target": "src_domain_mastery_promoteonjudgedpass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_mastery_promoteonclozepass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_applytransition",
+      "target": "src_domain_mastery_promoteonclozepass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_masteryhistory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_masteryhistory_derivemasteryhistory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_masteryhistory_test_firstof",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_masteryhistory_test_fsrslog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_masteryhistory_test_log",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_rating",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_rating_rating",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_review",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_review_fsrsreviewlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_review_reviewlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test",
+      "target": "src_domain_review_reviewtier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test_log",
+      "target": "src_domain_masteryhistory_test_fsrslog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.test.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_test_firstof",
+      "target": "src_domain_masteryhistory_derivemasteryhistory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_masteryhistory_applytransition",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_masteryhistory_derivemasteryhistory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_masteryhistory_initialstatefromtier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_masteryhistory_masteryhistoryentry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_masteryhistory_masterymove",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_review",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_review_reviewlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory",
+      "target": "src_domain_review_reviewtier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_masteryhistoryentry",
+      "target": "src_domain_review_reviewtier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L97",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_derivemasteryhistory",
+      "target": "src_domain_masteryhistory_initialstatefromtier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/domain/masteryHistory.ts",
+      "source_location": "L109",
+      "weight": 1.0,
+      "source": "src_domain_masteryhistory_derivemasteryhistory",
+      "target": "src_domain_masteryhistory_applytransition",
       "confidence_score": 1.0
     },
     {
@@ -27020,7 +29368,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L19",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_catalog",
@@ -27116,7 +29464,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L19",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_catalog_jsoncatalog",
@@ -27183,7 +29531,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L36",
+      "source_location": "L38",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composecuedreview",
       "target": "src_infrastructure_catalog_jsoncatalog_fromfile"
@@ -27194,7 +29542,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L54",
+      "source_location": "L56",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composefreeproduction",
       "target": "src_infrastructure_catalog_jsoncatalog_fromfile"
@@ -27205,7 +29553,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L146",
+      "source_location": "L148",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composeresolveprompt",
       "target": "src_infrastructure_catalog_jsoncatalog_fromfile"
@@ -27216,9 +29564,20 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L118",
+      "source_location": "L120",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composeseeding",
+      "target": "src_infrastructure_catalog_jsoncatalog_fromfile"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/infrastructure/composition.ts",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "src_infrastructure_composition_composewords",
       "target": "src_infrastructure_catalog_jsoncatalog_fromfile"
     },
     {
@@ -27313,7 +29672,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L34",
+      "source_location": "L36",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composecuedreview",
@@ -27323,7 +29682,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L167",
+      "source_location": "L169",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composedashboardsummary",
@@ -27333,7 +29692,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L48",
+      "source_location": "L50",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composefreeproduction",
@@ -27343,7 +29702,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L142",
+      "source_location": "L144",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composeresolveprompt",
@@ -27353,7 +29712,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L70",
+      "source_location": "L72",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composereviewpass",
@@ -27363,7 +29722,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L103",
+      "source_location": "L105",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composereviewpasslive",
@@ -27373,7 +29732,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L84",
+      "source_location": "L86",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composereviewpasspersistent",
@@ -27383,7 +29742,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L113",
+      "source_location": "L115",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composeseeding",
@@ -27393,7 +29752,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L131",
+      "source_location": "L133",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composesession",
@@ -27403,7 +29762,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L154",
+      "source_location": "L156",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_composeusablecounter",
@@ -27413,7 +29772,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L29",
+      "source_location": "L181",
+      "weight": 1.0,
+      "source": "src_infrastructure_composition",
+      "target": "src_infrastructure_composition_composewords",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/composition.ts",
+      "source_location": "L31",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_here",
@@ -27423,7 +29792,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L32",
+      "source_location": "L34",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_items_path",
@@ -27433,7 +29802,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L98",
+      "source_location": "L100",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_composition_livejudge",
@@ -27444,7 +29813,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L26",
+      "source_location": "L28",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_deepseekconfig",
@@ -27455,7 +29824,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L26",
+      "source_location": "L28",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_deepseekconfig_deepseekconfigfromenv",
@@ -27466,7 +29835,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L25",
+      "source_location": "L27",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_deepseekjudge",
@@ -27477,7 +29846,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L25",
+      "source_location": "L27",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_deepseekjudge_deepseekjudge",
@@ -27488,7 +29857,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L27",
+      "source_location": "L29",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_drizzlecardrepository",
@@ -27499,7 +29868,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L27",
+      "source_location": "L29",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
@@ -27510,7 +29879,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L27",
+      "source_location": "L29",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_drizzlecardrepository_drizzledb",
@@ -27521,7 +29890,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L21",
+      "source_location": "L23",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_inmemorycardrepository",
@@ -27532,7 +29901,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L21",
+      "source_location": "L23",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_inmemorycardrepository_inmemorycardrepository",
@@ -27543,7 +29912,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L20",
+      "source_location": "L22",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_jsonwordsource",
@@ -27554,7 +29923,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L20",
+      "source_location": "L22",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_jsonwordsource_jsonwordsource",
@@ -27565,7 +29934,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L24",
+      "source_location": "L26",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_tagaloglexicon",
@@ -27576,7 +29945,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L24",
+      "source_location": "L26",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_tagaloglexicon_tagalog_lexicon",
@@ -27587,7 +29956,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L22",
+      "source_location": "L24",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_tsfsrsscheduler",
@@ -27598,7 +29967,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L22",
+      "source_location": "L24",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_tsfsrsscheduler_tsfsrsscheduler",
@@ -27609,7 +29978,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L23",
+      "source_location": "L25",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_winklemmatizer",
@@ -27620,7 +29989,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L23",
+      "source_location": "L25",
       "weight": 1.0,
       "source": "src_infrastructure_composition",
       "target": "src_infrastructure_winklemmatizer_winklemmatizer",
@@ -27707,6 +30076,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_infrastructure_composition",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
       "source_location": "L4",
       "weight": 1.0,
@@ -27763,7 +30143,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L74",
+      "source_location": "L76",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composereviewpass",
       "target": "src_infrastructure_composition_composefreeproduction",
@@ -27774,7 +30154,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L89",
+      "source_location": "L91",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composereviewpasspersistent",
       "target": "src_infrastructure_composition_composefreeproduction",
@@ -27796,7 +30176,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L104",
+      "source_location": "L106",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composereviewpasslive",
       "target": "src_infrastructure_composition_composereviewpass",
@@ -27850,6 +30230,17 @@
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_infrastructure_composition_composereviewpass",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
       "source_location": "L4",
       "weight": 1.0,
@@ -27863,7 +30254,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L57",
+      "source_location": "L60",
       "weight": 1.0,
       "source": "src_presentation_server_composition_reviewdeps",
       "target": "src_infrastructure_composition_composereviewpass"
@@ -27873,7 +30264,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L104",
+      "source_location": "L106",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composereviewpasslive",
       "target": "src_infrastructure_composition_livejudge",
@@ -27885,7 +30276,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L99",
+      "source_location": "L101",
       "weight": 1.0,
       "source": "src_infrastructure_composition_livejudge",
       "target": "src_infrastructure_deepseekconfig_deepseekconfigfromenv"
@@ -27907,7 +30298,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L119",
+      "source_location": "L121",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composeseeding",
       "target": "src_infrastructure_jsonwordsource_jsonwordsource_fromfile"
@@ -27917,7 +30308,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/composition.ts",
-      "source_location": "L135",
+      "source_location": "L137",
       "weight": 1.0,
       "source": "src_infrastructure_composition_composesession",
       "target": "src_infrastructure_composition_composeseeding",
@@ -27971,6 +30362,17 @@
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_infrastructure_composition_composesession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
       "source_location": "L4",
       "weight": 1.0,
@@ -27984,7 +30386,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L53",
+      "source_location": "L56",
       "weight": 1.0,
       "source": "src_presentation_server_composition_sessiondeps",
       "target": "src_infrastructure_composition_composesession"
@@ -28017,7 +30419,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L61",
+      "source_location": "L64",
       "weight": 1.0,
       "source": "src_presentation_server_composition_promptdeps",
       "target": "src_infrastructure_composition_composeresolveprompt"
@@ -28039,7 +30441,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L67",
+      "source_location": "L70",
       "weight": 1.0,
       "source": "src_presentation_server_composition_counterdeps",
       "target": "src_infrastructure_composition_composeusablecounter"
@@ -28061,10 +30463,43 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L73",
+      "source_location": "L76",
       "weight": 1.0,
       "source": "src_presentation_server_composition_dashboarddeps",
       "target": "src_infrastructure_composition_composedashboardsummary"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_infrastructure_composition_composewords",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/composition.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_presentation_server_composition",
+      "target": "src_infrastructure_composition_composewords",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/presentation/server/composition.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "src_presentation_server_composition_wordsdeps",
+      "target": "src_infrastructure_composition_composewords"
     },
     {
       "relation": "contains",
@@ -29017,7 +31452,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_infrastructure_devjudge",
@@ -29050,7 +31485,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_infrastructure_devjudge_devverdict",
@@ -29468,6 +31903,17 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_infrastructure_fakejudge",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -29616,6 +32062,17 @@
       "source_location": "L4",
       "weight": 1.0,
       "source": "src_infrastructure_session_smoke_test",
+      "target": "src_infrastructure_fakejudge_fakejudge",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
       "target": "src_infrastructure_fakejudge_fakejudge",
       "confidence_score": 1.0
     },
@@ -29926,6 +32383,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
+      "target": "src_infrastructure_inmemorycardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
       "source_location": "L1",
       "weight": 1.0,
@@ -30045,6 +32513,17 @@
       "source_location": "L3",
       "weight": 1.0,
       "source": "src_infrastructure_session_smoke_test",
+      "target": "src_infrastructure_inmemorycardrepository_inmemorycardrepository",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/infrastructure/words.smoke.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_infrastructure_words_smoke_test",
       "target": "src_infrastructure_inmemorycardrepository_inmemorycardrepository",
       "confidence_score": 1.0
     },
@@ -30486,7 +32965,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L10",
+      "source_location": "L11",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
       "target": "src_presentation_components_app_shell",
@@ -30497,7 +32976,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L10",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "src_presentation_routes_words_wordid",
       "target": "src_presentation_components_app_shell",
@@ -30530,7 +33009,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L10",
+      "source_location": "L11",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
       "target": "src_presentation_components_app_shell_appshell",
@@ -30541,7 +33020,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L10",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "src_presentation_routes_words_wordid",
       "target": "src_presentation_components_app_shell_appshell",
@@ -30951,7 +33430,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
       "target": "src_presentation_components_mastery_chip",
@@ -30962,7 +33441,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L11",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "src_presentation_routes_words_wordid",
       "target": "src_presentation_components_mastery_chip",
@@ -31028,7 +33507,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
       "target": "src_presentation_components_mastery_chip_masterychip",
@@ -31039,7 +33518,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L11",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "src_presentation_routes_words_wordid",
       "target": "src_presentation_components_mastery_chip_masterychip",
@@ -32346,7 +34825,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
       "target": "src_presentation_lib_utils",
@@ -32357,7 +34836,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L15",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "src_presentation_routes_words_wordid",
       "target": "src_presentation_lib_utils",
@@ -32401,7 +34880,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
       "target": "src_presentation_lib_utils_cn",
@@ -32412,7 +34891,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L15",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "src_presentation_routes_words_wordid",
       "target": "src_presentation_lib_utils_cn",
@@ -32424,7 +34903,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L83",
+      "source_location": "L104",
       "weight": 1.0,
       "source": "src_presentation_routes_words_wordid_worddetail",
       "target": "src_presentation_lib_utils_cn"
@@ -32482,28 +34961,6 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L12",
-      "weight": 1.0,
-      "source": "src_presentation_routes_words_index",
-      "target": "src_presentation_mock_catalog",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L12",
-      "weight": 1.0,
-      "source": "src_presentation_routes_words_wordid",
-      "target": "src_presentation_mock_catalog",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -32545,39 +35002,6 @@
       "source_location": "L177",
       "weight": 1.0,
       "source": "src_presentation_routes_onboarding_firstwinstep",
-      "target": "src_presentation_mock_catalog_mockitem"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L12",
-      "weight": 1.0,
-      "source": "src_presentation_routes_words_index",
-      "target": "src_presentation_mock_catalog_mockitem",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L12",
-      "weight": 1.0,
-      "source": "src_presentation_routes_words_wordid",
-      "target": "src_presentation_mock_catalog_mockitem",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L44",
-      "weight": 1.0,
-      "source": "src_presentation_routes_words_wordid_worddetail",
       "target": "src_presentation_mock_catalog_mockitem"
     },
     {
@@ -32741,7 +35165,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L11",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "src_presentation_mock_learner",
       "target": "src_presentation_mock_learner_masterystate",
@@ -32751,60 +35175,10 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L175",
-      "weight": 1.0,
-      "source": "src_presentation_mock_learner",
-      "target": "src_presentation_mock_learner_mock_ladder",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L38",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "src_presentation_mock_learner",
       "target": "src_presentation_mock_learner_mock_learner",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L182",
-      "weight": 1.0,
-      "source": "src_presentation_mock_learner",
-      "target": "src_presentation_mock_learner_mock_queue",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L51",
-      "weight": 1.0,
-      "source": "src_presentation_mock_learner",
-      "target": "src_presentation_mock_learner_mock_words",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L13",
-      "weight": 1.0,
-      "source": "src_presentation_mock_learner",
-      "target": "src_presentation_mock_learner_mockhistoryentry",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/mock/learner.ts",
-      "source_location": "L23",
-      "weight": 1.0,
-      "source": "src_presentation_mock_learner",
-      "target": "src_presentation_mock_learner_mocklearnerword",
       "confidence_score": 1.0
     },
     {
@@ -32834,20 +35208,9 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
-      "target": "src_presentation_mock_learner",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L14",
-      "weight": 1.0,
-      "source": "src_presentation_routes_words_wordid",
       "target": "src_presentation_mock_learner",
       "confidence_score": 1.0
     },
@@ -32867,7 +35230,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
       "target": "src_presentation_mock_learner_masterystate",
@@ -32883,39 +35246,6 @@
       "source": "src_presentation_routes_settings",
       "target": "src_presentation_mock_learner_mock_learner",
       "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L14",
-      "weight": 1.0,
-      "source": "src_presentation_routes_words_index",
-      "target": "src_presentation_mock_learner_mock_words",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L14",
-      "weight": 1.0,
-      "source": "src_presentation_routes_words_wordid",
-      "target": "src_presentation_mock_learner_mock_words",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "references",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L31",
-      "weight": 1.0,
-      "source": "src_presentation_routes_words_wordid_worddetail",
-      "target": "src_presentation_mock_learner_mock_words"
     },
     {
       "relation": "contains",
@@ -33439,7 +35769,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L17",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "src_presentation_routes_words_wordid",
+      "target": "src_presentation_routes_words_wordid_backlink",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/routes/words.$wordId.tsx",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "src_presentation_routes_words_wordid",
       "target": "src_presentation_routes_words_wordid_route",
@@ -33449,7 +35789,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L21",
+      "source_location": "L23",
       "weight": 1.0,
       "source": "src_presentation_routes_words_wordid",
       "target": "src_presentation_routes_words_wordid_tier_label",
@@ -33459,7 +35799,7 @@
       "relation": "indirect_call",
       "confidence": "INFERRED",
       "source_file": "src/presentation/routes/words.$wordId.tsx",
-      "source_location": "L18",
+      "source_location": "L20",
       "weight": 1.0,
       "context": "collection",
       "source": "src_presentation_routes_words_wordid",
@@ -33467,10 +35807,32 @@
       "confidence_score": 0.5
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/routes/words.$wordId.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "src_presentation_routes_words_wordid",
+      "target": "src_presentation_server_words",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/routes/words.$wordId.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "src_presentation_routes_words_wordid",
+      "target": "src_presentation_server_words_worddetailfn",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
       "target": "src_presentation_routes_words_index_filters",
@@ -33480,7 +35842,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "src_presentation_routes_words_index",
       "target": "src_presentation_routes_words_index_route",
@@ -33490,7 +35852,7 @@
       "relation": "indirect_call",
       "confidence": "INFERRED",
       "source_file": "src/presentation/routes/words.index.tsx",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "context": "collection",
       "source": "src_presentation_routes_words_index",
@@ -33498,10 +35860,32 @@
       "confidence_score": 0.5
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/routes/words.index.tsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "src_presentation_routes_words_index",
+      "target": "src_presentation_server_words",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/routes/words.index.tsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "src_presentation_routes_words_index",
+      "target": "src_presentation_server_words_wordslistfn",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L66",
+      "source_location": "L69",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_presentation_server_composition_counterdeps",
@@ -33511,7 +35895,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L72",
+      "source_location": "L75",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_presentation_server_composition_dashboarddeps",
@@ -33521,7 +35905,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L60",
+      "source_location": "L63",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_presentation_server_composition_promptdeps",
@@ -33531,7 +35915,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L56",
+      "source_location": "L59",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_presentation_server_composition_reviewdeps",
@@ -33541,10 +35925,20 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/presentation/server/composition.ts",
-      "source_location": "L52",
+      "source_location": "L55",
       "weight": 1.0,
       "source": "src_presentation_server_composition",
       "target": "src_presentation_server_composition_sessiondeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/composition.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "src_presentation_server_composition",
+      "target": "src_presentation_server_composition_wordsdeps",
       "confidence_score": 1.0
     },
     {
@@ -33581,6 +35975,17 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_presentation_server_composition",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -33633,6 +36038,17 @@
       "weight": 1.0,
       "source": "src_presentation_server_dashboard",
       "target": "src_presentation_server_composition_dashboarddeps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_presentation_server_composition_wordsdeps",
       "confidence_score": 1.0
     },
     {
@@ -33700,6 +36116,17 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_presentation_server_currentuser",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -33718,6 +36145,17 @@
       "source_location": "L11",
       "weight": 1.0,
       "source": "src_presentation_server_review",
+      "target": "src_presentation_server_currentuser_currentuserid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
       "target": "src_presentation_server_currentuser_currentuserid",
       "confidence_score": 1.0
     },
@@ -33799,6 +36237,26 @@
       "weight": 1.0,
       "source": "src_presentation_server_review",
       "target": "src_presentation_server_review_submitreviewinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_presentation_server_words_worddetailfn",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/presentation/server/words.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_presentation_server_words",
+      "target": "src_presentation_server_words_wordslistfn",
       "confidence_score": 1.0
     },
     {
@@ -35645,7 +38103,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L311",
+      "source_location": "L370",
       "weight": 1.0,
       "source": "claude_md_claude_claude",
       "target": "claude_build_pipeline_architecture_build_docs_build_md",
@@ -35715,7 +38173,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L339",
+      "source_location": "L398",
       "weight": 1.0,
       "source": "claude_build_pipeline_architecture_build_docs_build_md",
       "target": "claude_stage_b_generation_loop_active_work_this_is_the_task_in_progress",
@@ -38360,5 +40818,5 @@
       "source_file": "spec/11-end-to-end-loop.md"
     }
   ],
-  "built_at_commit": "9727e12ace48bb2e3142c367a92dbf0815f3200e"
+  "built_at_commit": "d300b6c4d59a1f7c4edc922d3180d8fbca00a280"
 }

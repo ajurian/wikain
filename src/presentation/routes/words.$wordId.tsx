@@ -1,17 +1,19 @@
 /*
  * /words/$wordId — per-word detail: mastery history with promotions AND
  * demotions at equal weight (CNT-1 honest ladder), retrievability vs the
- * counter floor, past sentences. DESIGN BUILD, MOCK-DRIVEN.
+ * counter floor. WIRED to the real read-model.
+ *
+ * The free-production *sentence text* is not shown: it is not persisted on
+ * ReviewLog (DM-6), so v1 shows the move, not the words (memo work adds it).
  */
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowRight, CircleCheck, CircleX } from "lucide-react";
 
 import { AppShell } from "../components/app-shell";
 import { MasteryChip } from "../components/mastery-chip";
-import { mockItem } from "../mock/catalog";
-// MOCK DATA — replace with server functions when wiring.
-import { MOCK_R_FLOOR, MOCK_WORDS } from "../mock/learner";
+import { wordDetailFn } from "../server/words";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/words/$wordId")({
@@ -25,10 +27,33 @@ const TIER_LABEL: Record<string, string> = {
   free: "free production",
 };
 
+function BackLink() {
+  return (
+    <Link
+      to="/words"
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft hover:text-ink"
+    >
+      <ArrowLeft className="size-4" strokeWidth={1.75} /> Your words
+    </Link>
+  );
+}
+
 function WordDetail() {
   const { wordId } = Route.useParams();
   const reduced = useReducedMotion();
-  const word = MOCK_WORDS.find((w) => w.senseId === wordId);
+
+  const { data: word, isPending } = useQuery({
+    queryKey: ["word-detail", wordId],
+    queryFn: () => wordDetailFn({ data: wordId }),
+  });
+
+  if (isPending) {
+    return (
+      <AppShell>
+        <p className="text-sm text-ink-soft">Loading…</p>
+      </AppShell>
+    );
+  }
 
   if (!word) {
     return (
@@ -41,8 +66,6 @@ function WordDetail() {
     );
   }
 
-  const item = mockItem(word.senseId);
-  const aboveFloor = word.retrievability >= MOCK_R_FLOOR;
   const history = [...word.history].reverse(); // newest first
 
   return (
@@ -53,24 +76,22 @@ function WordDetail() {
         transition={{ duration: 0.25 }}
         className="space-y-6"
       >
-        <Link
-          to="/words"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft hover:text-ink"
-        >
-          <ArrowLeft className="size-4" strokeWidth={1.75} /> Your words
-        </Link>
+        <BackLink />
 
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="font-serif text-4xl font-semibold text-ink">{item.lemma}</h1>
+            <h1 className="font-serif text-4xl font-semibold text-ink">{word.lemma}</h1>
             <p className="mt-1 text-xs tracking-wide text-ink-faint uppercase">
-              {item.pos} · {item.cefr}
+              {word.pos}
+              {word.cefr ? ` · ${word.cefr}` : ""}
             </p>
           </div>
           <MasteryChip state={word.mastery} className="mt-2" />
         </div>
 
-        <p className="font-serif text-xl leading-relaxed text-ink">{item.recognitionMeaning}</p>
+        {word.recognitionMeaning ? (
+          <p className="font-serif text-xl leading-relaxed text-ink">{word.recognitionMeaning}</p>
+        ) : null}
 
         {/* memory strength (CNT-3 live retrievability) + counted status (CNT-2) */}
         <div className="rounded-xl border border-line bg-paper-raised p-5">
@@ -80,14 +101,14 @@ function WordDetail() {
           </div>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-paper-sunken">
             <div
-              className={cn("h-full rounded-full", aboveFloor ? "bg-moss" : "bg-terracotta")}
+              className={cn("h-full rounded-full", word.aboveFloor ? "bg-moss" : "bg-terracotta")}
               style={{ width: `${word.retrievability * 100}%` }}
             />
           </div>
           <p className="mt-2 text-xs leading-relaxed text-ink-faint">
             {word.counted
               ? "In your usable words — keep it above the line with an occasional sentence."
-              : aboveFloor
+              : word.aboveFloor
                 ? `Not yet counted: it takes 2+ real sentences on separate days (${word.judgedPassDays} so far).`
                 : "Faded below the usable line — its next review will bring it back."}
           </p>
@@ -110,18 +131,13 @@ function WordDetail() {
                         <CircleX className="size-4 shrink-0 text-terracotta" strokeWidth={1.75} />
                       )}
                       <span className="font-medium text-ink">{TIER_LABEL[h.tier]}</span>
-                      <span className="text-ink-faint">{h.date}</span>
+                      <span className="text-ink-faint">{h.day}</span>
                     </p>
                     {h.moved ? (
                       <p className="mt-1.5 flex items-center gap-2 text-xs text-ink-soft">
                         moved <MasteryChip state={h.moved.from} />
                         <ArrowRight className="size-3 text-ink-faint" />
                         <MasteryChip state={h.moved.to} />
-                      </p>
-                    ) : null}
-                    {h.sentence ? (
-                      <p className="mt-1.5 font-serif text-base leading-relaxed text-ink">
-                        “{h.sentence}”
                       </p>
                     ) : null}
                   </div>
@@ -131,12 +147,14 @@ function WordDetail() {
           )}
         </div>
 
-        <div className="rounded-xl bg-paper-sunken p-5">
-          <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">Example</p>
-          <p className="mt-1.5 font-serif text-base leading-relaxed text-ink-soft">
-            “{item.modelSentence}”
-          </p>
-        </div>
+        {word.modelSentence ? (
+          <div className="rounded-xl bg-paper-sunken p-5">
+            <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">Example</p>
+            <p className="mt-1.5 font-serif text-base leading-relaxed text-ink-soft">
+              “{word.modelSentence}”
+            </p>
+          </div>
+        ) : null}
       </motion.div>
     </AppShell>
   );

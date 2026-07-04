@@ -300,6 +300,35 @@ called out):
     dedup; `/words`+`/onboarding` wiring; `app-shell` mock **user identity** (name/email). `mock/learner.ts`
     stays for `/words` + the mock user (`MasteryChip` still sources `MasteryState` from it).*
 
+16. **Wire the `/words` per-word read-models** (branch `wire/words-read-models`; additive — one new pure
+    domain helper + two read-models, no new business rules). Replaces `/words` + `/words/$wordId`'s
+    `mock/learner.ts` (`MOCK_WORDS`/`MOCK_R_FLOOR`) with real read-models mirroring `readDashboardSummary`.
+    domain (TDD, pure): `masteryHistory.ts` (`deriveMasteryHistory(logs, offset)` — **replays** a word's
+    ReviewLogs oldest→newest into `{day, tier, outcome, moved?}`, composing the **existing** transitions
+    `promoteOnClozePass`/`promoteOnCuedPass`/`promoteOnJudgedPass`/`demoteOneRung` + the `qualifiesForFluent`
+    gate fed by `distinctPassDays`+`fsrs.stability`; the "before" state is inferred from the first log's tier
+    per `reviewRouting`); `judgedPassLedger.ts` **exports** `localDayKey` for reuse. application (TDD):
+    `readWordsList.ts` (`{cards, scheduler, catalog}` deps → per-word `{senseId, lemma, mastery,
+    retrievability, aboveFloor, counted, judgedPassDays}` via `distinctPassDays`+`getRetrievability`+
+    `isCounted`; fail-loud on missing catalog) and `readWordDetail.ts` (adds catalog fields + `history`;
+    returns **`null`** when the user has no card — a reachable-but-empty URL — vs fail-loud on a missing
+    *catalog* entry; `New`/mastery filtering stays client-side). **Design (user-confirmed): the free-production
+    `sentence` text is DROPPED from history for v1** — `ReviewLog` never persists it (DM-6), so showing it
+    would need a schema change; honesty over fabrication (mirrors slice 14's dropped yesterday-delta). The
+    `moved` from→to survives (replayed). infra: `composeWords` (one composer, both read-models share the deps
+    shape); `words.smoke.test.ts` (seed→climb Seen→Recognized→read over real composition). presentation-server:
+    `wordsDeps()` + `server/words.ts` (`wordsListFn` GET; `wordDetailFn` GET + `senseId` validator, mirroring
+    `resolvePromptFn`). presentation-UI: `routes/words.index.tsx` + `words.$wordId.tsx` swap the `MOCK_*`
+    imports for `words-list`/`word-detail` TanStack Queries (empty/loading/not-found states; `words.index`
+    imports `COUNTER_R_FLOOR` from domain for the footer copy — presentation→domain, spec-true). `mock/learner.ts`
+    **trimmed** to just `MasteryState` + `MOCK_LEARNER` (the mock user for `/settings`+`app-shell`); the dead
+    dashboard mocks (`MOCK_WORDS`/`MOCK_R_FLOOR`/`MOCK_LADDER`/`MOCK_QUEUE`) are gone. **Covers (wired):**
+    CNT-1/2/3 (`/words`), SM-3..SM-7 (history replay). **Verified:** both typecheck gates, `npm test` (243),
+    `npm run build` (no `readWordsList`/`readWordDetail`/`deriveMasteryHistory`/`JsonCatalog`/db identifiers in
+    the client bundle), `/words`+`/words/$wordId`+`/` SSR 200 (`/words` shows the honest fresh-user empty state).
+    *Still mock/deferred: `/onboarding`+`/settings` wiring; `app-shell` mock **user identity**; sentence text in
+    history (arrives with the verdict memo DM-8/MEMO-1).*
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -314,25 +343,29 @@ LexTALE instrument + per-user FSRS optimization (SEED-4/8); the **BetterAuth (ST
 stubs a dev user at the `currentUser` seam). *Note: `/review` is **wired** (slices 13–14) — the judged
 loop, EDIT-7 render, NET-2/3/5, and the usable-words counter (CNT-2/3/4/6) run on real use-cases/DB. The
 **dashboard `/` is now wired too** (slice 15): SM-1 ladder, CNT-8 goal ring (real sentences-today, fixed
-default goal), and the SEED-6 Today due/new counts. Still **mock-only design** (slice 12, awaiting wiring):
-the `app-shell` user identity (name/email) and the `/onboarding`/`/words`/`/settings` routes.*
+default goal), and the SEED-6 Today due/new counts. **`/words`+`/words/$wordId` are now wired too** (slice
+16): per-word CNT-1/2/3 (counted-status + live retrievability) and the SM-3..SM-7 mastery history (replayed
+from logs; sentence text dropped for v1). Still **mock-only design** (slice 12, awaiting wiring): the
+`app-shell` user identity (name/email) and the `/onboarding`/`/settings` routes.*
 
-**Natural next slice:** **wire `/onboarding` → `seedIntroductions`** (real SEED-1/2/3 placement) and
-**`/words` → per-word read-models** (retrievability vs `COUNTER_R_FLOOR`, promotion/demotion history from
-`logsForWord`), retiring the rest of `mock/learner.ts`. Cheaper adjacent wins now unlocked by slice 15's
-read-model pattern: the counter's yesterday-delta + the daily-goal knob both need **persisted per-day / per-
-user state** (a daily snapshot; a user setting) — that state arrives with the **BetterAuth swap** (only
-`currentUser.ts` changes) which also unlocks real multi-user persistence over the already-wired Neon DB. The
-**verdict memo** (DM-8/MEMO-1) is the remaining judged-loop piece.
+**Natural next slice:** **wire `/onboarding` → `seedIntroductions`** (real SEED-1/2/3 placement) — the last
+mock-driven learning surface. It is heavier than the read-model slices: it needs a new POST server fn, a
+coarse-level→`frontierBand` mapping, wizard state lifted out of the per-step components, and confronts the
+SEED-1 "first written sentence" win vs. the `Seen`-tier cards it seeds (LexTALE SEED-4 stays deferred).
+Cheaper adjacent wins now unlocked by the read-model pattern: the counter's yesterday-delta + the daily-goal
+knob both need **persisted per-day / per-user state** (a daily snapshot; a user setting) — that state arrives
+with the **BetterAuth swap** (only `currentUser.ts` changes), which also unlocks real multi-user persistence
+over the already-wired Neon DB and the `app-shell`/`/settings` real user identity. The **verdict memo**
+(DM-8/MEMO-1) is the remaining judged-loop piece (and adds the sentence text back to `/words` history).
 
 > **Status (2026-07-04):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
-> 13–15 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
-> `wire/review-db-counter`; `git log` to confirm). `/review` **and** the `/` dashboard (counter + ladder +
-> goal ring + Today counts) are wired to real use-cases (Neon when `DATABASE_URL` is set, else in-memory;
-> DeepSeek when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run typecheck`
-> (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves each slice — do not
-> trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm test`, and `npm run
-> dev` at session start.
+> 13–16 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
+> `wire/words-read-models`; `git log` to confirm). `/review`, the `/` dashboard (counter + ladder + goal ring
+> + Today counts), **and `/words`** are wired to real use-cases (Neon when `DATABASE_URL` is set, else
+> in-memory; DeepSeek when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run
+> typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves each slice
+> — do not trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm test`, and
+> `npm run dev` at session start.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 

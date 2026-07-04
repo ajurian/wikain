@@ -7,6 +7,7 @@ import {
   composeSession,
   composeUsableCounter,
   composeDashboardSummary,
+  composeWords,
   liveJudge,
 } from "../../infrastructure/composition.js";
 import { devVerdict } from "../../infrastructure/devJudge.js";
@@ -17,6 +18,8 @@ import type { RunReviewPassDeps } from "../../application/runReviewPass.js";
 import type { ResolveReviewPromptDeps } from "../../application/resolveReviewPrompt.js";
 import type { ReadUsableCounterDeps } from "../../application/readUsableCounter.js";
 import type { ReadDashboardSummaryDeps } from "../../application/readDashboardSummary.js";
+import type { ReadWordsListDeps } from "../../application/readWordsList.js";
+import type { ReadWordDetailDeps } from "../../application/readWordDetail.js";
 
 /**
  * Server-only composition for the deterministic review slice. Imported only by server-function
@@ -71,4 +74,10 @@ export function counterDeps(): ReadUsableCounterDeps {
  * review pass writes, so the ladder / due count / today's uses reflect real progress. */
 export function dashboardDeps(): ReadDashboardSummaryDeps {
   return composeDashboardSummary(cards);
+}
+
+/** Deps for the per-word read-models (spec/10 CNT-1/2/3). Shares the same store + a real scheduler, so
+ * `/words` shows the live retrievability + real mastery history the review pass writes. */
+export function wordsDeps(): ReadWordsListDeps & ReadWordDetailDeps {
+  return composeWords(cards);
 }

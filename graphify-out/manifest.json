@@ -125,8 +125,8 @@
     "semantic_hash": ""
   },
   "src/domain/judgedPassLedger.ts": {
-    "mtime": 1783144076.3033347,
-    "ast_hash": "6f5e174fe7abac4aad04e92c5b1cd18a",
+    "mtime": 1783146072.5858576,
+    "ast_hash": "c41459e8646f603e52b9b22cbb4cb1bc",
     "semantic_hash": ""
   },
   "src/domain/lexicalItem.test.ts": {
@@ -205,8 +205,8 @@
     "semantic_hash": "54e9340a82cbbd9276b8d268e7313632"
   },
   "src/infrastructure/composition.ts": {
-    "mtime": 1783144172.7690022,
-    "ast_hash": "e328263cf9db2cd88d1167d292e2fc37",
+    "mtime": 1783146272.2105696,
+    "ast_hash": "d60bda80eb5bc59291c97d950aacac7f",
     "semantic_hash": ""
   },
   "src/infrastructure/deepSeekConfig.ts": {
@@ -375,8 +375,8 @@
     "semantic_hash": "c698309979460d0f02ba616417844399"
   },
   "CLAUDE.md": {
-    "mtime": 1783097109.169737,
-    "ast_hash": "3b32b23086cc4f155221753490fe9c28",
+    "mtime": 1783146750.8288364,
+    "ast_hash": "fe762b25d52dc6348f17258915e06767",
     "semantic_hash": ""
   },
   "docs/BUILD.md": {
@@ -735,8 +735,8 @@
     "semantic_hash": ""
   },
   "src/presentation/server/composition.ts": {
-    "mtime": 1783144187.225968,
-    "ast_hash": "6f980c8ab063d61c2148d61fad620e35",
+    "mtime": 1783146337.3460314,
+    "ast_hash": "5d732625513482f80bf8eeb3a764951c",
     "semantic_hash": ""
   },
   "src/presentation/server/currentUser.ts": {
@@ -865,8 +865,8 @@
     "semantic_hash": ""
   },
   "src/presentation/mock/learner.ts": {
-    "mtime": 1783057682.7034106,
-    "ast_hash": "8de4ac0a9f8e4f2f3d420f32053fba63",
+    "mtime": 1783146442.7451932,
+    "ast_hash": "857f03fd8f9ff4e0e566569504c772d3",
     "semantic_hash": ""
   },
   "src/presentation/routes/onboarding.tsx": {
@@ -890,13 +890,13 @@
     "semantic_hash": ""
   },
   "src/presentation/routes/words.$wordId.tsx": {
-    "mtime": 1783058176.031811,
-    "ast_hash": "5489328b7d15ea45418185bbefb16d03",
+    "mtime": 1783146418.5986888,
+    "ast_hash": "419c82d584e4c96f650f9699b6e3db2a",
     "semantic_hash": ""
   },
   "src/presentation/routes/words.index.tsx": {
-    "mtime": 1783058150.049976,
-    "ast_hash": "e3a780387c4c54b6bfdfe013a2d5212b",
+    "mtime": 1783146394.4666896,
+    "ast_hash": "86422fd2a1c19d434b061dcc1925bad0",
     "semantic_hash": ""
   },
   "src/presentation/server/counter.ts": {
@@ -962,6 +962,46 @@
   "src/presentation/server/dashboard.ts": {
     "mtime": 1783144193.3241003,
     "ast_hash": "754accd6bfc3d2634f28ee3c9da05f16",
+    "semantic_hash": ""
+  },
+  "src/application/readWordDetail.test.ts": {
+    "mtime": 1783146581.2375824,
+    "ast_hash": "86e024d58fdfd04fd2b351dd086c2d5e",
+    "semantic_hash": ""
+  },
+  "src/application/readWordDetail.ts": {
+    "mtime": 1783146193.6703532,
+    "ast_hash": "014b431324a5eb27fdf0c219aafa02bf",
+    "semantic_hash": ""
+  },
+  "src/application/readWordsList.test.ts": {
+    "mtime": 1783146537.609515,
+    "ast_hash": "9d9e6c517a5c6024e3866361a64a9bec",
+    "semantic_hash": ""
+  },
+  "src/application/readWordsList.ts": {
+    "mtime": 1783146178.788496,
+    "ast_hash": "c34954131fa888269e087c732a50bb04",
+    "semantic_hash": ""
+  },
+  "src/domain/masteryHistory.test.ts": {
+    "mtime": 1783146532.6184783,
+    "ast_hash": "681e7e09a9ab69f05e4fca6f218e7227",
+    "semantic_hash": ""
+  },
+  "src/domain/masteryHistory.ts": {
+    "mtime": 1783146503.5665267,
+    "ast_hash": "5c3cc5b2877d4b736a75da9f43725d1a",
+    "semantic_hash": ""
+  },
+  "src/infrastructure/words.smoke.test.ts": {
+    "mtime": 1783146552.859146,
+    "ast_hash": "fec4dfb634b30fb6581a6c4fc5c6d7bd",
+    "semantic_hash": ""
+  },
+  "src/presentation/server/words.ts": {
+    "mtime": 1783146353.938969,
+    "ast_hash": "40d30f1ca0389ab57c0602c5b7da3775",
     "semantic_hash": ""
   }
 }

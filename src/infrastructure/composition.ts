@@ -10,6 +10,8 @@ import type { SubmitFreeProductionDeps } from "../application/submitFreeProducti
 import type { RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { ReadUsableCounterDeps } from "../application/readUsableCounter.js";
 import type { ReadDashboardSummaryDeps } from "../application/readDashboardSummary.js";
+import type { ReadWordsListDeps } from "../application/readWordsList.js";
+import type { ReadWordDetailDeps } from "../application/readWordDetail.js";
 import type { SeedIntroductionsDeps } from "../application/seedIntroductions.js";
 import type { StartSessionDeps } from "../application/startSession.js";
 import type { ResolveReviewPromptDeps } from "../application/resolveReviewPrompt.js";
@@ -168,4 +170,18 @@ export function composeDashboardSummary(
   cards: CardRepository = new InMemoryCardRepository(),
 ): ReadDashboardSummaryDeps {
   return { cards };
+}
+
+/**
+ * Wiring for the per-word read-models (spec/10 CNT-1/2/3, `/words` + `/words/$wordId`). Both
+ * `readWordsList` and `readWordDetail` share one deps shape (`cards` + `scheduler` for live
+ * retrievability + `catalog` for the display lemma/gloss), so a single composer serves both. Reads the
+ * same SHARED store the review pass writes; defaults construct standalone instances for tests.
+ */
+export function composeWords(
+  cards: CardRepository = new InMemoryCardRepository(),
+  scheduler: Scheduler = new TsFsrsScheduler(),
+  itemsPath: string = ITEMS_PATH,
+): ReadWordsListDeps & ReadWordDetailDeps {
+  return { cards, scheduler, catalog: JsonCatalog.fromFile(itemsPath) };
 }

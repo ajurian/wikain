@@ -20,7 +20,7 @@ function isJudgedPass(log: ReviewLog): boolean {
  * days* in the user's timezone; per-user tz storage is a seeding/presentation concern (deferred), so
  * the boundary is an injected UTC-offset in minutes (default 0 / UTC) until the real tz wires in.
  */
-function localDayKey(at: Date, utcOffsetMinutes: number): string {
+export function localDayKey(at: Date, utcOffsetMinutes: number): string {
   return new Date(at.getTime() + utcOffsetMinutes * 60_000).toISOString().slice(0, 10);
 }
 
