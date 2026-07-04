@@ -6,6 +6,7 @@ import {
   composeResolvePrompt,
   composeSession,
   composeUsableCounter,
+  composeDashboardSummary,
   liveJudge,
 } from "../../infrastructure/composition.js";
 import { devVerdict } from "../../infrastructure/devJudge.js";
@@ -15,6 +16,7 @@ import type { StartSessionDeps } from "../../application/startSession.js";
 import type { RunReviewPassDeps } from "../../application/runReviewPass.js";
 import type { ResolveReviewPromptDeps } from "../../application/resolveReviewPrompt.js";
 import type { ReadUsableCounterDeps } from "../../application/readUsableCounter.js";
+import type { ReadDashboardSummaryDeps } from "../../application/readDashboardSummary.js";
 
 /**
  * Server-only composition for the deterministic review slice. Imported only by server-function
@@ -63,4 +65,10 @@ export function promptDeps(): ResolveReviewPromptDeps {
  * scheduler, so retrievability (CNT-3) is read live off the persisted cards the review pass writes. */
 export function counterDeps(): ReadUsableCounterDeps {
   return composeUsableCounter(cards);
+}
+
+/** Deps for the dashboard read-model (spec/01 SM-1, spec/10 CNT-8, SEED-6). Shares the same store the
+ * review pass writes, so the ladder / due count / today's uses reflect real progress. */
+export function dashboardDeps(): ReadDashboardSummaryDeps {
+  return composeDashboardSummary(cards);
 }

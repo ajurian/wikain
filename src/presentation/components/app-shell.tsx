@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { BookOpenText, House, Settings } from "lucide-react";
 import { Wordmark } from "./wordmark";
-import { MOCK_LEARNER } from "../mock/learner"; // MOCK — replace with session user
+import { usableCounterFn } from "../server/counter";
 
 const NAV = [
   { to: "/", label: "Home", icon: House },
@@ -15,6 +16,12 @@ const NAV = [
  * does not use this shell.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
+  // The same wired counter the dashboard headline reads (CNT-2); shared query key dedupes the fetch.
+  const { data: counter } = useQuery({
+    queryKey: ["usable-counter"],
+    queryFn: () => usableCounterFn(),
+  });
+
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
@@ -38,7 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* compact counter — the headline value, always visible (CNT-2) */}
             <span className="text-sm font-medium text-ink-soft">
               <span className="font-serif text-base font-semibold text-ink tabular-nums">
-                {MOCK_LEARNER.usableWords}
+                {counter?.count ?? 0}
               </span>{" "}
               usable
             </span>

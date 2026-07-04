@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { distinctPassDays, mostRecentPassScaffolded } from "./judgedPassLedger.js";
+import {
+  distinctPassDays,
+  judgedUsesOnDay,
+  mostRecentPassScaffolded,
+} from "./judgedPassLedger.js";
 import type { FsrsReviewLog, ReviewLog, ReviewTier } from "./review.js";
 import type { Rating } from "./rating.js";
 
@@ -72,6 +76,50 @@ describe("distinctPassDays (SM-5 a/b, CNT-2)", () => {
     const straddle = [log("2026-06-01T15:00:00Z"), log("2026-06-01T20:00:00Z")];
     expect(distinctPassDays(straddle)).toBe(1); // both Jun 1 UTC
     expect(distinctPassDays(straddle, 8 * 60)).toBe(2); // Jun 1 23:00 vs Jun 2 04:00 PH
+  });
+});
+
+describe("judgedUsesOnDay (CNT-8 daily-use goal)", () => {
+  const NOW = new Date("2026-06-03T12:00:00Z");
+
+  it("counts free judged passes on the given day as USES, not distinct days", () => {
+    // Unlike distinctPassDays, two passes on the same day count as two productive uses.
+    const logs = [log("2026-06-03T08:00:00Z"), log("2026-06-03T20:00:00Z")];
+    expect(judgedUsesOnDay(logs, NOW)).toBe(2);
+    expect(distinctPassDays(logs)).toBe(1);
+  });
+
+  it("ignores passes on other calendar days", () => {
+    const logs = [
+      log("2026-06-02T09:00:00Z"),
+      log("2026-06-03T09:00:00Z"),
+      log("2026-06-04T09:00:00Z"),
+    ];
+    expect(judgedUsesOnDay(logs, NOW)).toBe(1);
+  });
+
+  it("INV-4: a new introduction / deterministic pass on today does not advance the use goal", () => {
+    const logs = [
+      log("2026-06-03T09:00:00Z", { tier: "recognition" }),
+      log("2026-06-03T10:00:00Z", { tier: "cloze" }),
+      log("2026-06-03T11:00:00Z", { tier: "cued" }),
+    ];
+    expect(judgedUsesOnDay(logs, NOW)).toBe(0);
+  });
+
+  it("ignores failing free productions on today", () => {
+    const logs = [
+      log("2026-06-03T09:00:00Z", { rating: "Again" }),
+      log("2026-06-03T10:00:00Z", { rating: "Good" }),
+    ];
+    expect(judgedUsesOnDay(logs, NOW)).toBe(1);
+  });
+
+  it("uses the injected UTC offset for the day boundary", () => {
+    // 2026-06-03T18:00Z = Jun 4 02:00 +08 → a different PH day from NOW (Jun 3 20:00 +08).
+    const logs = [log("2026-06-03T18:00:00Z")];
+    expect(judgedUsesOnDay(logs, NOW)).toBe(1); // same UTC day
+    expect(judgedUsesOnDay(logs, NOW, 8 * 60)).toBe(0); // Jun 4 PH ≠ Jun 3 PH
   });
 });
 

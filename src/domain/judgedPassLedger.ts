@@ -38,6 +38,25 @@ export function distinctPassDays(logs: readonly ReviewLog[], utcOffsetMinutes = 
 }
 
 /**
+ * CNT-8: the number of passing free judged productions on the calendar day of `now` — the daily
+ * USE-goal progress. Counts *uses*, not distinct days (two passes today advance the goal by two),
+ * which is what distinguishes it from `distinctPassDays`. INV-4 still filters deterministic tiers, so
+ * a new introduction (a `Seen` interaction) never advances the goal (CNT-8 scenario).
+ */
+export function judgedUsesOnDay(
+  logs: readonly ReviewLog[],
+  now: Date,
+  utcOffsetMinutes = 0,
+): number {
+  const today = localDayKey(now, utcOffsetMinutes);
+  let uses = 0;
+  for (const log of logs) {
+    if (isJudgedPass(log) && localDayKey(log.reviewedAt, utcOffsetMinutes) === today) uses += 1;
+  }
+  return uses;
+}
+
+/**
  * SM-5(d) / SM-9: whether the most recent passing free production was scaffolded. A scaffolded pass
  * still rates Good (RAT-3) but does not satisfy Fluent's unscaffolded condition. Absent flag or no
  * passing production → unscaffolded (false); promotion is gated elsewhere when there are too few

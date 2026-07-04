@@ -61,6 +61,14 @@ export const COUNTER_MIN_SPACED_PASSES = 2;
  */
 export const COUNTER_R_FLOOR = 0.7;
 
+/**
+ * CNT-8: the default daily USE goal, unit = free judged productions (not minutes/cards/new intros).
+ * Learner-adjustable per spec, but persisting a per-user setting is settings/BetterAuth work (STACK-4,
+ * deferred) — v1 uses this fixed default. An independent knob from the §8 intro pace (`NEW_PER_DAY`,
+ * SEED-9); they coincide only numerically at 5.
+ */
+export const DAILY_GOAL_DEFAULT = 5;
+
 // --- First-session seeding / placement (spec/09, `SEED`) ---
 
 /** SEED-6: first session seeds this many near-frontier words so a production win comes fast (SEED-1). */

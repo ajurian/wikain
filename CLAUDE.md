@@ -276,6 +276,30 @@ called out):
     `app-shell` user chrome (the `132` header is the BetterAuth-deferred mock user, STACK-4); the
     yesterday-delta needs a persisted daily snapshot.*
 
+15. **Wire the dashboard read-models** (branch `wire/review-db-counter`; additive — one read-model
+    use-case, no new business rules). Replaces the dashboard's `mock/learner.ts` (`MOCK_LADDER/LEARNER/
+    QUEUE`) with a real read-model mirroring `readUsableCounter`. domain (TDD, pure): `masteryLadder.ts`
+    (`tallyMastery` — SM-1 distribution over the four **carded** rungs, `New` omitted as a card-less
+    pre-state); `judgedPassLedger.ts` gains `judgedUsesOnDay` (CNT-8 today's free-judged **uses**, not
+    distinct days — reuses the module's `isJudgedPass`/`localDayKey`); `constants.ts` adds
+    `DAILY_GOAL_DEFAULT`=5 (CNT-8; fixed until a learner-adjustable setting persists — STACK-4). application
+    (TDD): `readDashboardSummary.ts` — Input/Deps(`{cards}` only, **no scheduler**)/Result triple returning
+    `{ladder, dueReviews, newIntroductions, sentencesToday, dailyGoal}`; `dueReviews` reuses the
+    `sessionQueue` due predicate (`fsrs.due<=now`), `newIntroductions` reuses `newIntroductionsAllowed` (the
+    pacing **allowance** "up to N new" — no per-day intro ledger, so not a remaining-today figure), a pure
+    read (never seeds/writes). infra: `composeDashboardSummary`. presentation-server: `dashboardDeps()` +
+    `server/dashboard.ts` `dashboardSummaryFn` (byte-mirrors `server/counter.ts`). presentation-UI:
+    `routes/index.tsx` swaps the `MOCK_*` imports for a `dashboard-summary` TanStack Query (zero-guarded
+    ladder bar + empty-state copy for a fresh user); `app-shell.tsx` header counter now reads the wired
+    `usable-counter` query (shared key dedupes) instead of `MOCK_LEARNER.usableWords`. **Covers (wired):**
+    SM-1 (ladder), CNT-8 (goal ring: real sentences-today + fixed default goal), SEED-6 (Today due/new).
+    **Verified:** both typecheck gates, `npm test` (221), `npm run build` (no server/db identifiers in the
+    client bundle), a real-composition integration drive (seed→read: ladder `Seen=2`, `dueReviews=2`, pacing
+    drops `newIntros` to 0 under backlog), `/` SSR 200. *Still mock/deferred: learner-**adjustable** daily
+    goal (settings+BetterAuth); counter yesterday-delta (needs a daily snapshot); per-calendar-day intro
+    dedup; `/words`+`/onboarding` wiring; `app-shell` mock **user identity** (name/email). `mock/learner.ts`
+    stays for `/words` + the mock user (`MasteryChip` still sources `MasteryState` from it).*
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -287,26 +311,28 @@ called out):
 
 **Deferred — do NOT build until pulled into scope (`PRAG-1`):** verdict memo (`05`, MEMO-1 is a MAY);
 LexTALE instrument + per-user FSRS optimization (SEED-4/8); the **BetterAuth (STACK-4) adapter** (presentation
-stubs a dev user at the `currentUser` seam). *Note: `/review` is now **wired** (slices 13–14) — the judged
-loop, EDIT-7 render, NET-2/3/5, and the usable-words counter (CNT-2/3/4/6) run on real use-cases/DB. Still
-**mock-only design** (slice 12, awaiting wiring): the dashboard goal ring (CNT-8), mastery ladder (SM-1),
-Today/queue counts, the `app-shell` user chrome, and the `/onboarding`/`/words`/`/settings` routes.*
+stubs a dev user at the `currentUser` seam). *Note: `/review` is **wired** (slices 13–14) — the judged
+loop, EDIT-7 render, NET-2/3/5, and the usable-words counter (CNT-2/3/4/6) run on real use-cases/DB. The
+**dashboard `/` is now wired too** (slice 15): SM-1 ladder, CNT-8 goal ring (real sentences-today, fixed
+default goal), and the SEED-6 Today due/new counts. Still **mock-only design** (slice 12, awaiting wiring):
+the `app-shell` user identity (name/email) and the `/onboarding`/`/words`/`/settings` routes.*
 
-**Natural next slice:** **finish the dashboard read-models** — the SM-1 mastery-ladder distribution
-(group `listCards` by mastery) and the due/new Today counts are cheap/honest; the goal ring (CNT-8) needs a
-"sentences today" read-model + a persisted daily goal (a user setting), and the counter's yesterday-delta
-needs a persisted daily snapshot. Then wire `/onboarding` → `seedIntroductions` (real SEED-1/2/3) and
-`/words` → per-word read-models. The **BetterAuth swap** (only `currentUser.ts` changes) unlocks real
-multi-user persistence over the already-wired Neon DB; the **verdict memo** (DM-8/MEMO-1) is the remaining
-judged-loop piece.
+**Natural next slice:** **wire `/onboarding` → `seedIntroductions`** (real SEED-1/2/3 placement) and
+**`/words` → per-word read-models** (retrievability vs `COUNTER_R_FLOOR`, promotion/demotion history from
+`logsForWord`), retiring the rest of `mock/learner.ts`. Cheaper adjacent wins now unlocked by slice 15's
+read-model pattern: the counter's yesterday-delta + the daily-goal knob both need **persisted per-day / per-
+user state** (a daily snapshot; a user setting) — that state arrives with the **BetterAuth swap** (only
+`currentUser.ts` changes) which also unlocks real multi-user persistence over the already-wired Neon DB. The
+**verdict memo** (DM-8/MEMO-1) is the remaining judged-loop piece.
 
-> **Status (2026-07-03):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
-> 13–14 (backend wiring)** — land on **`design/brand-ui-system`** and a descendant wiring branch (`git log`
-> to confirm). `/review` + the dashboard counter are wired to real use-cases (Neon when `DATABASE_URL` is
-> set, else in-memory; DeepSeek when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate =
-> `npm run typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves
-> each slice — do not trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm
-> test`, and `npm run dev` at session start.
+> **Status (2026-07-04):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
+> 13–15 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
+> `wire/review-db-counter`; `git log` to confirm). `/review` **and** the `/` dashboard (counter + ladder +
+> goal ring + Today counts) are wired to real use-cases (Neon when `DATABASE_URL` is set, else in-memory;
+> DeepSeek when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run typecheck`
+> (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves each slice — do not
+> trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm test`, and `npm run
+> dev` at session start.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 

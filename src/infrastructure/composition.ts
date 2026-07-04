@@ -9,6 +9,7 @@ import type { SubmitCuedReviewDeps } from "../application/submitCuedReview.js";
 import type { SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
 import type { RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { ReadUsableCounterDeps } from "../application/readUsableCounter.js";
+import type { ReadDashboardSummaryDeps } from "../application/readDashboardSummary.js";
 import type { SeedIntroductionsDeps } from "../application/seedIntroductions.js";
 import type { StartSessionDeps } from "../application/startSession.js";
 import type { ResolveReviewPromptDeps } from "../application/resolveReviewPrompt.js";
@@ -155,4 +156,16 @@ export function composeUsableCounter(
   scheduler: Scheduler = new TsFsrsScheduler(),
 ): ReadUsableCounterDeps {
   return { cards, scheduler };
+}
+
+/**
+ * Wiring for the dashboard read-model (spec/01 SM-1, spec/10 CNT-8, SEED-6). A pure read over the same
+ * per-user card + ReviewLog store the review pass writes, so callers pass the SHARED repository. Needs
+ * only `cards` (no scheduler — unlike the counter, it reads no live retrievability); the default
+ * constructs a standalone repo for tests.
+ */
+export function composeDashboardSummary(
+  cards: CardRepository = new InMemoryCardRepository(),
+): ReadDashboardSummaryDeps {
+  return { cards };
 }
