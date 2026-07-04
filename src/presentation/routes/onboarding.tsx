@@ -1,18 +1,28 @@
 /*
- * /onboarding — first-session flow (SEED-1): a production win comes BEFORE any
- * long calibration. welcome → coarse level → two seeded words → first written
- * sentence (judged) → only then the optional "tune your level" placement
- * (per-word marking + LexTALE entry — SEED-2/3/4, both skippable).
+ * /onboarding — first-session flow (SEED-1), WIRED to the real backend. A production win comes BEFORE
+ * any long calibration: welcome → coarse level → two REAL seeded words → first written sentence (real
+ * rule layer + real judge) → only then the optional "tune your level" placement.
  *
- * DESIGN BUILD, MOCK-DRIVEN — see src/presentation/mock/* headers.
+ * Server-driven (STACK-2): the coarse level maps to a frontier band (`frontierBandForCoarseLevel`,
+ * SEED-2/5) that `seedFirstSessionFn` seeds at (SEED-1/6), returning the real catalog fields the seeds
+ * + first-win screens render. The first win runs the two-phase judged path — `ruleCheckFn` for the
+ * instant bounce (NET-2), then `judgeFirstProductionFn`, which judges but PERSISTS NOTHING (the seeded
+ * words are still `Seen`; a graded free review would leak into the counter, INV-4).
+ *
+ * Still deferred (visual only): the "tune your level" per-word marking (SEED-2/3) needs a per-user
+ * placement-marks store, and the LexTALE instrument (SEED-4) — both land with per-user state.
  */
 import { useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowRight, CircleCheck } from "lucide-react";
+import { ArrowRight, CircleCheck, CloudOff, Loader2 } from "lucide-react";
 
-import { mockItem } from "../mock/catalog";
-import { mockJudgeSubmit, mockRuleLayer, type MockBounceKind } from "../mock/judge";
+import { frontierBandForCoarseLevel, type CoarseLevel } from "../../domain/placement.js";
+import type { RuleBounceReason } from "../../domain/ruleLayer.js";
+import type { SeededWordView } from "../../application/presentSeededWords.js";
+import { seedFirstSessionFn, judgeFirstProductionFn } from "../server/onboarding";
+import { ruleCheckFn } from "../server/review";
 import { BounceCallout } from "../components/bounce-callout";
 import { CheckingIndicator } from "../components/checking-indicator";
 import { Wordmark } from "../components/wordmark";
@@ -24,21 +34,23 @@ export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
 });
 
-// MOCK — the seeder would pick ~FIRST_SESSION_SEED_WORDS near-frontier words (SEED-1/5).
-const SEEDED = ["resilient_adj_01", "negotiate_verb_01"] as const;
-
-// MOCK — a slice of the frontier band for per-word "I know this" marking (SEED-2).
-const PLACEMENT_WORDS = [
-  "allocate", "coherent", "diligent", "feasible", "meticulous",
-  "advocate", "adverse", "compile", "concise", "viable",
-];
-
 type Step = "welcome" | "level" | "seeds" | "firstWin" | "tune";
 const STEPS: Step[] = ["welcome", "level", "seeds", "firstWin", "tune"];
 
 function Onboarding() {
   const [step, setStep] = useState<Step>("welcome");
+  const [level, setLevel] = useState<CoarseLevel | null>(null);
   const reduced = useReducedMotion();
+
+  // SEED-1/6: seed the first-session words once the coarse level is chosen (POST via useQuery, run once —
+  // the same pattern the /review session uses). The result feeds both the seeds and first-win screens.
+  const seeds = useQuery({
+    queryKey: ["onboarding-seeds", level],
+    queryFn: () => seedFirstSessionFn({ data: { frontierBand: frontierBandForCoarseLevel(level!) } }),
+    enabled: level !== null,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-6 pb-8">
@@ -68,13 +80,31 @@ function Onboarding() {
             transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
           >
             {step === "welcome" ? <Welcome onNext={() => setStep("level")} /> : null}
-            {step === "level" ? <LevelStep onNext={() => setStep("seeds")} /> : null}
-            {step === "seeds" ? <SeedsStep onNext={() => setStep("firstWin")} /> : null}
-            {step === "firstWin" ? <FirstWinStep onNext={() => setStep("tune")} /> : null}
+            {step === "level" ? (
+              <LevelStep
+                onNext={(lvl) => {
+                  setLevel(lvl);
+                  setStep("seeds");
+                }}
+              />
+            ) : null}
+            {step === "seeds" ? <SeedsStep seeds={seeds} onNext={() => setStep("firstWin")} /> : null}
+            {step === "firstWin" ? (
+              <FirstWinStep word={seeds.data?.[0]} onNext={() => setStep("tune")} />
+            ) : null}
             {step === "tune" ? <TuneStep /> : null}
           </motion.div>
         </AnimatePresence>
       </div>
+    </div>
+  );
+}
+
+function Loading({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-8 text-ink-faint">
+      <Loader2 className="size-5 animate-spin" strokeWidth={1.75} />
+      <p className="text-sm">{label}</p>
     </div>
   );
 }
@@ -103,10 +133,10 @@ function Welcome({ onNext }: { onNext: () => void }) {
   );
 }
 
-/** One coarse self-report question — the low-friction signal that sets the frontier (SEED-1). */
-function LevelStep({ onNext }: { onNext: () => void }) {
-  const [band, setBand] = useState<string | null>(null);
-  const bands = [
+/** One coarse self-report question — the low-friction signal that sets the frontier band (SEED-1/2/5). */
+function LevelStep({ onNext }: { onNext: (level: CoarseLevel) => void }) {
+  const [band, setBand] = useState<CoarseLevel | null>(null);
+  const bands: { id: CoarseLevel; label: string; detail: string }[] = [
     { id: "b1", label: "I manage, but writing takes effort", detail: "emails are slow, words feel just out of reach" },
     { id: "b2", label: "I write comfortably, but plainly", detail: "clear messages — I want more precise, formal range" },
     { id: "c1", label: "I write well and want the last 10%", detail: "polish, nuance, academic and professional vocabulary" },
@@ -134,7 +164,7 @@ function LevelStep({ onNext }: { onNext: () => void }) {
           </button>
         ))}
       </div>
-      <Button size="lg" className="w-full" disabled={!band} onClick={onNext}>
+      <Button size="lg" className="w-full" disabled={!band} onClick={() => band && onNext(band)}>
         Continue
       </Button>
       <p className="text-center text-xs text-ink-faint">
@@ -144,7 +174,29 @@ function LevelStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function SeedsStep({ onNext }: { onNext: () => void }) {
+function SeedsStep({
+  seeds,
+  onNext,
+}: {
+  seeds: UseQueryResult<SeededWordView[]>;
+  onNext: () => void;
+}) {
+  if (seeds.isPending) return <Loading label="Picking your first words…" />;
+  if (seeds.isError || seeds.data === undefined) {
+    return (
+      <p className="py-8 text-center text-sm text-terracotta">
+        Couldn’t pick your first words. Please refresh to try again.
+      </p>
+    );
+  }
+  if (seeds.data.length === 0) {
+    return (
+      <p className="py-8 text-center text-sm text-ink-soft">
+        You’re already set up — <Link to="/review" className="font-medium text-ink underline">start a review</Link>.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="font-serif text-2xl font-semibold text-ink">Two words to start.</h2>
@@ -152,18 +204,18 @@ function SeedsStep({ onNext }: { onNext: () => void }) {
         You’ll write your first sentence in about a minute.
       </p>
       <div className="space-y-3">
-        {SEEDED.map((id) => {
-          const item = mockItem(id);
-          return (
-            <div key={id} className="rounded-xl border border-line bg-paper-raised p-5">
-              <p className="font-serif text-2xl font-semibold text-ink">{item.lemma}</p>
-              <p className="mt-0.5 text-xs tracking-wide text-ink-faint uppercase">
-                {item.pos} · {item.cefr}
-              </p>
+        {seeds.data.map((item) => (
+          <div key={item.senseId} className="rounded-xl border border-line bg-paper-raised p-5">
+            <p className="font-serif text-2xl font-semibold text-ink">{item.lemma}</p>
+            <p className="mt-0.5 text-xs tracking-wide text-ink-faint uppercase">
+              {item.pos}
+              {item.cefr ? ` · ${item.cefr}` : ""}
+            </p>
+            {item.recognitionMeaning ? (
               <p className="mt-2 text-sm leading-relaxed text-ink-soft">{item.recognitionMeaning}</p>
-            </div>
-          );
-        })}
+            ) : null}
+          </div>
+        ))}
       </div>
       <Button size="lg" className="w-full" onClick={onNext}>
         Write your first sentence <ArrowRight data-slot="icon" />
@@ -172,26 +224,47 @@ function SeedsStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-/** The first win (SEED-1) — a real judged production, before any placement test. */
-function FirstWinStep({ onNext }: { onNext: () => void }) {
-  const item = mockItem(SEEDED[0]);
+/** The first win (SEED-1) — a REAL judged production (no persistence), before any placement test. */
+function FirstWinStep({ word, onNext }: { word: SeededWordView | undefined; onNext: () => void }) {
   const [text, setText] = useState("");
-  const [bounce, setBounce] = useState<MockBounceKind | null>(null);
+  const [bounce, setBounce] = useState<RuleBounceReason | null>(null);
+  const [bounceCount, setBounceCount] = useState(0);
   const [checking, setChecking] = useState(false);
   const [won, setWon] = useState(false);
+  const [notice, setNotice] = useState<"offline" | "unavailable" | null>(null);
+
+  if (word === undefined) return <Loading label="Loading your word…" />;
 
   const submit = async () => {
     setBounce(null);
-    const bounced = mockRuleLayer(text, item); // instant, no "checking…" (NET-2)
-    if (bounced) {
-      setBounce(bounced);
+    setNotice(null);
+
+    // NET-5: block the round-trip entirely when offline — never call the judge.
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setNotice("offline");
       return;
     }
+
+    // Phase 1 — the instant, judge-free rule check (NET-2: no "checking…" before a bounce).
+    const check = await ruleCheckFn({
+      data: { senseId: word.senseId, response: text, priorBounces: bounceCount },
+    });
+    if (!check.ok) {
+      setBounceCount(check.bounces);
+      setBounce(check.reason);
+      return;
+    }
+
+    // Phase 2 — the judge round-trip (show "checking…" while it runs).
     setChecking(true);
-    const result = await mockJudgeSubmit(text, item);
+    const result = await judgeFirstProductionFn({ data: { senseId: word.senseId, response: text } });
     setChecking(false);
-    // Onboarding demo: any judged outcome counts as reaching the win screen.
+    // Onboarding win: ANY judged outcome (pass or fail) reaches the win screen (SEED-1).
     if (result.kind === "judged") setWon(true);
+    else if (result.kind === "bounce") {
+      setBounceCount(result.bounces);
+      setBounce(result.reason);
+    } else setNotice("unavailable");
   };
 
   if (won) {
@@ -217,14 +290,15 @@ function FirstWinStep({ onNext }: { onNext: () => void }) {
     <div className="space-y-6">
       <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">your first sentence</p>
       <div>
-        <h2 className="font-serif text-4xl font-semibold text-ink">{item.lemma}</h2>
+        <h2 className="font-serif text-4xl font-semibold text-ink">{word.lemma}</h2>
         <p className="mt-1 text-xs tracking-wide text-ink-faint uppercase">
-          {item.pos} · {item.cefr}
+          {word.pos}
+          {word.cefr ? ` · ${word.cefr}` : ""}
         </p>
       </div>
       <p className="text-sm leading-relaxed text-ink-soft">
-        Write a sentence using <span className="font-serif italic">{item.lemma}</span> — ideally
-        something true about you. {item.selfReferencePrompt}
+        Write a sentence using <span className="font-serif italic">{word.lemma}</span> — ideally
+        something true about you.{word.selfReferencePrompt ? ` ${word.selfReferencePrompt}` : ""}
       </p>
       <div className="space-y-3">
         <Textarea
@@ -235,7 +309,18 @@ function FirstWinStep({ onNext }: { onNext: () => void }) {
           placeholder="Your sentence…"
           className="min-h-24 font-serif text-xl leading-relaxed"
         />
-        {bounce ? <BounceCallout kind={bounce} lemma={item.lemma} /> : null}
+        {bounce ? <BounceCallout kind={bounce} lemma={word.lemma} /> : null}
+        {notice === "offline" ? (
+          <p className="flex items-center gap-2 rounded-lg bg-paper-sunken px-3.5 py-3 text-sm text-ink-soft">
+            <CloudOff className="size-4 shrink-0 text-ink-faint" strokeWidth={1.5} />
+            You’re offline — reconnect to check this sentence.
+          </p>
+        ) : null}
+        {notice === "unavailable" ? (
+          <p className="rounded-lg bg-paper-sunken px-3.5 py-3 text-sm text-ink-soft">
+            Couldn’t check that one — try again. Your sentence is still here.
+          </p>
+        ) : null}
         {checking ? (
           <CheckingIndicator />
         ) : (
@@ -248,10 +333,21 @@ function FirstWinStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-/** Optional placement AFTER the win (SEED-2/3/4): per-word marking + LexTALE entry, both skippable. */
+/**
+ * Optional placement AFTER the win (SEED-2/3/4): per-word marking + LexTALE entry, both skippable.
+ * VISUAL ONLY for now — persisting the marks (so flagged words lazily card at `Recognized`, SEED-7)
+ * needs a per-user placement-marks store that does not exist yet; it lands with per-user state. The
+ * LexTALE instrument (SEED-4) is likewise deferred. So `known` is collected but not yet sent anywhere.
+ */
 function TuneStep() {
   const navigate = useNavigate();
   const [known, setKnown] = useState<Set<string>>(new Set());
+
+  // A slice of common frontier words to tap — display-only chips until marks persist (SEED-2/7).
+  const placementWords = [
+    "allocate", "coherent", "diligent", "feasible", "meticulous",
+    "advocate", "adverse", "compile", "concise", "viable",
+  ];
 
   const toggle = (w: string) =>
     setKnown((prev) => {
@@ -270,7 +366,7 @@ function TuneStep() {
           Known words skip the flashcard stage and go straight to production practice.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          {PLACEMENT_WORDS.map((w) => (
+          {placementWords.map((w) => (
             <button
               key={w}
               type="button"

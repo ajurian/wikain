@@ -50,10 +50,11 @@ derived from the PRD, then tests are written against the specs, then runtime cod
 TypeScript/Node), which realizes `docs/BUILD.md`; and (2) the **v4 runtime** (`src/`, started
 2026-06-30) — see `### v4 runtime (src/)` below — now spanning the review loop, first-session seeding,
 the real DeepSeek judge, the usable-words counter, edit resolution, a real Drizzle/Neon persistence
-adapter, and a **wired** TanStack Start UI (the `/review` session + dashboard counter run on real
-use-cases). **Parts of the v4 web/multi-user runtime specified in `spec/` still do not exist** — no
-verdict memo, no BetterAuth adapter, and several dashboard/onboarding/words surfaces are still
-mock-only design (slice 12). Do not assume a runtime piece is present; scaffold it only when asked.
+adapter, and a **wired** TanStack Start UI (the `/review` session, `/` dashboard, `/words`, and
+`/onboarding` all run on real use-cases). **Parts of the v4 web/multi-user runtime specified in `spec/`
+still do not exist** — no verdict memo, no BetterAuth adapter, no per-user state (placement-marks
+persistence, adjustable daily goal, counter yesterday-delta), and `/settings` + the `app-shell` user
+identity are still mock-only design (slice 12). Do not assume a runtime piece is present; scaffold it only when asked.
 *(Note: v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend — ignore any
 stale "Electron" framing elsewhere.)*
 
@@ -329,6 +330,33 @@ called out):
     *Still mock/deferred: `/onboarding`+`/settings` wiring; `app-shell` mock **user identity**; sentence text in
     history (arrives with the verdict memo DM-8/MEMO-1).*
 
+17. **Wire `/onboarding` → first-session seeding + the real first-win** (branch `wire/onboarding-seeding`;
+    the last mock-driven **learning** surface). Replaces `routes/onboarding.tsx`'s `mockItem`/`mockJudgeSubmit`/
+    `mockRuleLayer` with real use-cases: the coarse level maps to a frontier band, real words are seeded, and
+    the first written sentence runs the real rule layer + judge. domain (TDD, pure): `placement.ts`
+    (`frontierBandForCoarseLevel(level)` — SEED-2/5, the coarse scalar sets WHERE the frontier is; it never
+    marks/selects, SEED-3). application (TDD): `judgeFirstProduction.ts` — the SEED-1 win as
+    **judge-DON'T-persist** (`checkFreeProductionRuleLayer` → judge → return `bounce|judged|unavailable`; NO
+    rating/schedule/log/mastery-change). **Design (user-confirmed): the seeded words are still `Seen`, so a
+    graded `free` review would leak a "usable" pass into the counter (INV-4) — the win is a pedagogical moment,
+    judged for honest feedback and recorded nothing** (mirrors slices 14/16's honesty-over-fabrication drops).
+    `presentSeededWords.ts` (pure `Card[]`+`Catalog` → onboarding view; fail-loud on missing catalog).
+    presentation-server: `seedingDeps()` + `server/onboarding.ts` (`seedFirstSessionFn` POST → seeds at the
+    band, returns display fields, dev-idempotent fallback to earliest cards; `judgeFirstProductionFn` POST over
+    the same key-gated judge as `/review`, **reusing** `ruleCheckFn` for the instant NET-2 bounce). presentation-UI:
+    `routes/onboarding.tsx` rewritten — `level` + a `["onboarding-seeds", level]` TanStack Query **lifted to the
+    parent** (per-step local state was discarded before); `frontierBandForCoarseLevel` imported from domain
+    (presentation→domain, spec-true). infra: `onboarding.smoke.test.ts` (seed→judge over real composition,
+    asserts NO ReviewLog + card stays `Seen`). **Design (user-confirmed): the TuneStep per-word placement
+    marking (SEED-2/3) + LexTALE (SEED-4) stay VISUAL-ONLY** — persisting marks so flagged words lazily card at
+    `Recognized` (SEED-7) needs a per-user placement-marks store that lands with per-user state; `placementKnown`
+    is therefore never passed and all first-session words enter at `Seen` (SM-11). **Covers (wired):** SEED-1
+    (win before calibration), SEED-2/5 (coarse level→band), SEED-6 (first-session pace), RL-2/3/4 + NET-2/3/5
+    (first-win bounce/offline/transient). **Verified:** both typecheck gates, `npm test` (252), `npm run build`
+    (no `seedIntroductions`/`judgeFirstProduction`/`presentSeededWords`/`JsonCatalog`/db identifiers in the
+    client bundle), `/onboarding`+`/` SSR 200. *Still mock/deferred: placement-marks persistence (SEED-2/7) +
+    LexTALE (SEED-4); `/settings` wiring; `app-shell` mock user identity.*
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -345,24 +373,23 @@ loop, EDIT-7 render, NET-2/3/5, and the usable-words counter (CNT-2/3/4/6) run o
 **dashboard `/` is now wired too** (slice 15): SM-1 ladder, CNT-8 goal ring (real sentences-today, fixed
 default goal), and the SEED-6 Today due/new counts. **`/words`+`/words/$wordId` are now wired too** (slice
 16): per-word CNT-1/2/3 (counted-status + live retrievability) and the SM-3..SM-7 mastery history (replayed
-from logs; sentence text dropped for v1). Still **mock-only design** (slice 12, awaiting wiring): the
-`app-shell` user identity (name/email) and the `/onboarding`/`/settings` routes.*
+from logs; sentence text dropped for v1). **`/onboarding` is now wired too** (slice 17): SEED-1 first-session
+seeding + the real judge-don't-persist first win (its placement-marks + LexTALE stay visual-only). Still
+**mock-only design** (slice 12, awaiting wiring): the `app-shell` user identity (name/email) and `/settings`.*
 
-**Natural next slice:** **wire `/onboarding` → `seedIntroductions`** (real SEED-1/2/3 placement) — the last
-mock-driven learning surface. It is heavier than the read-model slices: it needs a new POST server fn, a
-coarse-level→`frontierBand` mapping, wizard state lifted out of the per-step components, and confronts the
-SEED-1 "first written sentence" win vs. the `Seen`-tier cards it seeds (LexTALE SEED-4 stays deferred).
-Cheaper adjacent wins now unlocked by the read-model pattern: the counter's yesterday-delta + the daily-goal
-knob both need **persisted per-day / per-user state** (a daily snapshot; a user setting) — that state arrives
-with the **BetterAuth swap** (only `currentUser.ts` changes), which also unlocks real multi-user persistence
-over the already-wired Neon DB and the `app-shell`/`/settings` real user identity. The **verdict memo**
-(DM-8/MEMO-1) is the remaining judged-loop piece (and adds the sentence text back to `/words` history).
+**Natural next slice:** the last mock learning surface is wired — what remains is **per-user state**, gated on
+the **BetterAuth (STACK-4) swap** (only `currentUser.ts` changes). It unlocks, in one cluster: the onboarding
+**placement-marks store** (SEED-2/7 — flagged words lazily card at `Recognized`), a learner-**adjustable**
+daily goal (CNT-8), the counter's **yesterday-delta** (needs a persisted daily snapshot), and the
+`app-shell`/`/settings` **real user identity** — all over the already-wired Neon DB (multi-tenant). The
+**verdict memo** (DM-8/MEMO-1) is the remaining judged-loop piece (and adds the sentence text back to `/words`
+history). Both are heavier than the read-model slices; pick per priority.
 
-> **Status (2026-07-04):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
-> 13–16 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
-> `wire/words-read-models`; `git log` to confirm). `/review`, the `/` dashboard (counter + ladder + goal ring
-> + Today counts), **and `/words`** are wired to real use-cases (Neon when `DATABASE_URL` is set, else
-> in-memory; DeepSeek when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run
+> **Status (2026-07-05):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
+> 13–17 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
+> `wire/onboarding-seeding`; `git log` to confirm). `/review`, the `/` dashboard (counter + ladder + goal ring
+> + Today counts), `/words`, **and `/onboarding`** are wired to real use-cases (Neon when `DATABASE_URL` is set,
+> else in-memory; DeepSeek when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run
 > typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves each slice
 > — do not trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm test`, and
 > `npm run dev` at session start.

@@ -5,6 +5,7 @@ import {
   composeReviewPass,
   composeResolvePrompt,
   composeSession,
+  composeSeeding,
   composeUsableCounter,
   composeDashboardSummary,
   composeWords,
@@ -14,6 +15,7 @@ import { devVerdict } from "../../infrastructure/devJudge.js";
 import type { JudgePort } from "../../application/ports/judge.js";
 import type { CardRepository } from "../../application/ports/cardRepository.js";
 import type { StartSessionDeps } from "../../application/startSession.js";
+import type { SeedIntroductionsDeps } from "../../application/seedIntroductions.js";
 import type { RunReviewPassDeps } from "../../application/runReviewPass.js";
 import type { ResolveReviewPromptDeps } from "../../application/resolveReviewPrompt.js";
 import type { ReadUsableCounterDeps } from "../../application/readUsableCounter.js";
@@ -54,6 +56,12 @@ const judge: JudgePort = process.env.DEEPSEEK_API_KEY
 
 export function sessionDeps(): StartSessionDeps {
   return composeSession(cards);
+}
+
+/** Deps for first-session seeding (spec/09 SEED-1). Shares the same store so onboarding-seeded cards
+ * are the very cards the review pass / dashboard / words reads then see. */
+export function seedingDeps(): SeedIntroductionsDeps {
+  return composeSeeding(cards);
 }
 
 export function reviewDeps(): RunReviewPassDeps {
