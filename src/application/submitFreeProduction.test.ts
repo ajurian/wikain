@@ -15,7 +15,11 @@ import type { Lemmatizer } from "./ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";
 import { JudgeUnavailableError, type JudgePort, type JudgeRequest } from "./ports/judge.js";
 import type { Scheduler } from "./ports/scheduler.js";
+import type { MemoVersions } from "./ports/verdictMemo.js";
+import { InMemoryVerdictMemo } from "../infrastructure/inMemoryVerdictMemo.js";
 import { MAX_RULE_BOUNCE_RETRIES } from "../domain/constants.js";
+
+const TEST_VERSIONS: MemoVersions = { modelVersion: "test", rubricVersion: "test" };
 
 const NOW = new Date("2026-06-30T00:00:00Z");
 const SENSE = "negotiate_verb_01";
@@ -179,7 +183,18 @@ function deps(
   const { scheduler, calls } = makeScheduler();
   const repo = makeRepo(card);
   return {
-    d: { catalog, cards: repo.cards, scheduler, lemmatizer, analyzer, judge, tagalogLexicon },
+    d: {
+      catalog,
+      cards: repo.cards,
+      scheduler,
+      lemmatizer,
+      analyzer,
+      judge,
+      tagalogLexicon,
+      // A fresh memo per deps() so no test's submission hits another's cached verdict.
+      memo: new InMemoryVerdictMemo(),
+      judgeVersions: TEST_VERSIONS,
+    },
     calls,
     logs: repo.logs,
     stored: repo.stored,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
-import { ITEMS_PATH, composeFreeProduction } from "./composition.js";
+import { ITEMS_PATH, composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
+import { InMemoryVerdictMemo } from "./inMemoryVerdictMemo.js";
 import { JsonCatalog } from "./catalog.js";
 import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
@@ -31,6 +32,8 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
       analyzer: wink,
       judge,
       tagalogLexicon: TAGALOG_LEXICON,
+      memo: new InMemoryVerdictMemo(),
+      judgeVersions: DEV_JUDGE_VERSIONS,
     };
     return { deps, cards };
   }

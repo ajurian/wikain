@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
-import { ITEMS_PATH, composeReviewPass } from "./composition.js";
+import { ITEMS_PATH, composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
+import { InMemoryVerdictMemo } from "./inMemoryVerdictMemo.js";
 import { JsonCatalog } from "./catalog.js";
 import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
@@ -36,6 +37,8 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
       analyzer: wink,
       judge,
       tagalogLexicon: TAGALOG_LEXICON,
+      memo: new InMemoryVerdictMemo(),
+      judgeVersions: DEV_JUDGE_VERSIONS,
     };
     await cards.save({ userId: "u1", senseId: item.sense_id, mastery, fsrs: new TsFsrsScheduler().newCard(now) });
     return { deps, cards };

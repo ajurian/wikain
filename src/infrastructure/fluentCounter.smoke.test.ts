@@ -7,6 +7,8 @@ import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { WinkLemmatizer } from "./winkLemmatizer.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
 import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
+import { InMemoryVerdictMemo } from "./inMemoryVerdictMemo.js";
+import { DEV_JUDGE_VERSIONS } from "./composition.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import { readUsableCounter } from "../application/readUsableCounter.js";
 import type { LexicalItem } from "../domain/lexicalItem.js";
@@ -51,6 +53,8 @@ describe("SM-5 promotion + counter (smoke: real catalog + wink + ts-fsrs, fake j
       analyzer: wink,
       judge: new FakeJudge(passingVerdict()),
       tagalogLexicon: TAGALOG_LEXICON,
+      memo: new InMemoryVerdictMemo(),
+      judgeVersions: DEV_JUDGE_VERSIONS,
     };
     return { deps, cards, scheduler };
   }

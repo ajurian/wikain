@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
-import { ITEMS_PATH } from "./composition.js";
+import { ITEMS_PATH, DEV_JUDGE_VERSIONS } from "./composition.js";
+import { InMemoryVerdictMemo } from "./inMemoryVerdictMemo.js";
 import { JsonCatalog } from "./catalog.js";
 import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
@@ -33,6 +34,8 @@ describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", 
       analyzer: wink,
       judge,
       tagalogLexicon: TAGALOG_LEXICON,
+      memo: new InMemoryVerdictMemo(),
+      judgeVersions: DEV_JUDGE_VERSIONS,
     };
 
     const userId = "u1";

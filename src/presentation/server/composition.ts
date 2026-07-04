@@ -1,5 +1,7 @@
 import { InMemoryCardRepository } from "../../infrastructure/inMemoryCardRepository.js";
-import { DrizzleCardRepository } from "../../infrastructure/drizzleCardRepository.js";
+import { DrizzleCardRepository, type DrizzleDb } from "../../infrastructure/drizzleCardRepository.js";
+import { InMemoryVerdictMemo } from "../../infrastructure/inMemoryVerdictMemo.js";
+import { DrizzleVerdictMemo } from "../../infrastructure/drizzleVerdictMemo.js";
 import { neonDbFromEnv } from "../../infrastructure/db/neon.js";
 import {
   composeReviewPass,
@@ -10,10 +12,13 @@ import {
   composeDashboardSummary,
   composeWords,
   liveJudge,
+  liveJudgeVersions,
+  DEV_JUDGE_VERSIONS,
 } from "../../infrastructure/composition.js";
 import { devVerdict } from "../../infrastructure/devJudge.js";
 import type { JudgePort } from "../../application/ports/judge.js";
 import type { CardRepository } from "../../application/ports/cardRepository.js";
+import type { MemoVersions, VerdictMemoPort } from "../../application/ports/verdictMemo.js";
 import type { StartSessionDeps } from "../../application/startSession.js";
 import type { SeedIntroductionsDeps } from "../../application/seedIntroductions.js";
 import type { RunReviewPassDeps } from "../../application/runReviewPass.js";
@@ -39,9 +44,21 @@ import type { ReadWordDetailDeps } from "../../application/readWordDetail.js";
  *
  * Run `npm run db:migrate` against the Neon instance once before using the `DATABASE_URL` path.
  */
-const cards: CardRepository = process.env.DATABASE_URL
-  ? new DrizzleCardRepository(neonDbFromEnv())
+// Build the DB handle ONCE (lazy connection) so the cards repo AND the verdict memo (DM-8) share it —
+// both persist to the same Postgres under `currentUserId()`, or both fall back to process-shared
+// in-memory stores when `DATABASE_URL` is unset.
+const db: DrizzleDb | undefined = process.env.DATABASE_URL ? neonDbFromEnv() : undefined;
+
+const cards: CardRepository = db
+  ? new DrizzleCardRepository(db)
   : new InMemoryCardRepository();
+
+/**
+ * The verdict memo (spec/05, DM-8) is URL-gated exactly like `cards`: Drizzle over the same handle
+ * when `DATABASE_URL` is set (durable per-user cache that skips a billable judge call on an identical
+ * resubmission), else in-memory. Shared across every server-function call in this process.
+ */
+const memo: VerdictMemoPort = db ? new DrizzleVerdictMemo(db) : new InMemoryVerdictMemo();
 
 /**
  * The judged branch is **key-gated** (NET-7). With `DEEPSEEK_API_KEY` set we use the real DeepSeek
@@ -54,6 +71,15 @@ const judge: JudgePort = process.env.DEEPSEEK_API_KEY
   ? liveJudge()
   : { judge: async (request) => devVerdict(request) };
 
+/**
+ * spec/05 MEMO-6: the memo version stamp tracks the active judge — the real DeepSeek model id +
+ * RUBRIC_VERSION on the live path, a fixed `"dev"` stamp otherwise. Swapping the judge (key set/unset)
+ * or bumping the rubric invalidates stale memoized verdicts rather than serving them across models.
+ */
+const judgeVersions: MemoVersions = process.env.DEEPSEEK_API_KEY
+  ? liveJudgeVersions()
+  : DEV_JUDGE_VERSIONS;
+
 export function sessionDeps(): StartSessionDeps {
   return composeSession(cards);
 }
@@ -65,7 +91,7 @@ export function seedingDeps(): SeedIntroductionsDeps {
 }
 
 export function reviewDeps(): RunReviewPassDeps {
-  return { ...composeReviewPass(judge), cards };
+  return { ...composeReviewPass(judge, undefined, memo, judgeVersions), cards };
 }
 
 export function promptDeps(): ResolveReviewPromptDeps {

@@ -26,7 +26,21 @@ import { WinkLemmatizer } from "./winkLemmatizer.js";
 import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
 import { DeepSeekJudge } from "./deepSeekJudge.js";
 import { deepSeekConfigFromEnv } from "./deepSeekConfig.js";
+import { RUBRIC_VERSION } from "./deepSeekRubric.js";
 import { DrizzleCardRepository, type DrizzleDb } from "./drizzleCardRepository.js";
+import { InMemoryVerdictMemo } from "./inMemoryVerdictMemo.js";
+import { DrizzleVerdictMemo } from "./drizzleVerdictMemo.js";
+import type { MemoVersions, VerdictMemoPort } from "../application/ports/verdictMemo.js";
+
+/**
+ * spec/05 MEMO-6: the version stamp for the offline/fake judge wirings. A memo hit must match the
+ * (model, rubric) pair; the fake/dev judge carries a fixed `"dev"` model id + the real RUBRIC_VERSION
+ * so a rubric bump still invalidates. The live wiring stamps the real DeepSeek model id instead.
+ */
+export const DEV_JUDGE_VERSIONS: MemoVersions = {
+  modelVersion: "dev",
+  rubricVersion: RUBRIC_VERSION,
+};
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -50,6 +64,8 @@ export function composeCuedReview(itemsPath: string = ITEMS_PATH): SubmitCuedRev
 export function composeFreeProduction(
   judge: JudgePort,
   itemsPath: string = ITEMS_PATH,
+  memo: VerdictMemoPort = new InMemoryVerdictMemo(),
+  judgeVersions: MemoVersions = DEV_JUDGE_VERSIONS,
 ): SubmitFreeProductionDeps {
   const wink = new WinkLemmatizer();
   return {
@@ -60,6 +76,8 @@ export function composeFreeProduction(
     analyzer: wink,
     judge,
     tagalogLexicon: TAGALOG_LEXICON,
+    memo,
+    judgeVersions,
   };
 }
 
@@ -72,8 +90,10 @@ export function composeFreeProduction(
 export function composeReviewPass(
   judge: JudgePort,
   itemsPath: string = ITEMS_PATH,
+  memo: VerdictMemoPort = new InMemoryVerdictMemo(),
+  judgeVersions: MemoVersions = DEV_JUDGE_VERSIONS,
 ): RunReviewPassDeps {
-  return composeFreeProduction(judge, itemsPath);
+  return composeFreeProduction(judge, itemsPath, memo, judgeVersions);
 }
 
 /**
@@ -87,8 +107,13 @@ export function composeReviewPassPersistent(
   judge: JudgePort,
   db: DrizzleDb,
   itemsPath: string = ITEMS_PATH,
+  judgeVersions: MemoVersions = DEV_JUDGE_VERSIONS,
 ): RunReviewPassDeps {
-  return { ...composeFreeProduction(judge, itemsPath), cards: new DrizzleCardRepository(db) };
+  // The memo persists alongside the cards over the same handle (DM-8) — durable per user.
+  return {
+    ...composeFreeProduction(judge, itemsPath, new DrizzleVerdictMemo(db), judgeVersions),
+    cards: new DrizzleCardRepository(db),
+  };
 }
 
 /**
@@ -101,9 +126,18 @@ export function liveJudge(): JudgePort {
   return new DeepSeekJudge(deepSeekConfigFromEnv());
 }
 
+/**
+ * spec/05 MEMO-6: the live judge's version stamp — the real DeepSeek model id (from config) +
+ * RUBRIC_VERSION. Swapping either model or rubric invalidates memoized verdicts. Reads the config
+ * (server-side, NET-7); requires `DEEPSEEK_API_KEY`.
+ */
+export function liveJudgeVersions(): MemoVersions {
+  return { modelVersion: deepSeekConfigFromEnv().model, rubricVersion: RUBRIC_VERSION };
+}
+
 /** Wiring for the end-to-end loop against the real DeepSeek judge (NET-7). Requires `DEEPSEEK_API_KEY`. */
 export function composeReviewPassLive(itemsPath: string = ITEMS_PATH): RunReviewPassDeps {
-  return composeReviewPass(liveJudge(), itemsPath);
+  return composeReviewPass(liveJudge(), itemsPath, new InMemoryVerdictMemo(), liveJudgeVersions());
 }
 
 /**

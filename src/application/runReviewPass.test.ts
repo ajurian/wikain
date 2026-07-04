@@ -11,8 +11,12 @@ import type { CardRepository } from "./ports/cardRepository.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";
 import { FakeJudge, passingVerdict } from "../infrastructure/fakeJudge.js";
+import { InMemoryVerdictMemo } from "../infrastructure/inMemoryVerdictMemo.js";
 import { JudgeUnavailableError } from "./ports/judge.js";
 import type { Scheduler } from "./ports/scheduler.js";
+import type { MemoVersions } from "./ports/verdictMemo.js";
+
+const TEST_VERSIONS: MemoVersions = { modelVersion: "test", rubricVersion: "test" };
 
 const NOW = new Date("2026-06-30T00:00:00Z");
 const SENSE = "negotiate_verb_01";
@@ -141,6 +145,8 @@ function deps(
       analyzer: healthyAnalyzer,
       judge,
       tagalogLexicon: new Set(),
+      memo: new InMemoryVerdictMemo(),
+      judgeVersions: TEST_VERSIONS,
     },
     judge,
     calls,

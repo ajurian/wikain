@@ -11,6 +11,8 @@ import type { Scheduler } from "./ports/scheduler.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";
 import { JudgeUnavailableError, type JudgePort, type JudgeUnavailableReason } from "./ports/judge.js";
+import type { MemoVersions, VerdictMemoPort } from "./ports/verdictMemo.js";
+import { memoKey, normalizeSentence } from "../domain/verdictMemo.js";
 import {
   checkFreeProductionRuleLayer,
   type BounceResult,
@@ -43,6 +45,10 @@ export interface SubmitFreeProductionDeps {
   judge: JudgePort;
   /** Shipped Tagalog lexicon, lowercased (RL-4). */
   tagalogLexicon: ReadonlySet<string>;
+  /** spec/05: the per-user verdict cache consulted before the judge (MEMO-1) and written on judge. */
+  memo: VerdictMemoPort;
+  /** spec/05 MEMO-6: the model/rubric stamp a memo hit must match; a bump invalidates stale rows. */
+  judgeVersions: MemoVersions;
 }
 
 /** A judged outcome: exactly one rating, one ReviewLog, and at most one demotion (INV-1). */
@@ -82,8 +88,9 @@ export type SubmitFreeProductionResult = BounceResult | JudgedResult | Unavailab
  *    (≥FLUENT_JUDGED_PASSES spaced judged passes, FSRS stability, unscaffolded most-recent — derived
  *    from the judged-pass ledger over the persisted ReviewLogs); otherwise mastery is unchanged.
  *  - RAT-8 / DM-6: exactly one ReviewLog per rated review; RAT-5: the scaffold flag is instrumented.
- *
- * The verdict memo (spec/05 MEMO-1, a `MAY`) is intentionally not consulted here yet.
+ *  - MEMO-1: the verdict memo is consulted after the rule-layer pass and before the judge; a hit
+ *    returns the stored verdict and skips the billable call. It changes NO gate outcome (a hit is the
+ *    byte-identical verdict a fresh judge would return), and a miss records the verdict on judge.
  */
 export async function submitFreeProduction(
   input: SubmitFreeProductionInput,
@@ -108,23 +115,40 @@ export async function submitFreeProduction(
   );
   if (!rule.ok) return rule.bounce;
 
-  // RL-1: the judge runs only on a rule-layer pass. (Memo lookup, spec/05, is deferred.)
+  // MEMO-1/2: consult the per-user memo after the rule-layer pass, before the judge. The key is the
+  // pure (normalized sentence + lemma + sense) triple (MEMO-2); a version-matched hit (MEMO-6) returns
+  // the stored verdict and skips the billable call. A miss judges then records below. `intendedSense`
+  // is item-derived, so the same senseId always keys the same intended sense (MEMO-2 stays sound).
+  const key = memoKey({
+    normalizedSentence: normalizeSentence(input.response),
+    lemma: item.lemma,
+    senseId: input.senseId,
+  });
+  const cached = await deps.memo.lookup(input.userId, key, deps.judgeVersions);
+
+  // RL-1: the judge runs only on a rule-layer pass — and only on a memo miss (MEMO-1).
   // INV-2 / NET-3/4/5: a transport failure (timeout/5xx/429/offline, after the adapter's one retry —
   // NET-6) yields no verdict. It must NOT be rated `Again` (that would inject a phantom lapse). The
   // card is left untouched (stays due) and the failure reason is surfaced for the UI's neutral message.
   let verdict: JudgeVerdict;
-  try {
-    verdict = await deps.judge.judge({
-      sentence: input.response,
-      lemma: item.lemma,
-      intendedSense: item.intended_sense,
-      modelSentence: item.model_sentence,
-    });
-  } catch (error) {
-    if (error instanceof JudgeUnavailableError) {
-      return { kind: "unavailable", reason: error.reason };
+  if (cached !== undefined) {
+    verdict = cached;
+  } else {
+    try {
+      verdict = await deps.judge.judge({
+        sentence: input.response,
+        lemma: item.lemma,
+        intendedSense: item.intended_sense,
+        modelSentence: item.model_sentence,
+      });
+    } catch (error) {
+      if (error instanceof JudgeUnavailableError) {
+        return { kind: "unavailable", reason: error.reason };
+      }
+      throw error;
     }
-    throw error;
+    // MEMO-6: write-on-judge only (never on an unavailable transport failure — that path returned above).
+    await deps.memo.record(input.userId, key, verdict, deps.judgeVersions);
   }
 
   // INV-1 / RAT-1 / RAT-4: exactly one rating on this single verdict.

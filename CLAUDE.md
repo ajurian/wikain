@@ -357,6 +357,29 @@ called out):
     client bundle), `/onboarding`+`/` SSR 200. *Still mock/deferred: placement-marks persistence (SEED-2/7) +
     LexTALE (SEED-4); `/settings` wiring; `app-shell` mock user identity.*
 
+18. **Wire the verdict memo** (branch `wire/verdict-memo`; closes `spec/05` — the last unimplemented judged-loop
+    spec). A per-user cache that lets an identical free-production resubmission skip a billable judge call
+    (MEMO-1); it is **invisible** — it changes NO gate outcome (a hit returns the byte-identical verdict a fresh
+    judge would produce), so its only observable effect is the judge CALL COUNT. domain (TDD, pure):
+    `verdictMemo.ts` (`normalizeSentence` — MEMO-3 lowercase/trim/collapse-ws/strip-OUTER-punct; `memoKey` —
+    MEMO-2 triple `normalized_sentence + lemma + sense_id`, **JSON-encoded** not delimiter-joined so it is both
+    injective AND storable — JSON escapes a stray NUL that a Postgres `text` column rejects). application: narrow
+    `ports/verdictMemo.ts` (`VerdictMemoPort` `lookup`/`record` + `MemoVersions`; per-user MEMO-5, version-gated
+    MEMO-6); `submitFreeProduction` gains `memo`+`judgeVersions` deps and consults the memo **after** the
+    rule-layer pass, **before** the judge (hit → skip judge; miss → judge then `record`, **write-on-judge only**,
+    never on an `unavailable` transport failure). `judgeFirstProduction` is an intentional non-consumer (one-time
+    onboarding moment; PRAG-1). infra: `db/schema.ts` `verdict_memos` table (PK `(user_id, memo_key)`; verdict as
+    **`jsonb`** — lossless since `JudgeVerdict` has no `Date` fields, unlike the DM-5 expanded columns);
+    `inMemoryVerdictMemo.ts` + `drizzleVerdictMemo.ts` behind the shared `verdictMemoContract.ts` (SOLID-3, run
+    over both in-mem + pglite); migration `drizzle/0001_high_guardsmen.sql`. composition: memo is **URL-gated**
+    over the SAME Neon handle as `cards` (built once), else in-memory; `judgeVersions` tracks the judge gate (live
+    DeepSeek model id + `RUBRIC_VERSION`, else a fixed `"dev"` stamp) so a model/rubric swap invalidates stale
+    rows (MEMO-6). No UI/route changes. **Covers (wired):** MEMO-1/2/3/4/5/6, DM-8. **Verified:** both typecheck
+    gates, `npm test` (273), `npm run build` (no `verdictMemo`/`DrizzleVerdictMemo`/db identifiers in the client
+    bundle), `/`+`/review`+`/onboarding`+`/words` SSR 200, and a real-composition smoke proof (identical
+    resubmission ⇒ **1** judge call; a different sentence ⇒ 2). *Note: `db:generate` produced the migration; run
+    `npm run db:migrate` once against Neon before the `DATABASE_URL` path.*
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -366,30 +389,35 @@ called out):
   it behind a port (ARCH-3).
 - Every test names the `spec/` ID it exercises.
 
-**Deferred — do NOT build until pulled into scope (`PRAG-1`):** verdict memo (`05`, MEMO-1 is a MAY);
-LexTALE instrument + per-user FSRS optimization (SEED-4/8); the **BetterAuth (STACK-4) adapter** (presentation
-stubs a dev user at the `currentUser` seam). *Note: `/review` is **wired** (slices 13–14) — the judged
+**Deferred — do NOT build until pulled into scope (`PRAG-1`):** LexTALE instrument + per-user FSRS
+optimization (SEED-4/8); the **BetterAuth (STACK-4) adapter** (presentation stubs a dev user at the
+`currentUser` seam). *(The verdict memo is no longer deferred — slice 18 wired it.)* *Note: `/review` is
+**wired** (slices 13–14) — the judged
 loop, EDIT-7 render, NET-2/3/5, and the usable-words counter (CNT-2/3/4/6) run on real use-cases/DB. The
 **dashboard `/` is now wired too** (slice 15): SM-1 ladder, CNT-8 goal ring (real sentences-today, fixed
 default goal), and the SEED-6 Today due/new counts. **`/words`+`/words/$wordId` are now wired too** (slice
 16): per-word CNT-1/2/3 (counted-status + live retrievability) and the SM-3..SM-7 mastery history (replayed
 from logs; sentence text dropped for v1). **`/onboarding` is now wired too** (slice 17): SEED-1 first-session
-seeding + the real judge-don't-persist first win (its placement-marks + LexTALE stay visual-only). Still
-**mock-only design** (slice 12, awaiting wiring): the `app-shell` user identity (name/email) and `/settings`.*
+seeding + the real judge-don't-persist first win (its placement-marks + LexTALE stay visual-only). The
+**verdict memo** is now wired too (slice 18): MEMO-1..6 + DM-8, invisible (no gate-outcome change), the
+judged loop is complete. Still **mock-only design** (slice 12, awaiting wiring): the `app-shell` user
+identity (name/email) and `/settings`.*
 
-**Natural next slice:** the last mock learning surface is wired — what remains is **per-user state**, gated on
-the **BetterAuth (STACK-4) swap** (only `currentUser.ts` changes). It unlocks, in one cluster: the onboarding
-**placement-marks store** (SEED-2/7 — flagged words lazily card at `Recognized`), a learner-**adjustable**
-daily goal (CNT-8), the counter's **yesterday-delta** (needs a persisted daily snapshot), and the
-`app-shell`/`/settings` **real user identity** — all over the already-wired Neon DB (multi-tenant). The
-**verdict memo** (DM-8/MEMO-1) is the remaining judged-loop piece (and adds the sentence text back to `/words`
-history). Both are heavier than the read-model slices; pick per priority.
+**Natural next slice:** the judged loop is now complete (slice 18) and every mock learning surface is wired
+— the one remaining big cluster is **per-user state**, gated on the **BetterAuth (STACK-4) swap** (only
+`currentUser.ts` changes). It unlocks, together: the onboarding **placement-marks store** (SEED-2/7 — flagged
+words lazily card at `Recognized`), a learner-**adjustable** daily goal (CNT-8), the counter's
+**yesterday-delta** (needs a persisted daily snapshot), and the `app-shell`/`/settings` **real user identity**
+— all over the already-wired Neon DB (multi-tenant). *(The `/words` history sentence text still awaits a
+schema change — the verdict memo stores the normalized sentence, but re-attaching it to history is a separate
+DM-6/DM-8 decision, not done in slice 18.)*
 
-> **Status (2026-07-05):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
-> 13–17 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
-> `wire/onboarding-seeding`; `git log` to confirm). `/review`, the `/` dashboard (counter + ladder + goal ring
-> + Today counts), `/words`, **and `/onboarding`** are wired to real use-cases (Neon when `DATABASE_URL` is set,
-> else in-memory; DeepSeek when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run
+> **Status (2026-07-04):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
+> 13–18 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
+> `wire/verdict-memo`; `git log` to confirm). `/review`, the `/` dashboard (counter + ladder + goal ring
+> + Today counts), `/words`, **and `/onboarding`** are wired to real use-cases, and the **verdict memo** (slice
+> 18) caches judged verdicts per user (Neon when `DATABASE_URL` is set, else in-memory; DeepSeek when
+> `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run
 > typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves each slice
 > — do not trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm test`, and
 > `npm run dev` at session start.

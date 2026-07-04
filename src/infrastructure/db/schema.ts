@@ -17,6 +17,7 @@ import {
   boolean,
   doublePrecision,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   serial,
@@ -26,6 +27,7 @@ import {
 import type { MasteryState } from "../../domain/card.js";
 import type { ReviewTier } from "../../domain/review.js";
 import type { Rating } from "../../domain/rating.js";
+import type { JudgeVerdict } from "../../domain/verdict.js";
 
 /** One FSRS card per (user, word) — SM-2, DM-5. `mastery` kept apart from `fsrs_state` (DM-7). */
 export const cards = pgTable(
@@ -73,3 +75,25 @@ export const reviewLogs = pgTable("review_logs", {
   fsrsScheduledDays: doublePrecision("fsrs_scheduled_days").notNull(),
   fsrsReview: timestamp("fsrs_review", { withTimezone: true, mode: "date" }).notNull(),
 });
+
+/**
+ * Per-user verdict memo (spec/05-verdict-memo.md MEMO-1..6, DM-8). One row per (user, memo key); a
+ * re-judge under a bumped version overwrites the row (MEMO-6, write-on-judge only). Never shared
+ * across accounts (MEMO-5 — `user_id` is part of the PK).
+ *
+ * The verdict is stored as `jsonb`: unlike the FSRS card/log state (which needs expanded columns to
+ * round-trip `Date` fields losslessly — see DM-5 note above), `JudgeVerdict` has NO `Date` fields, so
+ * a jsonb blob is lossless here.
+ */
+export const verdictMemos = pgTable(
+  "verdict_memos",
+  {
+    userId: text("user_id").notNull(),
+    // The pure memoKey() (domain/verdictMemo.ts): normalized_sentence + lemma + sense_id (MEMO-2).
+    memoKey: text("memo_key").notNull(),
+    modelVersion: text("model_version").notNull(),
+    rubricVersion: text("rubric_version").notNull(),
+    verdict: jsonb("verdict").$type<JudgeVerdict>().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.memoKey] })],
+);

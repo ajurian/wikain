@@ -1,0 +1,272 @@
+{
+  "id": "18e871d6-d2fa-4623-a3f0-f8a39f539c18",
+  "prevId": "c64aea80-e527-4641-9772-8890219ecc0b",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.cards": {
+      "name": "cards",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sense_id": {
+          "name": "sense_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mastery": {
+          "name": "mastery",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_due": {
+          "name": "fsrs_due",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_stability": {
+          "name": "fsrs_stability",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_difficulty": {
+          "name": "fsrs_difficulty",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_elapsed_days": {
+          "name": "fsrs_elapsed_days",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_scheduled_days": {
+          "name": "fsrs_scheduled_days",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_reps": {
+          "name": "fsrs_reps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_lapses": {
+          "name": "fsrs_lapses",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_state": {
+          "name": "fsrs_state",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_last_review": {
+          "name": "fsrs_last_review",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "cards_user_id_sense_id_pk": {
+          "name": "cards_user_id_sense_id_pk",
+          "columns": [
+            "user_id",
+            "sense_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.review_logs": {
+      "name": "review_logs",
+      "schema": "",
+      "columns": {
+        "seq": {
+          "name": "seq",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sense_id": {
+          "name": "sense_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tier": {
+          "name": "tier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rating": {
+          "name": "rating",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scaffolded": {
+          "name": "scaffolded",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fsrs_rating": {
+          "name": "fsrs_rating",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_state": {
+          "name": "fsrs_state",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_due": {
+          "name": "fsrs_due",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_stability": {
+          "name": "fsrs_stability",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_difficulty": {
+          "name": "fsrs_difficulty",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_elapsed_days": {
+          "name": "fsrs_elapsed_days",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_last_elapsed_days": {
+          "name": "fsrs_last_elapsed_days",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_scheduled_days": {
+          "name": "fsrs_scheduled_days",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fsrs_review": {
+          "name": "fsrs_review",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.verdict_memos": {
+      "name": "verdict_memos",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "memo_key": {
+          "name": "memo_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_version": {
+          "name": "model_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rubric_version": {
+          "name": "rubric_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verdict": {
+          "name": "verdict",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "verdict_memos_user_id_memo_key_pk": {
+          "name": "verdict_memos_user_id_memo_key_pk",
+          "columns": [
+            "user_id",
+            "memo_key"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
