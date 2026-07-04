@@ -375,8 +375,8 @@
     "semantic_hash": "c698309979460d0f02ba616417844399"
   },
   "CLAUDE.md": {
-    "mtime": 1783146750.8288364,
-    "ast_hash": "fe762b25d52dc6348f17258915e06767",
+    "mtime": 1783164581.5417428,
+    "ast_hash": "db5104720cbac5401d4c3db0abde7622",
     "semantic_hash": ""
   },
   "docs/BUILD.md": {
@@ -735,8 +735,8 @@
     "semantic_hash": ""
   },
   "src/presentation/server/composition.ts": {
-    "mtime": 1783146337.3460314,
-    "ast_hash": "5d732625513482f80bf8eeb3a764951c",
+    "mtime": 1783164212.7276049,
+    "ast_hash": "d10c3e51b7aed82ca55c30f7b3ac7589",
     "semantic_hash": ""
   },
   "src/presentation/server/currentUser.ts": {
@@ -870,8 +870,8 @@
     "semantic_hash": ""
   },
   "src/presentation/routes/onboarding.tsx": {
-    "mtime": 1783058125.265277,
-    "ast_hash": "66551ef013cd24238c26a61db0872494",
+    "mtime": 1783164311.2786589,
+    "ast_hash": "18de5b6c6474ab59ce27a479d873905a",
     "semantic_hash": ""
   },
   "src/presentation/routes/settings.tsx": {
@@ -1002,6 +1002,46 @@
   "src/presentation/server/words.ts": {
     "mtime": 1783146353.938969,
     "ast_hash": "40d30f1ca0389ab57c0602c5b7da3775",
+    "semantic_hash": ""
+  },
+  "src/application/judgeFirstProduction.test.ts": {
+    "mtime": 1783164175.6824844,
+    "ast_hash": "3062a29bb402f4591d3a5548e5cfce57",
+    "semantic_hash": ""
+  },
+  "src/application/judgeFirstProduction.ts": {
+    "mtime": 1783164065.4908888,
+    "ast_hash": "437a0f9f4d6efede571dc8e0552cf5df",
+    "semantic_hash": ""
+  },
+  "src/application/presentSeededWords.test.ts": {
+    "mtime": 1783164124.384711,
+    "ast_hash": "ff35bba450b5ec8ba0ed8902955e479e",
+    "semantic_hash": ""
+  },
+  "src/application/presentSeededWords.ts": {
+    "mtime": 1783164109.7321062,
+    "ast_hash": "6f822855b4aa5a0b0df32cc02afc1514",
+    "semantic_hash": ""
+  },
+  "src/domain/placement.test.ts": {
+    "mtime": 1783164044.086386,
+    "ast_hash": "0f7fc9354f836bf5ad8b19da16dc8416",
+    "semantic_hash": ""
+  },
+  "src/domain/placement.ts": {
+    "mtime": 1783164036.7508645,
+    "ast_hash": "0faaffd8aae5d720e85ce775be0b73c4",
+    "semantic_hash": ""
+  },
+  "src/infrastructure/onboarding.smoke.test.ts": {
+    "mtime": 1783164336.0602047,
+    "ast_hash": "bbfc7189112d853e4bf92e29c2cf9de7",
+    "semantic_hash": ""
+  },
+  "src/presentation/server/onboarding.ts": {
+    "mtime": 1783164229.982973,
+    "ast_hash": "07b8ab05bee2a1fa16f033bb1bbd641b",
     "semantic_hash": ""
   }
 }
