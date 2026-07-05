@@ -5,8 +5,8 @@
     "semantic_hash": "500a4a83edf770d92912fce99cdc2a54"
   },
   "package.json": {
-    "mtime": 1783057561.873658,
-    "ast_hash": "948e94bbc099b3160d11c9ff95cc5ebe",
+    "mtime": 1783168619.7300317,
+    "ast_hash": "5211714cf069b1c0b349cb90567383c6",
     "semantic_hash": ""
   },
   "src/application/ports/cardRepository.ts": {
@@ -205,8 +205,8 @@
     "semantic_hash": "54e9340a82cbbd9276b8d268e7313632"
   },
   "src/infrastructure/composition.ts": {
-    "mtime": 1783165672.839595,
-    "ast_hash": "0ca46bec670eebeeb2c6b0b1518785a3",
+    "mtime": 1783173169.2486904,
+    "ast_hash": "89969510cbf4ff0138ff8583d28fd7ed",
     "semantic_hash": ""
   },
   "src/infrastructure/deepSeekConfig.ts": {
@@ -375,8 +375,8 @@
     "semantic_hash": "c698309979460d0f02ba616417844399"
   },
   "CLAUDE.md": {
-    "mtime": 1783164581.5417428,
-    "ast_hash": "db5104720cbac5401d4c3db0abde7622",
+    "mtime": 1783227605.826338,
+    "ast_hash": "dd31946f9d5c30d5582ea0af5f70c1e8",
     "semantic_hash": ""
   },
   "docs/BUILD.md": {
@@ -465,8 +465,8 @@
     "semantic_hash": "20446bd2d66b0add234c57b5e57143b0"
   },
   "drizzle.config.ts": {
-    "mtime": 1782990684.6787462,
-    "ast_hash": "093a6b44a783ff8a753ad6c3dd8160e9",
+    "mtime": 1783168646.5754144,
+    "ast_hash": "a8571aa0e3cd4d90a09be371d490e0e9",
     "semantic_hash": ""
   },
   "drizzle/0000_init.sql": {
@@ -480,8 +480,8 @@
     "semantic_hash": ""
   },
   "drizzle/meta/_journal.json": {
-    "mtime": 1783165632.8771973,
-    "ast_hash": "1a4eac7c93399097afd92dfda96b7b4d",
+    "mtime": 1783173021.1984699,
+    "ast_hash": "9cbb81963842f6f71410227fa5dd2e4f",
     "semantic_hash": ""
   },
   "src/application/ports/wordSource.ts": {
@@ -490,13 +490,13 @@
     "semantic_hash": ""
   },
   "src/application/seedIntroductions.test.ts": {
-    "mtime": 1782990684.684747,
-    "ast_hash": "25f3705cab9a27d807fda0937098bc36",
+    "mtime": 1783173073.9952912,
+    "ast_hash": "3deaabf7e02fb95e64f0009ae67fcc4b",
     "semantic_hash": ""
   },
   "src/application/seedIntroductions.ts": {
-    "mtime": 1782990684.684747,
-    "ast_hash": "cda85babc9e7beee4f405d245afe2aeb",
+    "mtime": 1783173064.9809978,
+    "ast_hash": "f2d3fab479f346cfe5f793de73a0d15b",
     "semantic_hash": ""
   },
   "src/application/submitCloze.test.ts": {
@@ -590,8 +590,8 @@
     "semantic_hash": ""
   },
   "src/infrastructure/db/schema.ts": {
-    "mtime": 1783165565.830005,
-    "ast_hash": "e9c622162f96a249f8117aa1fd0e83d4",
+    "mtime": 1783172992.6208603,
+    "ast_hash": "18b000ce98bc7a1ef64baa9873848265",
     "semantic_hash": ""
   },
   "src/infrastructure/drizzleCardRepository.test.ts": {
@@ -735,8 +735,8 @@
     "semantic_hash": ""
   },
   "src/presentation/server/composition.ts": {
-    "mtime": 1783165712.6432583,
-    "ast_hash": "15d7fcd9586b665c4bbf325aeee0e9d6",
+    "mtime": 1783227384.9281936,
+    "ast_hash": "692b3491a644ff415e987c7c37a85700",
     "semantic_hash": ""
   },
   "src/presentation/server/currentUser.ts": {
@@ -870,8 +870,8 @@
     "semantic_hash": ""
   },
   "src/presentation/routes/onboarding.tsx": {
-    "mtime": 1783164311.2786589,
-    "ast_hash": "18de5b6c6474ab59ce27a479d873905a",
+    "mtime": 1783227464.8571734,
+    "ast_hash": "b9be41d822ee03480e0cef02b81a4e17",
     "semantic_hash": ""
   },
   "src/presentation/routes/settings.tsx": {
@@ -1040,8 +1040,8 @@
     "semantic_hash": ""
   },
   "src/presentation/server/onboarding.ts": {
-    "mtime": 1783164229.982973,
-    "ast_hash": "07b8ab05bee2a1fa16f033bb1bbd641b",
+    "mtime": 1783227414.2151153,
+    "ast_hash": "9edd626c9ad69837af760830e3bb69c8",
     "semantic_hash": ""
   },
   "drizzle/0001_high_guardsmen.sql": {
@@ -1097,6 +1097,76 @@
   "src/infrastructure/verdictMemoContract.ts": {
     "mtime": 1783165937.5311382,
     "ast_hash": "6306ec3cf56fa8491af389e7dac06362",
+    "semantic_hash": ""
+  },
+  "drizzle/0002_purple_doomsday.sql": {
+    "mtime": 1783173021.1984699,
+    "ast_hash": "2eaa4e4a14f7c07063a618464f526879",
+    "semantic_hash": ""
+  },
+  "drizzle/meta/0002_snapshot.json": {
+    "mtime": 1783173021.1984699,
+    "ast_hash": "3327b0c83b84b54213fb745ddb77e379",
+    "semantic_hash": ""
+  },
+  "src/application/ports/placementMarks.ts": {
+    "mtime": 1783172957.3740776,
+    "ast_hash": "5c3b3ae3f84246d7be11808dd20ba8e3",
+    "semantic_hash": ""
+  },
+  "src/application/readPlacementSlate.test.ts": {
+    "mtime": 1783173135.047456,
+    "ast_hash": "a169ec74d151a865a59282b85d1606ee",
+    "semantic_hash": ""
+  },
+  "src/application/readPlacementSlate.ts": {
+    "mtime": 1783173112.1982527,
+    "ast_hash": "a9c1a2bac9e16619ba6fea444fe00d65",
+    "semantic_hash": ""
+  },
+  "src/application/recordPlacementMarks.test.ts": {
+    "mtime": 1783173121.5732398,
+    "ast_hash": "ed7e9bbe865c01414e3665b18fea0013",
+    "semantic_hash": ""
+  },
+  "src/application/recordPlacementMarks.ts": {
+    "mtime": 1783173100.3108308,
+    "ast_hash": "436ad31d05c131ea348d21f1c45fd7b5",
+    "semantic_hash": ""
+  },
+  "src/infrastructure/drizzlePlacementMarks.test.ts": {
+    "mtime": 1783173013.3695104,
+    "ast_hash": "461e53e8ba553bed5216b2bbce730474",
+    "semantic_hash": ""
+  },
+  "src/infrastructure/drizzlePlacementMarks.ts": {
+    "mtime": 1783173000.709201,
+    "ast_hash": "80e80748e58cd8a2ccc44c23bb39acc1",
+    "semantic_hash": ""
+  },
+  "src/infrastructure/inMemoryPlacementMarks.test.ts": {
+    "mtime": 1783173007.7379775,
+    "ast_hash": "f9187ed9032b200e17b56576a0eba8a4",
+    "semantic_hash": ""
+  },
+  "src/infrastructure/inMemoryPlacementMarks.ts": {
+    "mtime": 1783172978.1236882,
+    "ast_hash": "86d4632751cae5be84b0f4af12e87d89",
+    "semantic_hash": ""
+  },
+  "src/infrastructure/placementMarks.smoke.test.ts": {
+    "mtime": 1783173206.498769,
+    "ast_hash": "28389000d62f11edeab0ec26f4f5d874",
+    "semantic_hash": ""
+  },
+  "src/infrastructure/placementMarksContract.ts": {
+    "mtime": 1783172969.5445185,
+    "ast_hash": "e1138d2455190c937e5a2dfd6853914c",
+    "semantic_hash": ""
+  },
+  "ongoing_task.md": {
+    "mtime": 1783183436.3844798,
+    "ast_hash": "17949d3565386f831a03cacaa2289233",
     "semantic_hash": ""
   }
 }

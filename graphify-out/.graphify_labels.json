@@ -213,10 +213,7 @@
   "211": "composition.ts",
   "212": "deepSeekJudge.ts",
   "213": "MemoVersions",
-  "214": "checkFreeProductionRuleLayer.test.ts",
   "215": "CardRepository",
   "216": "seedIntroductions.ts",
-  "217": "submitFreeProduction.ts",
-  "218": "JudgeUnavailableError",
   "219": "cardRepositoryContract.ts"
 }
