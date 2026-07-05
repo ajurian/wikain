@@ -1,7 +1,9 @@
 /**
- * Composition root for the cued-review slice (ARCH-3): the single place that wires concrete
- * adapters to the application's ports. Swapping the in-memory repository for the Neon adapter
- * (STACK-3) later happens only here.
+ * Composition root (ARCH-3): the single place that wires concrete adapters to the application's ports.
+ * Persistence is Drizzle-only — the composers take the concrete stores (`cards`/`memo`/`marks`/
+ * `settings`) as arguments; the caller constructs them over a `DrizzleDb` handle (Neon in prod, pglite
+ * in tests). There is no in-memory adapter and no offline fallback (removed with STACK-4): the app
+ * requires a real database, tests run against embedded pglite.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,28 +23,25 @@ import type { JudgePort } from "../application/ports/judge.js";
 import type { CardRepository } from "../application/ports/cardRepository.js";
 import type { Scheduler } from "../application/ports/scheduler.js";
 import type { PlacementMarksStore } from "../application/ports/placementMarks.js";
-import { InMemoryPlacementMarks } from "./inMemoryPlacementMarks.js";
+import type { SettingsStore } from "../application/ports/settings.js";
+import type { MemoVersions, VerdictMemoPort } from "../application/ports/verdictMemo.js";
 import { JsonCatalog } from "./catalog.js";
 import { JsonWordSource } from "./jsonWordSource.js";
-import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { WinkLemmatizer } from "./winkLemmatizer.js";
 import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
 import { DeepSeekJudge } from "./deepSeekJudge.js";
 import { deepSeekConfigFromEnv } from "./deepSeekConfig.js";
 import { RUBRIC_VERSION } from "./deepSeekRubric.js";
-import { DrizzleCardRepository, type DrizzleDb } from "./drizzleCardRepository.js";
-import { InMemoryVerdictMemo } from "./inMemoryVerdictMemo.js";
-import { DrizzleVerdictMemo } from "./drizzleVerdictMemo.js";
-import type { MemoVersions, VerdictMemoPort } from "../application/ports/verdictMemo.js";
 
 /**
- * spec/05 MEMO-6: the version stamp for the offline/fake judge wirings. A memo hit must match the
- * (model, rubric) pair; the fake/dev judge carries a fixed `"dev"` model id + the real RUBRIC_VERSION
- * so a rubric bump still invalidates. The live wiring stamps the real DeepSeek model id instead.
+ * spec/05 MEMO-6: a fixed memo version stamp for wirings that use a FAKE judge (tests). A memo hit must
+ * match the (model, rubric) pair; the fake judge carries a fixed `"fake"` model id + the real
+ * RUBRIC_VERSION so a rubric bump still invalidates. The live wiring stamps the real DeepSeek model id
+ * instead (`liveJudgeVersions`).
  */
 export const DEV_JUDGE_VERSIONS: MemoVersions = {
-  modelVersion: "dev",
+  modelVersion: "fake",
   rubricVersion: RUBRIC_VERSION,
 };
 
@@ -51,30 +50,33 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 /** repo/build/out/items.json, resolved from src/infrastructure/. */
 export const ITEMS_PATH = path.resolve(HERE, "..", "..", "build", "out", "items.json");
 
-export function composeCuedReview(itemsPath: string = ITEMS_PATH): SubmitCuedReviewDeps {
+export function composeCuedReview(
+  cards: CardRepository,
+  itemsPath: string = ITEMS_PATH,
+): SubmitCuedReviewDeps {
   return {
     catalog: JsonCatalog.fromFile(itemsPath),
-    cards: new InMemoryCardRepository(),
+    cards,
     scheduler: new TsFsrsScheduler(),
     lemmatizer: new WinkLemmatizer(),
   };
 }
 
 /**
- * Wiring for the judged free-production slice. The `judge` is injected because v1 has no real judge
- * adapter yet (the DeepSeek transport + failure path is the `08` slice) — pass a FakeJudge here. The
- * one wink adapter serves as both Lemmatizer (presence) and SentenceAnalyzer (degeneracy POS).
+ * Wiring for the judged free-production slice. The `judge`, `cards`, and `memo` are injected; the one
+ * wink adapter serves as both Lemmatizer (presence) and SentenceAnalyzer (degeneracy POS).
  */
 export function composeFreeProduction(
   judge: JudgePort,
+  cards: CardRepository,
+  memo: VerdictMemoPort,
+  judgeVersions: MemoVersions,
   itemsPath: string = ITEMS_PATH,
-  memo: VerdictMemoPort = new InMemoryVerdictMemo(),
-  judgeVersions: MemoVersions = DEV_JUDGE_VERSIONS,
 ): SubmitFreeProductionDeps {
   const wink = new WinkLemmatizer();
   return {
     catalog: JsonCatalog.fromFile(itemsPath),
-    cards: new InMemoryCardRepository(),
+    cards,
     scheduler: new TsFsrsScheduler(),
     lemmatizer: wink,
     analyzer: wink,
@@ -86,45 +88,23 @@ export function composeFreeProduction(
 }
 
 /**
- * Wiring for the end-to-end loop (spec/11). `runReviewPass` selects the tier from mastery state and
- * dispatches to the cued or judged use-case, so it needs the full judged-branch dependency set (a
- * structural superset of the cued one). The `judge` is injected — pass a FakeJudge until the real
- * DeepSeek adapter (`06`/`08`) lands.
+ * Wiring for the end-to-end loop (spec/11). `runReviewPass` routes cued vs. judged, so it needs the full
+ * judged-branch dependency set (a structural superset of the cued one).
  */
 export function composeReviewPass(
   judge: JudgePort,
+  cards: CardRepository,
+  memo: VerdictMemoPort,
+  judgeVersions: MemoVersions,
   itemsPath: string = ITEMS_PATH,
-  memo: VerdictMemoPort = new InMemoryVerdictMemo(),
-  judgeVersions: MemoVersions = DEV_JUDGE_VERSIONS,
 ): RunReviewPassDeps {
-  return composeFreeProduction(judge, itemsPath, memo, judgeVersions);
-}
-
-/**
- * Wiring for the end-to-end loop against a REAL database (spec/12 DM-5..DM-7, STACK-3/6). Swaps only
- * the `CardRepository` for the Drizzle adapter over the supplied `db` handle — everything else reuses
- * `composeFreeProduction`, so this is the single place persistence enters (ARCH-3). The `db` is
- * injected (pass `makeNeonDb(...)` for prod, `makePgliteDb()` for an offline run) so this function
- * itself needs no network or credentials. `judge` is injected exactly as in the in-memory wirings.
- */
-export function composeReviewPassPersistent(
-  judge: JudgePort,
-  db: DrizzleDb,
-  itemsPath: string = ITEMS_PATH,
-  judgeVersions: MemoVersions = DEV_JUDGE_VERSIONS,
-): RunReviewPassDeps {
-  // The memo persists alongside the cards over the same handle (DM-8) — durable per user.
-  return {
-    ...composeFreeProduction(judge, itemsPath, new DrizzleVerdictMemo(db), judgeVersions),
-    cards: new DrizzleCardRepository(db),
-  };
+  return composeFreeProduction(judge, cards, memo, judgeVersions, itemsPath);
 }
 
 /**
  * The live judge (spec/06 JDG-10, spec/08 NET-7): a DeepSeek adapter configured from the environment.
- * This is the single place the API key is read — it stays server-side (NET-7). Kept out of the default
- * `compose*` wirings so the test suite never constructs it (and never needs a key or the network); it
- * is only invoked by a real entry point / the manual smoke script.
+ * The single place the API key is read — server-side (NET-7). Kept out of test wirings (tests inject a
+ * FakeJudge) so the suite never needs a key or the network.
  */
 export function liveJudge(): JudgePort {
   return new DeepSeekJudge(deepSeekConfigFromEnv());
@@ -132,61 +112,49 @@ export function liveJudge(): JudgePort {
 
 /**
  * spec/05 MEMO-6: the live judge's version stamp — the real DeepSeek model id (from config) +
- * RUBRIC_VERSION. Swapping either model or rubric invalidates memoized verdicts. Reads the config
- * (server-side, NET-7); requires `DEEPSEEK_API_KEY`.
+ * RUBRIC_VERSION. Reads the config (server-side, NET-7); requires `DEEPSEEK_API_KEY`.
  */
 export function liveJudgeVersions(): MemoVersions {
   return { modelVersion: deepSeekConfigFromEnv().model, rubricVersion: RUBRIC_VERSION };
 }
 
-/** Wiring for the end-to-end loop against the real DeepSeek judge (NET-7). Requires `DEEPSEEK_API_KEY`. */
-export function composeReviewPassLive(itemsPath: string = ITEMS_PATH): RunReviewPassDeps {
-  return composeReviewPass(liveJudge(), itemsPath, new InMemoryVerdictMemo(), liveJudgeVersions());
-}
-
 /**
  * Wiring for first-session seeding (spec/09). Creates a user's cards (New → Seen, or → Recognized for
- * placement-known words, SM-11) from the frequency list stack. No external services (JSON catalog +
- * word source + ts-fsrs + in-memory repo). Pass the SHARED repository so seeded cards are visible to
- * the review pass; the default constructs a standalone in-memory repo for tests.
+ * placement-known words, SM-11) from the frequency-list stack. The shared `cards` + `marks` stores are
+ * injected so seeded cards are visible to the review pass and a marked word enters at Recognized (SEED-7).
  */
 export function composeSeeding(
-  cards: CardRepository = new InMemoryCardRepository(),
+  cards: CardRepository,
+  marks: PlacementMarksStore,
   itemsPath: string = ITEMS_PATH,
-  marks: PlacementMarksStore = new InMemoryPlacementMarks(),
 ): SeedIntroductionsDeps {
   return {
     catalog: JsonCatalog.fromFile(itemsPath),
     wordSource: JsonWordSource.fromFile(itemsPath),
     cards,
     scheduler: new TsFsrsScheduler(),
-    // SEED-7: the seeder consults persisted marks to enter a marked word at Recognized. Pass the SHARED
-    // store so a mark recorded in onboarding is seen by later sessions; the default is a fresh empty one.
     marks,
   };
 }
 
 /**
- * Wiring for a session start (spec/11 LOOP-1 step 1). `StartSessionDeps === SeedIntroductionsDeps`
- * (the queue ordering needs only `cards`, already in the seeding set), so this reuses the seeding
- * wiring — named separately for intent + a stable call site. Pass the SHARED repository + marks store so
- * the queued cards are the same ones the review pass reads/writes and marks lazily card at Recognized.
+ * Wiring for a session start (spec/11 LOOP-1 step 1). `StartSessionDeps === SeedIntroductionsDeps`, so
+ * this reuses the seeding wiring — named separately for intent + a stable call site.
  */
 export function composeSession(
-  cards: CardRepository = new InMemoryCardRepository(),
+  cards: CardRepository,
+  marks: PlacementMarksStore,
   itemsPath: string = ITEMS_PATH,
-  marks: PlacementMarksStore = new InMemoryPlacementMarks(),
 ): StartSessionDeps {
-  return composeSeeding(cards, itemsPath, marks);
+  return composeSeeding(cards, marks, itemsPath);
 }
 
 /**
  * Wiring for the onboarding placement-marking step (spec/09 SEED-2). The slate read reuses the same
- * list-stack word source + catalog the seeder selects from; the record write persists the marks to the
- * SHARED store the seeder then consults (SEED-7). Defaults construct standalone instances for tests.
+ * list-stack word source + catalog the seeder selects from.
  */
 export function composePlacementSlate(
-  cards: CardRepository = new InMemoryCardRepository(),
+  cards: CardRepository,
   itemsPath: string = ITEMS_PATH,
 ): ReadPlacementSlateDeps {
   return {
@@ -197,54 +165,50 @@ export function composePlacementSlate(
 }
 
 export function composeRecordPlacementMarks(
-  marks: PlacementMarksStore = new InMemoryPlacementMarks(),
+  marks: PlacementMarksStore,
 ): RecordPlacementMarksDeps {
   return { marks };
 }
 
 /**
  * Wiring for the render-time prompt read-model (spec/03 TIER-*, spec/11 LOOP-1 step 2). Catalog + the
- * SHARED card repository — it reads the same store the review pass writes, so pass the shared repo.
+ * shared card repository.
  */
 export function composeResolvePrompt(
-  cards: CardRepository = new InMemoryCardRepository(),
+  cards: CardRepository,
   itemsPath: string = ITEMS_PATH,
 ): ResolveReviewPromptDeps {
   return { catalog: JsonCatalog.fromFile(itemsPath), cards };
 }
 
 /**
- * Wiring for the "words you can now use" counter read-model (spec/10). It reads the same per-user
- * card + ReviewLog store the review pass writes, so callers pass the SHARED repository (and scheduler
- * for live retrievability) — defaults construct standalone instances for tests.
+ * Wiring for the "words you can now use" counter read-model (spec/10). Reads the shared per-user card +
+ * ReviewLog store; the scheduler gives live retrievability (CNT-3).
  */
 export function composeUsableCounter(
-  cards: CardRepository = new InMemoryCardRepository(),
+  cards: CardRepository,
   scheduler: Scheduler = new TsFsrsScheduler(),
 ): ReadUsableCounterDeps {
   return { cards, scheduler };
 }
 
 /**
- * Wiring for the dashboard read-model (spec/01 SM-1, spec/10 CNT-8, SEED-6). A pure read over the same
- * per-user card + ReviewLog store the review pass writes, so callers pass the SHARED repository. Needs
- * only `cards` (no scheduler — unlike the counter, it reads no live retrievability); the default
- * constructs a standalone repo for tests.
+ * Wiring for the dashboard read-model (spec/01 SM-1, spec/10 CNT-8, SEED-6). Reads the shared card +
+ * ReviewLog store; `settings` supplies the learner's daily goal (CNT-8).
  */
 export function composeDashboardSummary(
-  cards: CardRepository = new InMemoryCardRepository(),
+  cards: CardRepository,
+  settings: SettingsStore,
 ): ReadDashboardSummaryDeps {
-  return { cards };
+  return { cards, settings };
 }
 
 /**
- * Wiring for the per-word read-models (spec/10 CNT-1/2/3, `/words` + `/words/$wordId`). Both
- * `readWordsList` and `readWordDetail` share one deps shape (`cards` + `scheduler` for live
- * retrievability + `catalog` for the display lemma/gloss), so a single composer serves both. Reads the
- * same SHARED store the review pass writes; defaults construct standalone instances for tests.
+ * Wiring for the per-word read-models (spec/10 CNT-1/2/3, `/words` + `/words/$wordId`). Both share one
+ * deps shape (`cards` + `scheduler` for live retrievability + `catalog`), so a single composer serves both.
  */
 export function composeWords(
-  cards: CardRepository = new InMemoryCardRepository(),
+  cards: CardRepository,
   scheduler: Scheduler = new TsFsrsScheduler(),
   itemsPath: string = ITEMS_PATH,
 ): ReadWordsListDeps & ReadWordDetailDeps {

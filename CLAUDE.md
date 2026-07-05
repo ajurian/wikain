@@ -48,13 +48,16 @@ derived from the PRD, then tests are written against the specs, then runtime cod
 
 **What is implemented:** (1) the **build-time content-generation pipeline** (`build/`,
 TypeScript/Node), which realizes `docs/BUILD.md`; and (2) the **v4 runtime** (`src/`, started
-2026-06-30) — see `### v4 runtime (src/)` below — now spanning the review loop, first-session seeding,
-the real DeepSeek judge, the usable-words counter, edit resolution, a real Drizzle/Neon persistence
-adapter, and a **wired** TanStack Start UI (the `/review` session, `/` dashboard, `/words`, and
-`/onboarding` all run on real use-cases). **Parts of the v4 web/multi-user runtime specified in `spec/`
-still do not exist** — no verdict memo, no BetterAuth adapter, no per-user state (placement-marks
-persistence, adjustable daily goal, counter yesterday-delta), and `/settings` + the `app-shell` user
-identity are still mock-only design (slice 12). Do not assume a runtime piece is present; scaffold it only when asked.
+2026-06-30) — see `### v4 runtime (src/)` below — now spanning the whole review loop, first-session
+seeding, the real DeepSeek judge, the usable-words counter, edit resolution, the verdict memo, a
+Drizzle/Neon persistence adapter, **real BetterAuth email+password auth with per-user settings**, and a
+fully **wired, guarded** TanStack Start UI (every surface — `/`, `/review`, `/words`, `/onboarding`,
+`/settings`, `/signin`, `/signup` — runs on real use-cases behind a real session). The app is now
+**multi-tenant and secrets-required**: it fails fast on boot without `DATABASE_URL`, `DEEPSEEK_API_KEY`,
+and `BETTER_AUTH_SECRET` — there are **no in-memory adapters or offline fallbacks** anywhere (tests run
+against embedded pglite). **A few spec pieces remain deferred** — LexTALE (SEED-4), per-user FSRS
+optimization (SEED-8), and the counter's yesterday-delta (needs a persisted daily snapshot). Do not
+assume a runtime piece is present; scaffold it only when asked.
 *(Note: v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend — ignore any
 stale "Electron" framing elsewhere.)*
 
@@ -80,336 +83,92 @@ Code lives in `src/` under a **clean/onion architecture** (`.claude/rules/`, esp
 **test-first** against `spec/` IDs with **vitest** (`06-tdd.md`). Layout: `src/domain/` (pure),
 `src/application/` (use-cases + `ports/`), `src/infrastructure/` (adapters), `src/presentation/`
 (TanStack Start app — own `tsconfig`, `npm run typecheck:web`, excluded from the NodeNext backend
-gate). NodeNext ESM — relative imports carry `.js`; tests co-located `*.test.ts` (`TDD-4`). Slices
-1–11 are on **`master`**; the UI slices — 12 (design), 13–14 (backend wiring) — live on
-**`design/brand-ui-system`** and its descendant wiring branch (re-confirm with `git log`).
+gate). NodeNext ESM — relative imports carry `.js`; tests co-located `*.test.ts` (`TDD-4`). Backend
+slices 1–11 are on **`master`**; every UI slice — 12 (design), 13–20 (backend wiring) — lands on
+**`design/brand-ui-system`** and descendant wiring branches (re-confirm with `git log`).
+
+**Persistence & secrets (since slice 20):** there is **one Drizzle-only persistence path** — no
+in-memory adapters, no offline/URL-gated/key-gated fallbacks. The app **requires** `DATABASE_URL`,
+`DEEPSEEK_API_KEY`, and `BETTER_AUTH_SECRET`; the presentation composition root throws at load if any is
+missing (fail fast). Tests run against embedded **pglite** (`makePgliteDb()`); `FakeJudge` is the one
+test-only double (the judge is a paid external service). Run `npm run db:migrate` once against Neon
+before boot.
 
 ```bash
-npm test               # vitest run (runtime test gate)
+npm test               # vitest run (runtime test gate; pglite-backed, capped forks — see vite.config.ts)
 npm run test:watch     # vitest watch
 npm run typecheck      # NodeNext backend gate (build/** + src/** minus presentation)
 npm run typecheck:web  # presentation tsconfig
-npm run dev            # the TanStack Start app
+npm run dev            # the TanStack Start app (needs the 3 env vars)
+npm run db:migrate     # apply drizzle/ migrations to Neon (once, before the DATABASE_URL path)
 ```
 
-**Implemented slices** (each byte-preserving the earlier use-cases unless noted; external services
-called out):
+**Implemented slices** (1–20; each byte-preserves earlier use-cases unless noted). Terse — read the
+code + `spec/` IDs for detail:
 
-1. **Deterministic cued-production review** (architecture-proving; no external services). domain:
-   `lexicalItem.ts` (DM-2; `.test.ts` type-asserts vs `build/types.ts` — DM-12/DM-4), `card.ts`
-   (`MasteryState`/`Card`/`FsrsCardState`), `review.ts`, `rating.ts` (RAT-1), `mastery.ts` (SM-4),
-   `grading.ts` (TIER-5 pure lemma-match). application: ports `catalog`/`cardRepository`/`scheduler`/
-   `lemmatizer`; `submitCuedReview.ts` (grade→rate→schedule→promote→persist). infra: `winkLemmatizer`
-   (DM-9), `tsFsrsScheduler` (ts-fsrs confined to adapter), `inMemoryCardRepository`, `JsonCatalog`,
-   `composition.ts`. **Covers:** INV-1/3, SM-4, SM-6, RAT-1/8.
-
-2. **Judged free-production** (cloud judge **faked**). domain: `constants.ts` (RL tunables), `verdict.ts`
-   (JDG-4 + pure `passesGate` = sense AND grammar, JDG-2/5), `ruleLayer.ts` (RL-2/3/4 pure + `NlpToken`),
-   `mastery.ts` `demoteOneRung` (SM-6/7). application: ports `judge` + `sentenceAnalyzer` (separate from
-   `lemmatizer`, SOLID-4); `submitFreeProduction.ts` (rule-layer→judge→rate→demote-on-fail→persist;
-   `bounce | judged`). `ReviewTier`=`cued|free`; `ReviewLog.scaffolded` (RAT-5). infra: `fakeJudge.ts`,
-   `winkLemmatizer.analyze`, `tagalogLexicon.ts` (stub RL-4), `composeFreeProduction`. **Covers:** INV-2
-   (bounce→no rating/schedule/log), INV-1, RL-1/2/3/4/6, JDG-2/5, SM-6/7, RAT-1/4/5.
-
-3. **End-to-end loop orchestration** (`spec/11`; in-memory + faked judge). domain: `tier.ts` pure
-   `selectTier(mastery)` (SM-1 table; pure fn not port — ARCH-2/COMP-3). application: `runReviewPass.ts`
-   (load card→route→dispatch; `{tier, outcome}` union; `RunReviewPassDeps = SubmitFreeProductionDeps`).
-   infra: `composeReviewPass`; `reviewPass.smoke.test.ts`. **Covers:** LOOP-1..5, SM-1, SM-6.
-
-4. **SM-5 Fluent promotion + counter** (`spec/01` SM-5 + `spec/10`). Shared primitive = *distinct
-   calendar days with a passing free judged production*, derived from persisted `ReviewLog`s (no
-   Card-field drift; INV-4 filters non-free). domain: `judgedPassLedger.ts`, `fluentGate.ts`,
-   `mastery.ts` `promoteOnJudgedPass`, `counter.ts` `isCounted` (CNT-2/3/6), 4 constants
-   (`FLUENT_JUDGED_PASSES`=3, `FLUENT_MIN_STABILITY_DAYS`=21, `COUNTER_MIN_SPACED_PASSES`=2,
-   `COUNTER_R_FLOOR`=0.70). application: `Scheduler.getRetrievability` + `CardRepository.logsForWord`/
-   `listCards` ports; `readUsableCounter.ts` (live retrievability gate at read time). infra: ts-fsrs
-   `get_retrievability`, `composeUsableCounter`. **Covers:** SM-5(a-d), SM-6/7/9, INV-4, CNT-2/3/4/6.
-
-5. **Real DeepSeek cloud-judge + failure path** (`spec/06` JDG-10/11/6/4 + `spec/08` NET-*; **first
-   external service**). Swaps `FakeJudge` for a DeepSeek V4 Flash HTTPS adapter behind the unchanged
-   `JudgePort`; closes the cloud-failure half of INV-2. Tests stay offline (injected fake `http`).
-   application: `ports/judge.ts` + `JudgeUnavailableError`/`JudgeUnavailableReason`
-   (`transient`/`rate_limited`/`offline`/`invalid_response`, caught by use-case — ARCH-1);
-   `submitFreeProduction` gains `unavailable` arm (transport failure → no rating/schedule/log, card stays
-   due, ≠ bounce). `CLOUD_RETRY_COUNT`=1. infra: `deepSeekJudge.ts` (injectable `http`; JDG-6 JSON mode;
-   backed-off retry NET-3/6; error classify NET-3/4/5; **never fabricates a gate** — 2xx missing gate →
-   `invalid_response`; other-4xx → loud `Error`), `deepSeekConfig.ts` (**only** reader of
-   `DEEPSEEK_API_KEY`, server-side NET-7), `deepSeekRubric.ts` (`RUBRIC_VERSION`, JDG-9/11), `liveJudge()`/
-   `composeReviewPassLive()` (kept out of default wirings). **Covers:** INV-2 (cloud half), NET-3/4/5/6/7,
-   JDG-2/4/5/6/10/11. *Deferred (UI): NET-2 "checking…", NET-5 pre-submit offline block.*
-
-6. **Pure edit-resolution** (`spec/07` EDIT-*; pure domain, no consumer yet). domain: `editResolution.ts`
-   pure `resolveEdits(rawSentence, replacements, correctedSentence)` → `{kind:"inline";edits} |
-   {kind:"fallback";correctedSentence}`; reuses `Replacement`; in-module `REASON_PRIORITY`
-   (`sense>grammar>collocation>register`, fixed domain rule not a constant). **Design (user-confirmed):**
-   EDIT-4 fallback is **binary** — any edit whose `find` has 0 or ≥2 matches (empty=unresolvable)
-   suppresses all inline render → whole-sentence fallback; empty `replacements` = clean inline.
-   **Covers:** EDIT-2/3/4/5/6 (EDIT-1 met by `Replacement` shape). *Deferred (UI): EDIT-7 inline render +
-   wink token-boundary snapping.*
-
-7. **First persistence** (`spec/12` DM-5..DM-7, STACK-3/6; **first real DB**). Swaps
-   `InMemoryCardRepository` for a Drizzle adapter behind the unchanged `CardRepository` (swap confined to
-   composition root). Tests use embedded **pglite**, never Neon. infra: `db/schema.ts` (`cards` PK
-   `(userId, senseId)`; append-only `review_logs` with `serial seq`; `mastery` its own column — DM-7/INV-3;
-   FSRS = expanded `fsrs_`-prefixed `timestamptz` columns, no jsonb Date footgun),
-   `drizzleCardRepository.ts` (dialect-agnostic `DrizzleDb`, same code on pglite+Neon; `save`=upsert, SM-2),
-   `db/pglite.ts` + `db/neon.ts` (`neonDbFromEnv` reads `DATABASE_URL` server-side, NET-7/STACK-4),
-   `composeReviewPassPersistent`. **Shared contract test** `cardRepositoryContract.ts` runs against both
-   repos (SOLID-3 build-enforced). tooling: `drizzle.config.ts` + committed `drizzle/0000_init.sql` (same
-   migrations pglite+Neon); `db:generate`/`db:migrate`. **Covers:** DM-5/6/7, SM-2, INV-4, multi-tenant.
-   *Note: pglite suite adds ~12s (fresh DB/test). Deferred: memo table (DM-8); BetterAuth `userId` (STACK-4);
-   live Neon CI wiring.*
-
-8. **`Seen` on-ramp tiers** (`spec/03` TIER-1/2/5 + `spec/01` SM-3 + `spec/02` RAT-7). The missing rung;
-   both tiers deterministic (recognition=exact match, cloze=lemma-match). domain: `onRampLedger.ts`
-   (`nextSeenTier` — position derived from `ReviewLog`s, no new Card field; pure fold of SM-3's two-step +
-   RAT-7's capped drop-back via sticky `dropbackUsed`); `grading.ts` `isRecognitionCorrect` (TIER-2 **exact
-   identity**, not lemma-match); `mastery.ts` `promoteOnClozePass` (SM-3 `Seen→Recognized`, MCQ pass alone
-   never promotes); `ReviewTier`=`recognition|cloze|cued|free` (INV-4 still filters `free`); 2 constants
-   (`RECOGNITION_MCQ_OPTIONS`=4, `SEEN_CLOZE_DROPBACK_CAP`=1). application: `submitDeterministicReview.ts`
-   — shared grade→rate→schedule→promote→log core (rule-of-three, PRAG-3), strategy-injected by
-   `{tier, grade, promote}` (SOLID-2); `submitCuedReview` refactored onto it (API byte-identical); thin
-   `submitCloze`/`submitRecognition` configs. `runReviewPass` routes `Seen` via `nextSeenTier` **before**
-   `selectTier` (narrowed to `cued|free`). **Key insight:** RAT-7 drop-back is pure *routing* (which tier
-   next), never a mastery change — lives entirely in `nextSeenTier`. infra: no new adapters;
-   `onRamp.smoke.test.ts` (`Seen→Recognized→Productive`, FakeJudge zero calls). **Covers:** TIER-1/2/5,
-   SM-3, RAT-7, SM-6, RAT-1/8, DM-6, INV-1/3. *Deferred (UI): MCQ assembly/shuffle; `New→Seen` intro
-   (seeding).*
-
-9. **First-session seeding + placement** (`spec/09`). *Creates* a user's cards. The three placement
-   mechanisms (SEED-2/3) stay **structurally separate** (frontier band, per-word marks, list-stack source)
-   — the LexTALE scalar can never mark/select words (type-enforced). domain (pure): `entryState.ts`
-   (`introductionState` — placement-known→`Recognized` else `Seen`, SM-11/SEED-3), `introductionPacing.ts`
-   (`newIntroductionsAllowed` — SEED-6/9; backlog cap = closed-form `floor(f/(1−f)·due)`), `coldStart.ts`
-   (`coldStartDifficulty(cefr, band)`, SEED-8, FSRS[1,10]), 4 constants (`FIRST_SESSION_SEED_WORDS`=2,
-   `NEW_PER_DAY`=5, `NEW_FRACTION_UNDER_BACKLOG`=0.30, `REQUEST_RETENTION`=0.90). application: narrow
-   `WordSource` port; `Scheduler.newCard` + optional `ColdStart`; `seedIntroductions.ts` (pacing→select
-   excluding carded→`newCard` cold-started→entry state→save; no new repo method). infra: `jsonWordSource.ts`
-   (band bucket, list_rank, `sense_id` tiebreak), `tsFsrsScheduler` request_retention + cold-start,
-   `composeSeeding`. **Covers:** SEED-1/2/3/5/6/7/8/9, SM-11, INV-3. *Deferred: LexTALE internals (SEED-4);
-   per-user FSRS optimization (SEED-8, needs `@open-spaced-repetition/binding`); live session queue + UI.*
-
-10. **Session-queue / due-word surfacing** (`spec/11` LOOP-1 step 1; additive — no new ports/adapters).
-    domain (pure): `sessionQueue.ts` (`orderSessionQueue(cards, introSenseIds, now)` — due filter, reviews
-    most-overdue-first (`senseId` tiebreak), fresh intros evenly interleaved via proportional even-merge,
-    SEED-6; intro set passed explicitly). application: `startSession.ts` (`seedIntroductions`→`listCards`→
-    `orderSessionQueue`, returns `{queue, seeded}`). infra: `composeSession`; `session.smoke.test.ts`.
-    **Covers:** LOOP-1 (step 1), SEED-6/7. *Deferred: prompt resolution; per-calendar-day intro dedup;
-    due-only repo query.*
-
-11. **React deterministic review presentation** (`spec/03` TIER-1/2/5 render + `spec/11` LOOP-1;
-    **STACK-2/5/7**). First `src/presentation/` layer: **TanStack Start** (Vite 7 + React 19) full-stack
-    app; server functions run use-cases server-side so the DeepSeek key (NET-7) + DB (STACK-4) stay off the
-    client. Scope = deterministic screen (recognition/cloze/cued). backend (TDD): `reviewRouting.ts` —
-    extracted `resolveReviewTier(mastery, logs)` as **single source of truth** for routing (`runReviewPass`
-    refactored onto it, behavior-identical) so shown-tier == graded-tier; `resolveReviewPrompt.ts` read-model
-    (`{tier, …render fields}`, fail-loud on missing catalog field); `composeResolvePrompt`. presentation:
-    TanStack Start under `srcDirectory: src/presentation`; `server/` = 3 `createServerFn`s (`startSession`/
-    `resolvePrompt`/`submitReview`) over a process-shared in-memory repo + stubbed dev user (STACK-4 seam,
-    BetterAuth deferred); `routes/review.tsx` drives the flow with shadcn-ui + Tailwind v4 + TanStack Query.
-    tooling: Vite 7 / plugin-react 5 / **vitest 2→3** (vitest 2 pinned Vite 5); Tailwind v4; shadcn-ui
-    (`@/*`→`src/presentation`); `dev`/`build`/`start`/`typecheck:web`; shadcn MCP (`.mcp.json`).
-    **Covers:** render half of TIER-1/2/5 + LOOP-1 step 2. **Verified:** `npm run build` (server infra does
-    NOT leak to client), `/review` SSR-renders, both typecheck gates + tests green. *NOT driven headlessly
-    (the `createServerFn` HTTP click-path). Deferred (UI): free-production screen (real `liveJudge`) +
-    NET-2/5; EDIT-7 inline render; MCQ shuffle-on-render; counter/daily-goal (CNT-7/8/9); real Neon +
-    BetterAuth.*
-
-12. **Brand + design system + full mock-driven UI** (design deliverable; renders `spec/` §3/§7/§9/§10/§11
-    surfaces). **NOT a TDD runtime slice and NOT wired to infrastructure** — a complete UI/UX *design*; all
-    data comes from `src/presentation/mock/*` (every module carries a `MOCK DATA — TO BE REPLACED` header;
-    designed components never import `server/`). Brand = **warm editorial** (paper/ink neutrals, Manila-sun
-    **amber** accent, **Fraunces** serif for words/sentences + **Inter** UI; honest counter, no
-    confetti/streaks — encodes CNT-4/7/9). **Two skills authored** (leverage before UI work):
-    `.claude/skills/brand/` (positioning, voice **microcopy catalog keyed to spec IDs**, palette) +
-    `.claude/skills/design-system/` (tokens↔`styles.css`, component inventory, motion rules via
-    `motion/react`, **spec-state→UI map** in `references/screen-states.md`). `styles.css` rewritten (brand
-    oklch tokens + shadcn remap; `@fontsource-variable/fraunces|inter`). Routes: `/` dashboard (counter
-    CNT-2/3/4, goal ring CNT-8, ladder SM-1), `/review` **chromeless** session covering **all 5 tiers + the
-    full judged flow** (bounces RL-2/3/4, fallback offer TIER-7, cap-reveal+skip RL-6, "checking…" NET-2,
-    pass/fail verdict, **inline edits EDIT-7 via the real pure `resolveEdits`**, unscored practice SM-8,
-    offline NET-5, transient NET-3), `/onboarding` (SEED-1 win-before-calibration + per-word marking
-    SEED-2/3), `/words`+`/words/$wordId` (retrievability vs `COUNTER_R_FLOOR`, equal-weight
-    promotion/demotion history), `/signin`/`/signup`/`/settings` (visual-only; BetterAuth deferred). New ui
-    primitives `textarea`/`badge`/`progress` + composites (`app-shell`, `counter-stat`, `goal-ring`,
-    `mastery-chip`, `bounce-callout`, `checking-indicator`, `edited-sentence`, `verdict-panel`,
-    `session-summary`, `wordmark`). Dep: **motion**. **Only cross-layer reuse:** `edited-sentence.tsx` calls
-    the pure domain `resolveEdits` (presentation→domain, spec-true — not infra). **Verified:** `npm run
-    build`, both typecheck gates, `npm test` (194) green; all 8 routes SSR-render. *Design liberty: `/review`
-    compresses SM-3 spacing (a word's MCQ follows its intro same-session — commented). **The whole screen set
-    is UNWIRED — the `mock/*` data must be replaced with server functions/use-cases before any of it is
-    real.***
-
-13. **Wire `/review` to the real backend** (branch `design/brand-ui-system`; the first *wired* slice on
-    the mock UI). Replaces `src/presentation/mock/session.ts` with real server functions driving the whole
-    review loop — deterministic tiers AND the judged free-production flow — offline via a **key-gated dev
-    judge** (`devJudge.ts` `devVerdict`; real `liveJudge` when `DEEPSEEK_API_KEY` is set). backend (TDD):
-    extracted `checkFreeProductionRuleLayer.ts` (single source of truth for the rule-layer bounce, reused
-    by `submitFreeProduction` + the new `ruleCheckFn`); `runReviewPass` returns `previousMastery` (honest
-    from→to moves); pure `presentReviewOutcome.ts` DTO builder (result→serializable view-model, maps the
-    verdict's single feedback onto each edit); `resolveReviewPrompt` free arm reveals `lemma`/`pos`/`cefr`.
-    presentation-server: judge key-gated in `server/composition.ts`; `server/review.ts` gains `ruleCheckFn`
-    (instant judge-free rule pre-screen so "checking…" never precedes a bounce — NET-2; RL-6 model sentence
-    attached server-side only at the cap) + reworked `submitReviewFn`. `routes/review.tsx` rewritten
-    server-driven via TanStack Query (MCQ Fisher-Yates shuffle-on-render, NET-5 `navigator.onLine`
-    pre-check, dropped the New→Seen intro card per user scope). **Bug fixed:** `startSession` captured `now`
-    before `seedIntroductions` captured a later one → fresh intros fell past the queue's `due<=now` filter
-    (empty first session); now threads one `now`. **Covers (wired):** LOOP-1..5, TIER-1/2/5 grade,
-    RL-2/3/4/6, INV-2 (bounce+unavailable), NET-2/3/5, EDIT-7 (via the pure `resolveEdits`). **Verified:**
-    both typecheck gates, `npm test`, `npm run build` (no server leak in client bundle), `/review` SSR +
-    an offline click-path driver. *Deferred: verdict memo; live Neon + BetterAuth; per-calendar-day intro
-    dedup; MCQ headless click-path test.*
-
-14. **Wire the real DB + usable-words counter** (branch `design/brand-ui-system`; additive — **no new
-    domain/application logic**). (a) **DB is URL-gated** at the presentation composition root
-    (`server/composition.ts`): `DATABASE_URL` set → `new DrizzleCardRepository(neonDbFromEnv())` (durable;
-    the handle is built **synchronously** so no async composition — run `npm run db:migrate` once), unset →
-    the in-memory repo (zero-config offline dev). ONE shared binding all dep-factories close over, mirroring
-    the `DEEPSEEK_API_KEY` judge gate. (b) **Counter wired**: new `counterDeps()` + `server/counter.ts`
-    `usableCounterFn` call the existing `readUsableCounter`; `routes/index.tsx` renders it via TanStack
-    Query. **Dropped the yesterday-delta** (`previous`) — no daily snapshot is persisted, so no fabricated
-    comparison (honesty over a fake number). Correctness over the Drizzle adapter is guaranteed by the
-    shared `cardRepositoryContract` (SOLID-3 substitutability), so **no new tests**. **Covers (wired):**
-    CNT-2/3/4/6, STACK-3 (the Neon swap). **Verified:** both typecheck gates, `npm test` (206), `npm run
-    build` (no `DATABASE_URL`/`neon`/`drizzle`/`readUsableCounter` in the client bundle), `/` SSR renders
-    the **real** count (0 on a fresh store — honest; CNT-2 needs ≥2 spaced-day judged passes). *Still mock
-    (need new read-models / unstored data): goal ring CNT-8, ladder SM-1, Today/queue counts, and the
-    `app-shell` user chrome (the `132` header is the BetterAuth-deferred mock user, STACK-4); the
-    yesterday-delta needs a persisted daily snapshot.*
-
-15. **Wire the dashboard read-models** (branch `wire/review-db-counter`; additive — one read-model
-    use-case, no new business rules). Replaces the dashboard's `mock/learner.ts` (`MOCK_LADDER/LEARNER/
-    QUEUE`) with a real read-model mirroring `readUsableCounter`. domain (TDD, pure): `masteryLadder.ts`
-    (`tallyMastery` — SM-1 distribution over the four **carded** rungs, `New` omitted as a card-less
-    pre-state); `judgedPassLedger.ts` gains `judgedUsesOnDay` (CNT-8 today's free-judged **uses**, not
-    distinct days — reuses the module's `isJudgedPass`/`localDayKey`); `constants.ts` adds
-    `DAILY_GOAL_DEFAULT`=5 (CNT-8; fixed until a learner-adjustable setting persists — STACK-4). application
-    (TDD): `readDashboardSummary.ts` — Input/Deps(`{cards}` only, **no scheduler**)/Result triple returning
-    `{ladder, dueReviews, newIntroductions, sentencesToday, dailyGoal}`; `dueReviews` reuses the
-    `sessionQueue` due predicate (`fsrs.due<=now`), `newIntroductions` reuses `newIntroductionsAllowed` (the
-    pacing **allowance** "up to N new" — no per-day intro ledger, so not a remaining-today figure), a pure
-    read (never seeds/writes). infra: `composeDashboardSummary`. presentation-server: `dashboardDeps()` +
-    `server/dashboard.ts` `dashboardSummaryFn` (byte-mirrors `server/counter.ts`). presentation-UI:
-    `routes/index.tsx` swaps the `MOCK_*` imports for a `dashboard-summary` TanStack Query (zero-guarded
-    ladder bar + empty-state copy for a fresh user); `app-shell.tsx` header counter now reads the wired
-    `usable-counter` query (shared key dedupes) instead of `MOCK_LEARNER.usableWords`. **Covers (wired):**
-    SM-1 (ladder), CNT-8 (goal ring: real sentences-today + fixed default goal), SEED-6 (Today due/new).
-    **Verified:** both typecheck gates, `npm test` (221), `npm run build` (no server/db identifiers in the
-    client bundle), a real-composition integration drive (seed→read: ladder `Seen=2`, `dueReviews=2`, pacing
-    drops `newIntros` to 0 under backlog), `/` SSR 200. *Still mock/deferred: learner-**adjustable** daily
-    goal (settings+BetterAuth); counter yesterday-delta (needs a daily snapshot); per-calendar-day intro
-    dedup; `/words`+`/onboarding` wiring; `app-shell` mock **user identity** (name/email). `mock/learner.ts`
-    stays for `/words` + the mock user (`MasteryChip` still sources `MasteryState` from it).*
-
-16. **Wire the `/words` per-word read-models** (branch `wire/words-read-models`; additive — one new pure
-    domain helper + two read-models, no new business rules). Replaces `/words` + `/words/$wordId`'s
-    `mock/learner.ts` (`MOCK_WORDS`/`MOCK_R_FLOOR`) with real read-models mirroring `readDashboardSummary`.
-    domain (TDD, pure): `masteryHistory.ts` (`deriveMasteryHistory(logs, offset)` — **replays** a word's
-    ReviewLogs oldest→newest into `{day, tier, outcome, moved?}`, composing the **existing** transitions
-    `promoteOnClozePass`/`promoteOnCuedPass`/`promoteOnJudgedPass`/`demoteOneRung` + the `qualifiesForFluent`
-    gate fed by `distinctPassDays`+`fsrs.stability`; the "before" state is inferred from the first log's tier
-    per `reviewRouting`); `judgedPassLedger.ts` **exports** `localDayKey` for reuse. application (TDD):
-    `readWordsList.ts` (`{cards, scheduler, catalog}` deps → per-word `{senseId, lemma, mastery,
-    retrievability, aboveFloor, counted, judgedPassDays}` via `distinctPassDays`+`getRetrievability`+
-    `isCounted`; fail-loud on missing catalog) and `readWordDetail.ts` (adds catalog fields + `history`;
-    returns **`null`** when the user has no card — a reachable-but-empty URL — vs fail-loud on a missing
-    *catalog* entry; `New`/mastery filtering stays client-side). **Design (user-confirmed): the free-production
-    `sentence` text is DROPPED from history for v1** — `ReviewLog` never persists it (DM-6), so showing it
-    would need a schema change; honesty over fabrication (mirrors slice 14's dropped yesterday-delta). The
-    `moved` from→to survives (replayed). infra: `composeWords` (one composer, both read-models share the deps
-    shape); `words.smoke.test.ts` (seed→climb Seen→Recognized→read over real composition). presentation-server:
-    `wordsDeps()` + `server/words.ts` (`wordsListFn` GET; `wordDetailFn` GET + `senseId` validator, mirroring
-    `resolvePromptFn`). presentation-UI: `routes/words.index.tsx` + `words.$wordId.tsx` swap the `MOCK_*`
-    imports for `words-list`/`word-detail` TanStack Queries (empty/loading/not-found states; `words.index`
-    imports `COUNTER_R_FLOOR` from domain for the footer copy — presentation→domain, spec-true). `mock/learner.ts`
-    **trimmed** to just `MasteryState` + `MOCK_LEARNER` (the mock user for `/settings`+`app-shell`); the dead
-    dashboard mocks (`MOCK_WORDS`/`MOCK_R_FLOOR`/`MOCK_LADDER`/`MOCK_QUEUE`) are gone. **Covers (wired):**
-    CNT-1/2/3 (`/words`), SM-3..SM-7 (history replay). **Verified:** both typecheck gates, `npm test` (243),
-    `npm run build` (no `readWordsList`/`readWordDetail`/`deriveMasteryHistory`/`JsonCatalog`/db identifiers in
-    the client bundle), `/words`+`/words/$wordId`+`/` SSR 200 (`/words` shows the honest fresh-user empty state).
-    *Still mock/deferred: `/onboarding`+`/settings` wiring; `app-shell` mock **user identity**; sentence text in
-    history (arrives with the verdict memo DM-8/MEMO-1).*
-
-17. **Wire `/onboarding` → first-session seeding + the real first-win** (branch `wire/onboarding-seeding`;
-    the last mock-driven **learning** surface). Replaces `routes/onboarding.tsx`'s `mockItem`/`mockJudgeSubmit`/
-    `mockRuleLayer` with real use-cases: the coarse level maps to a frontier band, real words are seeded, and
-    the first written sentence runs the real rule layer + judge. domain (TDD, pure): `placement.ts`
-    (`frontierBandForCoarseLevel(level)` — SEED-2/5, the coarse scalar sets WHERE the frontier is; it never
-    marks/selects, SEED-3). application (TDD): `judgeFirstProduction.ts` — the SEED-1 win as
-    **judge-DON'T-persist** (`checkFreeProductionRuleLayer` → judge → return `bounce|judged|unavailable`; NO
-    rating/schedule/log/mastery-change). **Design (user-confirmed): the seeded words are still `Seen`, so a
-    graded `free` review would leak a "usable" pass into the counter (INV-4) — the win is a pedagogical moment,
-    judged for honest feedback and recorded nothing** (mirrors slices 14/16's honesty-over-fabrication drops).
-    `presentSeededWords.ts` (pure `Card[]`+`Catalog` → onboarding view; fail-loud on missing catalog).
-    presentation-server: `seedingDeps()` + `server/onboarding.ts` (`seedFirstSessionFn` POST → seeds at the
-    band, returns display fields, dev-idempotent fallback to earliest cards; `judgeFirstProductionFn` POST over
-    the same key-gated judge as `/review`, **reusing** `ruleCheckFn` for the instant NET-2 bounce). presentation-UI:
-    `routes/onboarding.tsx` rewritten — `level` + a `["onboarding-seeds", level]` TanStack Query **lifted to the
-    parent** (per-step local state was discarded before); `frontierBandForCoarseLevel` imported from domain
-    (presentation→domain, spec-true). infra: `onboarding.smoke.test.ts` (seed→judge over real composition,
-    asserts NO ReviewLog + card stays `Seen`). **Design (user-confirmed): the TuneStep per-word placement
-    marking (SEED-2/3) + LexTALE (SEED-4) stay VISUAL-ONLY** — persisting marks so flagged words lazily card at
-    `Recognized` (SEED-7) needs a per-user placement-marks store that lands with per-user state; `placementKnown`
-    is therefore never passed and all first-session words enter at `Seen` (SM-11). **Covers (wired):** SEED-1
-    (win before calibration), SEED-2/5 (coarse level→band), SEED-6 (first-session pace), RL-2/3/4 + NET-2/3/5
-    (first-win bounce/offline/transient). **Verified:** both typecheck gates, `npm test` (252), `npm run build`
-    (no `seedIntroductions`/`judgeFirstProduction`/`presentSeededWords`/`JsonCatalog`/db identifiers in the
-    client bundle), `/onboarding`+`/` SSR 200. *Still mock/deferred: placement-marks persistence (SEED-2/7) +
-    LexTALE (SEED-4); `/settings` wiring; `app-shell` mock user identity.*
-
-18. **Wire the verdict memo** (branch `wire/verdict-memo`; closes `spec/05` — the last unimplemented judged-loop
-    spec). A per-user cache that lets an identical free-production resubmission skip a billable judge call
-    (MEMO-1); it is **invisible** — it changes NO gate outcome (a hit returns the byte-identical verdict a fresh
-    judge would produce), so its only observable effect is the judge CALL COUNT. domain (TDD, pure):
-    `verdictMemo.ts` (`normalizeSentence` — MEMO-3 lowercase/trim/collapse-ws/strip-OUTER-punct; `memoKey` —
-    MEMO-2 triple `normalized_sentence + lemma + sense_id`, **JSON-encoded** not delimiter-joined so it is both
-    injective AND storable — JSON escapes a stray NUL that a Postgres `text` column rejects). application: narrow
-    `ports/verdictMemo.ts` (`VerdictMemoPort` `lookup`/`record` + `MemoVersions`; per-user MEMO-5, version-gated
-    MEMO-6); `submitFreeProduction` gains `memo`+`judgeVersions` deps and consults the memo **after** the
-    rule-layer pass, **before** the judge (hit → skip judge; miss → judge then `record`, **write-on-judge only**,
-    never on an `unavailable` transport failure). `judgeFirstProduction` is an intentional non-consumer (one-time
-    onboarding moment; PRAG-1). infra: `db/schema.ts` `verdict_memos` table (PK `(user_id, memo_key)`; verdict as
-    **`jsonb`** — lossless since `JudgeVerdict` has no `Date` fields, unlike the DM-5 expanded columns);
-    `inMemoryVerdictMemo.ts` + `drizzleVerdictMemo.ts` behind the shared `verdictMemoContract.ts` (SOLID-3, run
-    over both in-mem + pglite); migration `drizzle/0001_high_guardsmen.sql`. composition: memo is **URL-gated**
-    over the SAME Neon handle as `cards` (built once), else in-memory; `judgeVersions` tracks the judge gate (live
-    DeepSeek model id + `RUBRIC_VERSION`, else a fixed `"dev"` stamp) so a model/rubric swap invalidates stale
-    rows (MEMO-6). No UI/route changes. **Covers (wired):** MEMO-1/2/3/4/5/6, DM-8. **Verified:** both typecheck
-    gates, `npm test` (273), `npm run build` (no `verdictMemo`/`DrizzleVerdictMemo`/db identifiers in the client
-    bundle), `/`+`/review`+`/onboarding`+`/words` SSR 200, and a real-composition smoke proof (identical
-    resubmission ⇒ **1** judge call; a different sentence ⇒ 2). *Note: `db:generate` produced the migration; run
-    `npm run db:migrate` once against Neon before the `DATABASE_URL` path.*
-
-19. **Wire the placement-marks store** (branch `wire/placement-marks`; the first *per-user-state* slice — proves
-    the store-backed per-user pieces need NO BetterAuth, only the existing `currentUserId()` seam). Persists the
-    per-word placement-known flags the onboarding "tune your level" step collects, so a flagged word skips `Seen`
-    and lazily cards at `Recognized` when the pacer reaches it (SEED-7 / SM-11). The three SEED-2/3 placement
-    mechanisms stay **structurally separate** — the coarse level sets WHERE the frontier is (slice 17), the marks
-    say WHICH words are known (this slice), and neither is the list-stack source. application (TDD): narrow
-    `ports/placementMarks.ts` (`PlacementMarksStore` `record`/`list`, per-`userId`, idempotent + additive);
-    `seedIntroductions` gains an **optional** `marks` dep and derives its known-set as `input.placementKnown ??
-    (marks ? new Set(await marks.list) : ∅)` — an explicit input still wins (tests unchanged), else the persisted
-    marks feed SM-11 (byte-preserving every prior seeding test); `recordPlacementMarks.ts` (thin write use-case)
-    + `readPlacementSlate.ts` (the frontier candidates offered for marking — reuses the seeder's word source,
-    excludes already-carded senseIds per SEED-7, fail-loud on missing catalog). infra: `inMemoryPlacementMarks.ts`
-    + `drizzlePlacementMarks.ts` behind the shared `placementMarksContract.ts` (SOLID-3, run over both in-mem +
-    pglite; `record` `.onConflictDoNothing()` + empty-array early-return since an empty SQL insert errors);
-    `db/schema.ts` `placement_marks` table (PK `(user_id, sense_id)`); migration `drizzle/0002_purple_doomsday.sql`;
-    `placementMarks.smoke.test.ts` (slate→record→seed over the REAL catalog + shared store: marked word → `Recognized`,
-    others `Seen`; empty store → all `Seen`). composition: `composeSeeding`/`composeSession` take a shared `marks`
-    param; `composePlacementSlate`/`composeRecordPlacementMarks` added. presentation-server: `marks` is **URL-gated**
-    over the SAME Neon handle as `cards`/`memo` (built once), else in-memory — ONE shared instance so a mark
-    recorded in onboarding is the mark the seeder later consults; `placementSlateFn` (GET) + `recordPlacementMarksFn`
-    (POST) in `server/onboarding.ts`; `sessionDeps`/`seedingDeps` thread the shared store. presentation-UI:
-    `routes/onboarding.tsx` `TuneStep` **wired** — chips are REAL frontier candidates from `placementSlateFn` (drawn
-    from the level's band), marked BY senseId; on finish `recordPlacementMarksFn` persists them (navigate on settle,
-    so a store hiccup never traps the user). **Design (user-confirmed): the win still records nothing** — the marks
-    persist for the NEXT session's seeder (the win comes before the tune step; SEED-1 stays judge-don't-persist).
-    **Covers (wired):** SEED-2/3/7, SM-11. **Verified:** both typecheck gates, `npm test` (292), `npm run build`
-    (no `readPlacementSlate`/`recordPlacementMarks`/`DrizzlePlacementMarks`/`neonDbFromEnv`/`drizzle-orm` in the
-    client bundle), `/onboarding` SSR. *Note: run `npm run db:migrate` once against Neon before the `DATABASE_URL`
-    path. Deferred still: LexTALE (SEED-4); learner-adjustable daily goal + counter yesterday-delta + `app-shell`
-    real user identity + `/settings` (the identity pieces need the BetterAuth STACK-4 swap).*
+1. **Cued-production review** — grade→rate→schedule→promote→persist (`submitCuedReview`); wink
+   lemmatizer + ts-fsrs behind ports. INV-1/3, SM-4/6, RAT-1/8, TIER-5.
+2. **Judged free-production** — rule-layer→judge→rate→demote-on-fail; `bounce|judged`
+   (`submitFreeProduction`). INV-2, RL-1/2/3/4/6, JDG-2/5, SM-6/7.
+3. **End-to-end loop** — `runReviewPass` routes by mastery (`selectTier`). LOOP-1..5, SM-1.
+4. **Fluent promotion + counter** — distinct-day judged-pass ledger; live-retrievability gate at read
+   (`readUsableCounter`). SM-5, CNT-2/3/4/6, INV-4.
+5. **Real DeepSeek judge** — HTTPS adapter behind `JudgePort`; `unavailable` arm (transport failure ≠
+   bounce). NET-3/4/5/6/7, JDG-6/10/11.
+6. **Pure edit-resolution** — `resolveEdits` → inline | fallback. EDIT-2..6.
+7. **First persistence** — Drizzle adapter behind `CardRepository` (pglite + Neon, one shared contract
+   test). DM-5/6/7, SM-2.
+8. **`Seen` on-ramp** — recognition + cloze tiers via a shared `submitDeterministicReview` core;
+   `nextSeenTier` routing. TIER-1/2/5, SM-3, RAT-7.
+9. **First-session seeding** — pacing→select→cold-start→entry-state (`seedIntroductions`). The three
+   SEED-2/3 placement mechanisms stay structurally separate. SEED-1/2/3/5/6/7/8/9, SM-11.
+10. **Session queue** — `orderSessionQueue` (due filter + even intro interleave); `startSession`.
+    LOOP-1 step 1, SEED-6.
+11. **React deterministic review** — the TanStack Start app; `resolveReviewTier` is the single source so
+    shown-tier == graded-tier. render TIER-1/2/5, LOOP-1.
+12. **Brand + design system** — full mock-driven UI (warm editorial; Fraunces/Inter; honest counter, no
+    streaks). Two skills (`.claude/skills/brand/`, `.../design-system/`). *(Was mock-only; slices 13–20
+    wired it.)*
+13. **Wire `/review`** — real server functions drive the whole loop incl. the judged flow;
+    `checkFreeProductionRuleLayer` extracted; `ruleCheckFn` instant bounce (NET-2); `presentReviewOutcome`
+    DTO. LOOP-1..5, EDIT-7, NET-2/3/5, INV-2.
+14. **Wire DB + counter** — `/` usable-words counter on the real store. CNT-2/3/4/6, STACK-3.
+15. **Wire dashboard read-models** — `readDashboardSummary` (SM-1 ladder + due/new + today's judged
+    uses). SM-1, CNT-8, SEED-6.
+16. **Wire `/words`** — `readWordsList`/`readWordDetail` + `deriveMasteryHistory` (replayed from logs;
+    sentence text dropped for v1). CNT-1/2/3, SM-3..7.
+17. **Wire `/onboarding`** — `frontierBandForCoarseLevel` + `judgeFirstProduction` (the SEED-1
+    judge-DON'T-persist first win). SEED-1/2/5/6.
+18. **Verdict memo** — a per-user cache that skips a billable re-judge on an identical resubmission;
+    invisible (no gate-outcome change). `verdictMemo` + `verdict_memos` table. MEMO-1..6, DM-8.
+19. **Placement-marks store** — the onboarding TuneStep persists per-word known flags → flagged words
+    lazily card at `Recognized`. `placement_marks` table. SEED-2/3/7, SM-11.
+20. **BetterAuth + single Drizzle path** (this slice, `wire/betterauth-identity`). Real email+password
+    auth (STACK-4) + full route guards + per-user settings, AND the collapse to **one Drizzle-only
+    persistence path** (no in-memory adapters, no fallbacks). domain: `settings.ts`
+    (`UserSettings`/`DEFAULT_USER_SETTINGS`), `DAILY_GOAL_MIN/MAX`. application (TDD): `ports/settings.ts`
+    (`SettingsStore`), `readSettings`/`updateSettings` (goal clamp [1,20]); `readDashboardSummary` now
+    reads the goal from the store (CNT-8). infra: **uuid** `user_id` across all app tables (migration
+    `0003`, `ALTER … USING "user_id"::uuid`); `db/authSchema.ts` (user/session/account/verification, uuid
+    ids); `auth/auth.ts` `makeAuth(db, {secret, baseURL})` (drizzle adapter; `generateId: () =>
+    randomUUID()` — the string `"uuid"` form is silently unsupported in better-auth 1.6; the tanstack-start
+    cookie plugin MUST be last); `drizzleSettings.ts` behind `settingsContract`; **deleted** the three
+    in-memory adapters + the dev-judge and migrated every use-case/smoke test to pglite (shared
+    `makeTestStores`/`testIds`; `vitest.setup.ts` frees each pglite WASM heap per test; `vite.config.ts`
+    caps forks + 30s timeout so the herd of migrations fits the process). presentation-server: the
+    composition root **requires** the 3 env vars (fail fast), builds ONE Neon handle shared by every store
+    + `auth`, and `judge = liveJudge()` always; `currentUserId()` is now **async** (session cookie →
+    `user.id`, else a 401 `Response`); new `session.ts` (`getSessionFn`) + `settings.ts`
+    (`readSettingsFn`/`updateSettingsFn`); `await` added at every call site. presentation-UI:
+    `routes/api/auth/$.ts` handler route; `lib/auth-client.ts`; `/signin`+`/signup` call the real
+    `signIn`/`signUp` then `router.invalidate()`; `/settings` wires the goal stepper + identity + sign-out;
+    `app-shell` shows the user's initial; `__root.beforeLoad` resolves the session once and a
+    **`_authenticated` pathless layout** guards the 6 app routes (redirect to `/signin`). cleanup: deleted
+    `mock/learner.ts` (MasteryState → `domain/card.js`). **Covers (wired):** STACK-3/4, CNT-8, app-route
+    guards. **Verified:** both typecheck gates, `npm test` (282, pglite), `npm run build` (no
+    secret/`drizzle-orm`/`neon`/server identifiers in the client bundle; the better-auth *client* is
+    allowed). *Deferred still: LexTALE (SEED-4), per-user FSRS optimization (SEED-8), the counter's
+    yesterday-delta (needs a persisted daily snapshot).*
 
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
@@ -418,42 +177,30 @@ called out):
 - **Scheduling types** (`FsrsCardState`/`FsrsReviewLog`) are declared **structurally in the domain**;
   ts-fsrs's own types are mapped only inside `tsFsrsScheduler`. Never leak a library into app/domain — put
   it behind a port (ARCH-3).
+- **Session→userId is a presentation-server concern, not an application port** (STACK-4). Use-cases take a
+  plain `userId: string`; `currentUserId()` (the ONLY auth-aware module) resolves it from the BetterAuth
+  session. Every store is `userId`-scoped + multi-tenant.
+- **One Drizzle-only persistence path.** No in-memory adapters; tests use pglite. A new persisted store
+  follows the pattern: narrow application port → `Drizzle<X>` adapter + a shared `<x>Contract` run over
+  pglite → thread through the composition root over the ONE shared Neon handle.
 - Every test names the `spec/` ID it exercises.
 
-**Deferred — do NOT build until pulled into scope (`PRAG-1`):** LexTALE instrument + per-user FSRS
-optimization (SEED-4/8); the **BetterAuth (STACK-4) adapter** (presentation stubs a dev user at the
-`currentUser` seam). *(The verdict memo — slice 18 — and the placement-marks store — slice 19 — are no longer
-deferred.)* *Note: `/review` is **wired** (slices 13–14) — the judged
-loop, EDIT-7 render, NET-2/3/5, and the usable-words counter (CNT-2/3/4/6) run on real use-cases/DB. The
-**dashboard `/` is now wired too** (slice 15): SM-1 ladder, CNT-8 goal ring (real sentences-today, fixed
-default goal), and the SEED-6 Today due/new counts. **`/words`+`/words/$wordId` are now wired too** (slice
-16): per-word CNT-1/2/3 (counted-status + live retrievability) and the SM-3..SM-7 mastery history (replayed
-from logs; sentence text dropped for v1). **`/onboarding` is now wired too** (slice 17): SEED-1 first-session
-seeding + the real judge-don't-persist first win. The **verdict memo** is wired (slice 18): MEMO-1..6 + DM-8,
-invisible (no gate-outcome change), the judged loop is complete. The **placement-marks store** is wired (slice
-19): SEED-2/3/7 + SM-11 — the onboarding TuneStep persists per-word known flags (URL-gated Neon, else in-memory)
-so flagged words lazily card at `Recognized`. Still **mock-only design** (slice 12, awaiting wiring): the
-`app-shell` user identity (name/email) and `/settings` — both need the BetterAuth real principal.*
+**Deferred — do NOT build until pulled into scope (`PRAG-1`):** the **LexTALE** instrument + **per-user
+FSRS optimization** (SEED-4/8; the latter needs `@open-spaced-repetition/binding`); the counter's
+**yesterday-delta** (needs a persisted daily snapshot). *(BetterAuth (slice 20), the verdict memo (18),
+and the placement-marks store (19) are wired — no longer deferred.)*
 
-**Natural next slice:** the judged loop is complete (slice 18) and the first per-user-state piece is wired
-(slice 19 — placement marks, which proved the **store-backed** per-user pieces need only the existing
-`currentUserId()` seam, NOT BetterAuth). What remains splits by dependency: (a) the pieces that need only a new
-**store + read-model** over the already-wired Neon DB — a learner-**adjustable** daily goal (CNT-8, a
-`settings` store) and the counter's **yesterday-delta** (a persisted daily snapshot) — and (b) the pieces that
-genuinely need the **BetterAuth (STACK-4) swap** for a real principal: the `app-shell`/`/settings` **user
-identity** (name/email). Pick (a) for more spec coverage without the auth dependency, or (b) to unblock the
-identity chrome. *(The `/words` history sentence text still awaits a DM-6/DM-8 schema decision — separate.)*
-
-> **Status (2026-07-05):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
-> 13–19 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
-> `wire/placement-marks`; `git log` to confirm). `/review`, the `/` dashboard (counter + ladder + goal ring
-> + Today counts), `/words`, **and `/onboarding`** (including the now-wired placement-marks TuneStep) run on
-> real use-cases; the **verdict memo** (slice 18) caches judged verdicts and the **placement-marks store**
-> (slice 19) persists per-word known flags — both Neon when `DATABASE_URL` is set, else in-memory (DeepSeek
-> when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run
-> typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves each slice
-> — do not trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm test`, and
-> `npm run dev` at session start.
+> **Status (2026-07-05):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–20 (wiring)
+> land on **`design/brand-ui-system`** and descendant wiring branches (currently `wire/betterauth-identity`
+> — `git log` to confirm). **Every surface is wired and guarded**: `/`, `/review`, `/words`,
+> `/onboarding`, `/settings` run on real use-cases behind a real **BetterAuth** session (slice 20); the
+> verdict memo (18) and placement-marks store (19) persist to Neon. The app is **multi-tenant and
+> secrets-required** — `DATABASE_URL` + `DEEPSEEK_API_KEY` + `BETTER_AUTH_SECRET` are mandatory, there are
+> **no in-memory fallbacks**, and tests run against embedded pglite (`FakeJudge` is the one test-only
+> double). Backend gate = `npm run typecheck` (NodeNext) + `npm test`; presentation gate = `npm run
+> typecheck:web`; `npm run build` must keep server identifiers out of the client bundle. Test count moves
+> each slice — do not trust any number written here; run `npm test`. Re-confirm state with `git log`,
+> `npm test`, and `npm run dev` (needs the 3 env vars) at session start.
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 

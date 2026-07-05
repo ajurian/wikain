@@ -63,11 +63,17 @@ export const COUNTER_R_FLOOR = 0.7;
 
 /**
  * CNT-8: the default daily USE goal, unit = free judged productions (not minutes/cards/new intros).
- * Learner-adjustable per spec, but persisting a per-user setting is settings/BetterAuth work (STACK-4,
- * deferred) — v1 uses this fixed default. An independent knob from the §8 intro pace (`NEW_PER_DAY`,
- * SEED-9); they coincide only numerically at 5.
+ * The fallback when a learner has no persisted `dailyGoal` yet (see `UserSettings`). An independent
+ * knob from the §8 intro pace (`NEW_PER_DAY`, SEED-9); they coincide only numerically at 5.
  */
 export const DAILY_GOAL_DEFAULT = 5;
+
+/**
+ * CNT-8: bounds for the learner-adjustable daily goal — the single source shared by the `/settings`
+ * stepper and the `updateSettings` use-case guard, so UI clamp and server validation never drift.
+ */
+export const DAILY_GOAL_MIN = 1;
+export const DAILY_GOAL_MAX = 20;
 
 // --- First-session seeding / placement (spec/09, `SEED`) ---
 

@@ -18,24 +18,24 @@ import { useMutation, useQuery, type UseQueryResult } from "@tanstack/react-quer
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowRight, CircleCheck, CloudOff, Loader2 } from "lucide-react";
 
-import { frontierBandForCoarseLevel, type CoarseLevel } from "../../domain/placement.js";
-import type { RuleBounceReason } from "../../domain/ruleLayer.js";
-import type { SeededWordView } from "../../application/presentSeededWords.js";
+import { frontierBandForCoarseLevel, type CoarseLevel } from "../../../domain/placement.js";
+import type { RuleBounceReason } from "../../../domain/ruleLayer.js";
+import type { SeededWordView } from "../../../application/presentSeededWords.js";
 import {
   seedFirstSessionFn,
   judgeFirstProductionFn,
   placementSlateFn,
   recordPlacementMarksFn,
-} from "../server/onboarding";
-import { ruleCheckFn } from "../server/review";
-import { BounceCallout } from "../components/bounce-callout";
-import { CheckingIndicator } from "../components/checking-indicator";
-import { Wordmark } from "../components/wordmark";
+} from "../../server/onboarding";
+import { ruleCheckFn } from "../../server/review";
+import { BounceCallout } from "../../components/bounce-callout";
+import { CheckingIndicator } from "../../components/checking-indicator";
+import { Wordmark } from "../../components/wordmark";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/onboarding")({
+export const Route = createFileRoute("/_authenticated/onboarding")({
   component: Onboarding,
 });
 

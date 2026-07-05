@@ -1,15 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import {
   composeReviewPass,
   composeResolvePrompt,
   composeSession,
+  DEV_JUDGE_VERSIONS,
 } from "./composition.js";
+import { makeTestStores } from "./testStores.js";
 import { FakeJudge } from "./fakeJudge.js";
 import { startSession } from "../application/startSession.js";
 import { resolveReviewPrompt } from "../application/resolveReviewPrompt.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { ResolveReviewPromptDeps } from "../application/resolveReviewPrompt.js";
+import { USER_A } from "./testIds.js";
 
 /**
  * Smoke test of the exact data flow the presentation drives over a SHARED repo: start a session, then
@@ -22,21 +24,20 @@ describe("review flow (smoke: prompt tier always matches graded tier)", () => {
   const now = new Date("2026-07-02T00:00:00Z");
 
   it("LOOP-1/TIER-2: each queued word resolves a prompt and passes at the SAME tier it is graded", async () => {
-    const cards = new InMemoryCardRepository();
-    const sessionDeps = composeSession(cards);
+    const { cards, marks, memo } = await makeTestStores();
+    const sessionDeps = composeSession(cards, marks);
     const promptDeps: ResolveReviewPromptDeps = composeResolvePrompt(cards);
     const judge = new FakeJudge();
-    const reviewDeps: RunReviewPassDeps = { ...composeReviewPass(judge), cards };
+    const reviewDeps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS);
 
-    const userId = "flow-user";
-    const { queue } = await startSession({ userId, frontierBand: "B2", now }, sessionDeps);
+    const { queue } = await startSession({ userId: USER_A, frontierBand: "B2", now }, sessionDeps);
     expect(queue.length).toBeGreaterThan(0);
 
     for (const senseId of queue) {
-      const prompt = await resolveReviewPrompt({ userId, senseId }, promptDeps);
+      const prompt = await resolveReviewPrompt({ userId: USER_A, senseId }, promptDeps);
       // The correct answer for every deterministic tier is the target word.
       const correct = promptDeps.catalog.get(senseId)!.word;
-      const res = await runReviewPass({ userId, senseId, response: correct, now }, reviewDeps);
+      const res = await runReviewPass({ userId: USER_A, senseId, response: correct, now }, reviewDeps);
 
       // The core wiring invariant: shown tier === graded tier.
       expect(res.tier).toBe(prompt.tier);

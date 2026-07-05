@@ -10,7 +10,8 @@ import { wordsDeps } from "./composition.js";
  * display lemma. DB access stays server-side (NET-7/STACK-3); only the serializable rows cross to the client.
  */
 export const wordsListFn = createServerFn({ method: "GET" }).handler(
-  async (): Promise<ReadWordsListResult> => readWordsList({ userId: currentUserId() }, wordsDeps()),
+  async (): Promise<ReadWordsListResult> =>
+    readWordsList({ userId: await currentUserId() }, wordsDeps()),
 );
 
 /**
@@ -26,5 +27,5 @@ export const wordDetailFn = createServerFn({ method: "GET" })
     return senseId;
   })
   .handler(async ({ data }): Promise<WordDetail | null> =>
-    readWordDetail({ userId: currentUserId(), senseId: data }, wordsDeps()),
+    readWordDetail({ userId: await currentUserId(), senseId: data }, wordsDeps()),
   );

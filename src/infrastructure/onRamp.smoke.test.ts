@@ -1,22 +1,19 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
-import { ITEMS_PATH, DEV_JUDGE_VERSIONS } from "./composition.js";
-import { InMemoryVerdictMemo } from "./inMemoryVerdictMemo.js";
-import { JsonCatalog } from "./catalog.js";
-import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
+import { ITEMS_PATH, composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
-import { WinkLemmatizer } from "./winkLemmatizer.js";
 import { FakeJudge } from "./fakeJudge.js";
-import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
+import { makeTestStores } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { LexicalItem } from "../domain/lexicalItem.js";
+import { USER_A } from "./testIds.js";
 
 /**
  * End-to-end smoke test of the `Seen` on-ramp (spec/03 + SM-3 + RAT-7) over the REAL catalog with REAL
  * wink + ts-fsrs. It proves the ladder is now continuous: a freshly-introduced `Seen` word climbs
  * `Seen → Recognized → Productive` entirely through the deterministic tiers, with NO judge/LLM call
  * anywhere on that climb (the FakeJudge must record zero calls). This is the acceptance proof that
- * `runReviewPass` no longer dead-ends on `Seen`.
+ * `runReviewPass` no longer dead-ends on `Seen`. Persistence is pglite-backed Drizzle.
  */
 describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", () => {
   const items = JSON.parse(fs.readFileSync(ITEMS_PATH, "utf8")) as LexicalItem[];
@@ -24,21 +21,10 @@ describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", 
 
   it("SM-3: a Seen word climbs recognition → cloze → cued to Productive, never calling the judge", async () => {
     const judge = new FakeJudge();
-    const wink = new WinkLemmatizer();
-    const cards = new InMemoryCardRepository();
-    const deps: RunReviewPassDeps = {
-      catalog: new JsonCatalog(items),
-      cards,
-      scheduler: new TsFsrsScheduler(),
-      lemmatizer: wink,
-      analyzer: wink,
-      judge,
-      tagalogLexicon: TAGALOG_LEXICON,
-      memo: new InMemoryVerdictMemo(),
-      judgeVersions: DEV_JUDGE_VERSIONS,
-    };
+    const { cards, memo } = await makeTestStores();
+    const deps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS);
 
-    const userId = "u1";
+    const userId = USER_A;
     const senseId = item.sense_id;
     await cards.save({
       userId,
@@ -77,6 +63,7 @@ describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", 
     // The entire on-ramp climb is deterministic — the judge was never reached.
     expect(judge.calls).toHaveLength(0);
     // One ReviewLog per rated rep, in order (DM-6): recognition, cloze, cued.
-    expect(cards.reviewLogs.map((l) => l.tier)).toEqual(["recognition", "cloze", "cued"]);
+    const logs = await cards.logsForWord(userId, senseId);
+    expect(logs.map((l) => l.tier)).toEqual(["recognition", "cloze", "cued"]);
   });
 });

@@ -3,11 +3,12 @@ import { seedIntroductions } from "../application/seedIntroductions.js";
 import { judgeFirstProduction } from "../application/judgeFirstProduction.js";
 import { presentSeededWords } from "../application/presentSeededWords.js";
 import type { JudgePort } from "../application/ports/judge.js";
-import { composeSeeding, composeFreeProduction } from "./composition.js";
-import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
+import { composeSeeding, composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
+import { makeTestStores } from "./testStores.js";
 import { FIRST_SESSION_SEED_WORDS } from "../domain/constants.js";
+import { USER_A } from "./testIds.js";
 
-/** A judge that always passes the gate (offline; no DeepSeek key or network — mirrors devJudge). */
+/** A judge that always passes the gate (offline; no DeepSeek key or network). */
 const passingJudge: JudgePort = {
   judge: async ({ intendedSense }) => ({
     used_in_target_sense: true,
@@ -23,19 +24,18 @@ const passingJudge: JudgePort = {
   }),
 };
 
-const USER = "smoke-onboarding";
-
 /**
- * spec/09 SEED-1: the onboarding wiring end-to-end, offline over the real composition. Seeds the
- * first-session words, renders them, then judges a first production — asserting the win is graded but
- * NOTHING is persisted (judge-don't-persist: the seeded word stays `Seen`, no ReviewLog).
+ * spec/09 SEED-1: the onboarding wiring end-to-end, offline over the real composition (pglite-backed
+ * Drizzle stores). Seeds the first-session words, renders them, then judges a first production —
+ * asserting the win is graded but NOTHING is persisted (judge-don't-persist: the seeded word stays
+ * `Seen`, no ReviewLog).
  */
 describe("onboarding first-session wiring (SEED-1)", () => {
   it("seeds FIRST_SESSION_SEED_WORDS Seen cards at the frontier band and renders them", async () => {
-    const cards = new InMemoryCardRepository();
-    const deps = composeSeeding(cards);
+    const { cards, marks } = await makeTestStores();
+    const deps = composeSeeding(cards, marks);
 
-    const seeded = await seedIntroductions({ userId: USER, frontierBand: "B2" }, deps);
+    const seeded = await seedIntroductions({ userId: USER_A, frontierBand: "B2" }, deps);
 
     expect(seeded).toHaveLength(FIRST_SESSION_SEED_WORDS); // SEED-6: first session seeds ~2
     expect(seeded.every((c) => c.mastery === "Seen")).toBe(true); // SM-11: no placementKnown ⇒ all Seen
@@ -45,26 +45,26 @@ describe("onboarding first-session wiring (SEED-1)", () => {
   });
 
   it("judges the first-win production but persists NOTHING (INV-4: no free log on a Seen word)", async () => {
-    const cards = new InMemoryCardRepository();
-    const seedDeps = composeSeeding(cards);
-    const seeded = await seedIntroductions({ userId: USER, frontierBand: "B2" }, seedDeps);
+    const { cards, marks, memo } = await makeTestStores();
+    const seedDeps = composeSeeding(cards, marks);
+    const seeded = await seedIntroductions({ userId: USER_A, frontierBand: "B2" }, seedDeps);
     const first = seeded[0]!;
     const lemma = seedDeps.catalog.get(first.senseId)!.lemma;
 
     // A healthy English sentence that embeds the bare lemma (passes RL-2 presence + RL-3 length).
-    const sentence = `People often ${lemma} things, and I plan my weekly office schedule around that idea.`;
+    const sentence = `People often ${lemma} things, and we plan our weekly office schedule around that idea.`;
 
-    // judgeFirstProduction has no cards/scheduler deps — reuse the review-pass wiring (a structural
-    // superset) with an offline passing judge.
+    // judgeFirstProduction has no cards/scheduler deps of its own — reuse the review-pass wiring (a
+    // structural superset) with an offline passing judge.
     const result = await judgeFirstProduction(
       { senseId: first.senseId, response: sentence },
-      { ...composeFreeProduction(passingJudge) },
+      composeFreeProduction(passingJudge, cards, memo, DEV_JUDGE_VERSIONS),
     );
     expect(result.kind).toBe("judged");
 
     // The whole point of judge-don't-persist: the seeded card is untouched, and no ReviewLog exists.
-    const card = await cards.load(USER, first.senseId);
+    const card = await cards.load(USER_A, first.senseId);
     expect(card?.mastery).toBe("Seen");
-    expect(await cards.logsForWord(USER, first.senseId)).toEqual([]);
+    expect(await cards.logsForWord(USER_A, first.senseId)).toEqual([]);
   });
 });

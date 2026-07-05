@@ -1,26 +1,62 @@
 /*
- * /settings — daily goal (CNT-8: learner-set, unit = sentences), level band,
- * timezone (calendar-day logic SM-5b/CNT-2 depends on it). No notification or
- * streak settings — streaks don't exist (CNT-9). DESIGN BUILD, MOCK-DRIVEN.
+ * /settings — wired (STACK-4 + CNT-8). The daily goal is the learner-adjustable sentences/day target,
+ * persisted through `updateSettingsFn` and read back by the dashboard goal ring. Identity (name/email)
+ * + sign-out come from the real session. No notification or streak settings — streaks don't exist (CNT-9).
  */
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { Minus, Plus } from "lucide-react";
 
-import { AppShell } from "../components/app-shell";
-// MOCK DATA — replace with server functions when wiring.
-import { MOCK_LEARNER } from "../mock/learner";
+import { AppShell } from "../../components/app-shell";
+import { signOut, useSession } from "../../lib/auth-client";
+import { readSettingsFn, updateSettingsFn } from "../../server/settings";
+import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "../../../domain/constants.js";
+import type { UserSettings } from "../../../domain/settings.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
 function SettingsPage() {
   const reduced = useReducedMotion();
-  const [goal, setGoal] = useState(MOCK_LEARNER.dailyGoal);
+  const navigate = useNavigate();
+  const router = useRouter();
+  const qc = useQueryClient();
+  const { data: session } = useSession();
+
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => readSettingsFn(),
+  });
+
+  // Optimistic local override so the stepper feels instant; the persisted value backs it once settled.
+  const [pendingGoal, setPendingGoal] = useState<number | null>(null);
+  const goal = pendingGoal ?? settings?.dailyGoal ?? DAILY_GOAL_MIN;
+
+  const mutation = useMutation({
+    mutationFn: (patch: Partial<UserSettings>) => updateSettingsFn({ data: patch }),
+    onSuccess: () => {
+      // The dashboard goal ring reads `dailyGoal` off the dashboard summary — refresh both.
+      qc.invalidateQueries({ queryKey: ["settings"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    },
+  });
+
+  function changeGoal(next: number) {
+    const clamped = Math.max(DAILY_GOAL_MIN, Math.min(DAILY_GOAL_MAX, next));
+    setPendingGoal(clamped);
+    mutation.mutate({ dailyGoal: clamped });
+  }
+
+  async function onSignOut() {
+    await signOut();
+    await router.invalidate();
+    navigate({ to: "/signin" });
+  }
 
   return (
     <AppShell>
@@ -47,7 +83,8 @@ function SettingsPage() {
                 variant="outline"
                 size="icon"
                 aria-label="Lower goal"
-                onClick={() => setGoal((g) => Math.max(1, g - 1))}
+                disabled={goal <= DAILY_GOAL_MIN}
+                onClick={() => changeGoal(goal - 1)}
               >
                 <Minus />
               </Button>
@@ -58,7 +95,8 @@ function SettingsPage() {
                 variant="outline"
                 size="icon"
                 aria-label="Raise goal"
-                onClick={() => setGoal((g) => Math.min(20, g + 1))}
+                disabled={goal >= DAILY_GOAL_MAX}
+                onClick={() => changeGoal(goal + 1)}
               >
                 <Plus />
               </Button>
@@ -72,7 +110,7 @@ function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-ink">Level</p>
-                <p className="mt-0.5 text-xs text-ink-faint">{MOCK_LEARNER.levelBand}</p>
+                <p className="mt-0.5 text-xs text-ink-faint">{settings?.levelBand ?? "—"}</p>
               </div>
               <Button variant="outline" size="sm">
                 Retune
@@ -82,7 +120,7 @@ function SettingsPage() {
               <div>
                 <p className="text-sm font-medium text-ink">Timezone</p>
                 <p className="mt-0.5 text-xs text-ink-faint">
-                  {MOCK_LEARNER.timezone} — “separate days” for your progress follow this clock.
+                  {settings?.timezone ?? "UTC"} — “separate days” for your progress follow this clock.
                 </p>
               </div>
               <Button variant="outline" size="sm">
@@ -95,10 +133,10 @@ function SettingsPage() {
         <Card>
           <CardContent className="space-y-4 p-5">
             <div>
-              <p className="text-sm font-medium text-ink">{MOCK_LEARNER.name}</p>
-              <p className="mt-0.5 text-xs text-ink-faint">{MOCK_LEARNER.email}</p>
+              <p className="text-sm font-medium text-ink">{session?.user.name ?? "—"}</p>
+              <p className="mt-0.5 text-xs text-ink-faint">{session?.user.email ?? ""}</p>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={onSignOut}>
               Sign out
             </Button>
           </CardContent>

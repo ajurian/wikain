@@ -35,7 +35,7 @@ export const seedFirstSessionFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<SeededWordView[]> => {
     const deps = seedingDeps();
-    const userId = currentUserId();
+    const userId = await currentUserId();
     const seeded = await seedIntroductions({ userId, frontierBand: data.frontierBand }, deps);
     // Idempotent for the dev demo: a returning user (already carded) seeds nothing this call (SEED-6
     // pacing) — fall back to their earliest cards so the first-win screen still has a word to show.
@@ -85,7 +85,7 @@ export const placementSlateFn = createServerFn({ method: "GET" })
   })
   .handler(async ({ data }): Promise<PlacementSlateWord[]> =>
     readPlacementSlate(
-      { userId: currentUserId(), frontierBand: data, count: PLACEMENT_SLATE_SIZE },
+      { userId: await currentUserId(), frontierBand: data, count: PLACEMENT_SLATE_SIZE },
       placementSlateDeps(),
     ),
   );
@@ -108,5 +108,8 @@ export const recordPlacementMarksFn = createServerFn({ method: "POST" })
     return { senseIds: o.senseIds };
   })
   .handler(async ({ data }): Promise<void> => {
-    await recordPlacementMarks({ userId: currentUserId(), senseIds: data.senseIds }, recordMarksDeps());
+    await recordPlacementMarks(
+      { userId: await currentUserId(), senseIds: data.senseIds },
+      recordMarksDeps(),
+    );
   });

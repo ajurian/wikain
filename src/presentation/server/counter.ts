@@ -14,5 +14,5 @@ import { counterDeps } from "./composition.js";
  */
 export const usableCounterFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<UsableCounterResult> =>
-    readUsableCounter({ userId: currentUserId() }, counterDeps()),
+    readUsableCounter({ userId: await currentUserId() }, counterDeps()),
 );

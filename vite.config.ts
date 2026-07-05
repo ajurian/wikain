@@ -23,4 +23,15 @@ export default defineConfig({
     tanstackStart({ srcDirectory: "src/presentation" }),
     viteReact(),
   ],
+  // The Drizzle-only test strategy runs every persistence test against embedded pglite. Two costs to
+  // tame: (1) each `makePgliteDb()` re-runs the migrations (~1–2s), so a default 5s test timeout is too
+  // tight once many run at once — raise it generously; (2) at full 16-fork parallelism the simultaneous
+  // migrations thrash and time out (a thundering herd), so cap the forks. The setup file frees each
+  // instance's off-heap WASM memory after every test so the suite fits the process.
+  test: {
+    setupFiles: ["./vitest.setup.ts"],
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+    poolOptions: { forks: { maxForks: 4 } },
+  },
 });

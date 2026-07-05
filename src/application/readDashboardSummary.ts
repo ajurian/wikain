@@ -1,8 +1,8 @@
 import { tallyMastery, type LadderEntry } from "../domain/masteryLadder.js";
 import { judgedUsesOnDay } from "../domain/judgedPassLedger.js";
 import { newIntroductionsAllowed } from "../domain/introductionPacing.js";
-import { DAILY_GOAL_DEFAULT } from "../domain/constants.js";
 import type { CardRepository } from "./ports/cardRepository.js";
+import type { SettingsStore } from "./ports/settings.js";
 
 export interface ReadDashboardSummaryInput {
   userId: string;
@@ -14,6 +14,7 @@ export interface ReadDashboardSummaryInput {
 
 export interface ReadDashboardSummaryDeps {
   cards: CardRepository;
+  settings: SettingsStore;
 }
 
 export interface ReadDashboardSummaryResult {
@@ -29,7 +30,7 @@ export interface ReadDashboardSummaryResult {
   newIntroductions: number;
   /** CNT-8 daily-USE-goal progress: today's free judged passes (uses). */
   sentencesToday: number;
-  /** CNT-8 goal target — the fixed default until a learner-adjustable setting persists (STACK-4). */
+  /** CNT-8 goal target — the learner's persisted daily goal (DAILY_GOAL_DEFAULT until they adjust it). */
   dailyGoal: number;
 }
 
@@ -64,11 +65,13 @@ export async function readDashboardSummary(
     sentencesToday += judgedUsesOnDay(logs, now, offset);
   }
 
+  const { dailyGoal } = await deps.settings.read(input.userId);
+
   return {
     ladder: tallyMastery(cards),
     dueReviews,
     newIntroductions,
     sentencesToday,
-    dailyGoal: DAILY_GOAL_DEFAULT,
+    dailyGoal,
   };
 }

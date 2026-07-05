@@ -20,7 +20,7 @@ const FRONTIER_BAND = "B2";
  */
 export const startSessionFn = createServerFn({ method: "POST" }).handler(async () => {
   const { queue } = await startSession(
-    { userId: currentUserId(), frontierBand: FRONTIER_BAND },
+    { userId: await currentUserId(), frontierBand: FRONTIER_BAND },
     sessionDeps(),
   );
   return { queue };
@@ -35,7 +35,7 @@ export const resolvePromptFn = createServerFn({ method: "GET" })
     return senseId;
   })
   .handler(async ({ data }) =>
-    resolveReviewPrompt({ userId: currentUserId(), senseId: data }, promptDeps()),
+    resolveReviewPrompt({ userId: await currentUserId(), senseId: data }, promptDeps()),
   );
 
 export interface RuleCheckInput {
@@ -115,7 +115,7 @@ export const submitReviewFn = createServerFn({ method: "POST" })
     if (item === undefined) throw new Error(`submitReviewFn: unknown sense_id ${data.senseId}`);
     const result = await runReviewPass(
       {
-        userId: currentUserId(),
+        userId: await currentUserId(),
         senseId: data.senseId,
         response: data.response,
         scaffolded: data.scaffolded,

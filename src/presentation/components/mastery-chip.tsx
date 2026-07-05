@@ -1,4 +1,4 @@
-import type { MasteryState } from "../mock/learner";
+import type { MasteryState } from "../../domain/card.js";
 import { cn } from "@/lib/utils";
 
 /**

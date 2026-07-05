@@ -4,6 +4,8 @@ import type { Card, FsrsCardState, MasteryState } from "../domain/card.js";
 import type { FsrsReviewLog, ReviewLog, ReviewTier } from "../domain/review.js";
 import type { Rating } from "../domain/rating.js";
 import type { CardRepository } from "./ports/cardRepository.js";
+import type { SettingsStore } from "./ports/settings.js";
+import { DEFAULT_USER_SETTINGS } from "../domain/settings.js";
 import {
   DAILY_GOAL_DEFAULT,
   FIRST_SESSION_SEED_WORDS,
@@ -46,7 +48,18 @@ function log(senseId: string, reviewedAt: string, tier: ReviewTier, rating: Rati
   return { userId: USER, senseId, tier, rating, reviewedAt: new Date(reviewedAt), fsrs: FSRS_STUB };
 }
 
-function makeDeps(cards: Card[], logsBySense: Record<string, ReviewLog[]> = {}): ReadDashboardSummaryDeps {
+function settingsStub(dailyGoal = DAILY_GOAL_DEFAULT): SettingsStore {
+  return {
+    read: async () => ({ ...DEFAULT_USER_SETTINGS, dailyGoal }),
+    write: async () => {},
+  };
+}
+
+function makeDeps(
+  cards: Card[],
+  logsBySense: Record<string, ReviewLog[]> = {},
+  settings: SettingsStore = settingsStub(),
+): ReadDashboardSummaryDeps {
   const repo: CardRepository = {
     load: async () => undefined,
     save: async () => {},
@@ -54,7 +67,7 @@ function makeDeps(cards: Card[], logsBySense: Record<string, ReviewLog[]> = {}):
     logsForWord: async (_u, senseId) => logsBySense[senseId] ?? [],
     listCards: async () => cards,
   };
-  return { cards: repo };
+  return { cards: repo, settings };
 }
 
 const PAST = new Date("2026-06-29T00:00:00Z"); // due (<= now)
@@ -130,8 +143,16 @@ describe("readDashboardSummary", () => {
     expect(res.sentencesToday).toBe(3);
   });
 
-  it("CNT-8: exposes the default daily goal", async () => {
+  it("CNT-8: exposes the default daily goal when the learner has no persisted setting", async () => {
     const res = await readDashboardSummary({ userId: USER, now: NOW }, makeDeps([]));
     expect(res.dailyGoal).toBe(DAILY_GOAL_DEFAULT);
+  });
+
+  it("CNT-8: reflects the learner's persisted daily goal", async () => {
+    const res = await readDashboardSummary(
+      { userId: USER, now: NOW },
+      makeDeps([], {}, settingsStub(12)),
+    );
+    expect(res.dailyGoal).toBe(12);
   });
 });

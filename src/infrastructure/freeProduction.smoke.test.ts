@@ -1,48 +1,37 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import { ITEMS_PATH, composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
-import { InMemoryVerdictMemo } from "./inMemoryVerdictMemo.js";
-import { JsonCatalog } from "./catalog.js";
-import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
-import { WinkLemmatizer } from "./winkLemmatizer.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
+import { makeTestStores } from "./testStores.js";
 import { submitFreeProduction, type SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
+import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
 import type { LexicalItem } from "../domain/lexicalItem.js";
+import { USER_A } from "./testIds.js";
 
 /**
  * End-to-end smoke test of the judged free-production slice over the REAL catalog with REAL wink +
  * ts-fsrs and a FAKE judge — the architecture-proving path (RL-1..RL-4, JDG-2, INV-1, INV-2, SM-6).
- * No network/auth/DeepSeek needed.
+ * Persistence is pglite-backed Drizzle; no network/auth/DeepSeek needed.
  */
 describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judge)", () => {
   const items = JSON.parse(fs.readFileSync(ITEMS_PATH, "utf8")) as LexicalItem[];
   const item = items.find((i) => i.lemma === "abandon")!; // model_sentence present
   const now = new Date("2026-06-30T00:00:00Z");
 
-  function wire(judge: FakeJudge): { deps: SubmitFreeProductionDeps; cards: InMemoryCardRepository } {
-    const wink = new WinkLemmatizer();
-    const cards = new InMemoryCardRepository();
-    const deps: SubmitFreeProductionDeps = {
-      catalog: new JsonCatalog(items),
-      cards,
-      scheduler: new TsFsrsScheduler(),
-      lemmatizer: wink,
-      analyzer: wink,
-      judge,
-      tagalogLexicon: TAGALOG_LEXICON,
-      memo: new InMemoryVerdictMemo(),
-      judgeVersions: DEV_JUDGE_VERSIONS,
-    };
+  async function wire(
+    judge: FakeJudge,
+  ): Promise<{ deps: SubmitFreeProductionDeps; cards: DrizzleCardRepository }> {
+    const { cards, memo } = await makeTestStores();
+    const deps = composeFreeProduction(judge, cards, memo, DEV_JUDGE_VERSIONS);
     return { deps, cards };
   }
 
   it("JDG-2/INV-1: a real gate-passing sentence yields exactly one Good rating + one ReviewLog", async () => {
     const judge = new FakeJudge(passingVerdict());
-    const { deps, cards } = wire(judge);
+    const { deps, cards } = await wire(judge);
     await cards.save({
-      userId: "u1",
+      userId: USER_A,
       senseId: item.sense_id,
       mastery: "Productive",
       fsrs: new TsFsrsScheduler().newCard(now),
@@ -50,7 +39,7 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
 
     const res = await submitFreeProduction(
       {
-        userId: "u1",
+        userId: USER_A,
         senseId: item.sense_id,
         response: "The crew decided to abandon the sinking ship before dawn.",
         now,
@@ -64,15 +53,16 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
       expect(res.rating).toBe("Good");
     }
     expect(judge.calls).toHaveLength(1);
-    expect(cards.reviewLogs).toHaveLength(1);
-    expect(cards.reviewLogs[0]?.tier).toBe("free");
+    const logs = await cards.logsForWord(USER_A, item.sense_id);
+    expect(logs).toHaveLength(1);
+    expect(logs[0]?.tier).toBe("free");
   });
 
   it("INV-2: a real word-absent sentence bounces — judge never called, no ReviewLog", async () => {
     const judge = new FakeJudge(passingVerdict());
-    const { deps, cards } = wire(judge);
+    const { deps, cards } = await wire(judge);
     await cards.save({
-      userId: "u1",
+      userId: USER_A,
       senseId: item.sense_id,
       mastery: "Productive",
       fsrs: new TsFsrsScheduler().newCard(now),
@@ -80,7 +70,7 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
 
     const res = await submitFreeProduction(
       {
-        userId: "u1",
+        userId: USER_A,
         senseId: item.sense_id,
         response: "The crew decided to leave the sinking ship before dawn.",
         now,
@@ -91,10 +81,11 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
     expect(res.kind).toBe("bounce");
     if (res.kind === "bounce") expect(res.reason).toBe("absent");
     expect(judge.calls).toHaveLength(0); // RL-1: judge not reached
-    expect(cards.reviewLogs).toHaveLength(0); // INV-2: no log
+    expect(await cards.logsForWord(USER_A, item.sense_id)).toHaveLength(0); // INV-2: no log
   });
 
-  it("composeFreeProduction wires the slice without throwing", () => {
-    expect(() => composeFreeProduction(new FakeJudge())).not.toThrow();
+  it("composeFreeProduction wires the slice without throwing", async () => {
+    const { cards, memo } = await makeTestStores();
+    expect(() => composeFreeProduction(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS)).not.toThrow();
   });
 });

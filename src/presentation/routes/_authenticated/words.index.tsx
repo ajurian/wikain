@@ -8,14 +8,14 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { ChevronRight } from "lucide-react";
 
-import { AppShell } from "../components/app-shell";
-import { MasteryChip } from "../components/mastery-chip";
-import { wordsListFn } from "../server/words";
-import { COUNTER_R_FLOOR } from "../../domain/constants.js";
-import type { MasteryState } from "../mock/learner";
+import { AppShell } from "../../components/app-shell";
+import { MasteryChip } from "../../components/mastery-chip";
+import { wordsListFn } from "../../server/words";
+import { COUNTER_R_FLOOR } from "../../../domain/constants.js";
+import type { MasteryState } from "../../../domain/card.js";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/words/")({
+export const Route = createFileRoute("/_authenticated/words/")({
   component: WordsBrowser,
 });
 

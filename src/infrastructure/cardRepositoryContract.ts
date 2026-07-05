@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import type { CardRepository } from "../application/ports/cardRepository.js";
 import type { Card, FsrsCardState } from "../domain/card.js";
 import type { ReviewLog, FsrsReviewLog } from "../domain/review.js";
+import { USER_A, USER_B, USER_C } from "./testIds.js";
 
 function fsrsCardState(overrides: Partial<FsrsCardState> = {}): FsrsCardState {
   return {
@@ -26,7 +27,7 @@ function fsrsCardState(overrides: Partial<FsrsCardState> = {}): FsrsCardState {
 
 function card(overrides: Partial<Card> = {}): Card {
   return {
-    userId: "user-a",
+    userId: USER_A,
     senseId: "abandon_verb_01",
     mastery: "Recognized",
     fsrs: fsrsCardState(),
@@ -51,7 +52,7 @@ function fsrsReviewLog(overrides: Partial<FsrsReviewLog> = {}): FsrsReviewLog {
 
 function reviewLog(overrides: Partial<ReviewLog> = {}): ReviewLog {
   return {
-    userId: "user-a",
+    userId: USER_A,
     senseId: "abandon_verb_01",
     tier: "free",
     rating: "Good",
@@ -90,20 +91,20 @@ export function describeCardRepositoryContract(
       const repo = await makeRepo();
       // Same FSRS internal state, different mastery — the two must not be conflated (INV-3).
       await repo.save(card({ mastery: "Fluent" }));
-      const loaded = await repo.load("user-a", "abandon_verb_01");
+      const loaded = await repo.load(USER_A, "abandon_verb_01");
       expect(loaded!.mastery).toBe("Fluent");
     });
 
     it("tolerates a card with no last_review (undefined round-trips as undefined)", async () => {
       const repo = await makeRepo();
       await repo.save(card({ fsrs: fsrsCardState({ last_review: undefined }) }));
-      const loaded = await repo.load("user-a", "abandon_verb_01");
+      const loaded = await repo.load(USER_A, "abandon_verb_01");
       expect(loaded!.fsrs.last_review).toBeUndefined();
     });
 
     it("returns undefined for an absent card", async () => {
       const repo = await makeRepo();
-      expect(await repo.load("nobody", "nothing_noun_01")).toBeUndefined();
+      expect(await repo.load(USER_C, "nothing_noun_01")).toBeUndefined();
     });
 
     it("SM-2: save upserts on (userId, senseId) — one card per word, no duplicate", async () => {
@@ -111,9 +112,9 @@ export function describeCardRepositoryContract(
       await repo.save(card({ mastery: "Recognized" }));
       await repo.save(card({ mastery: "Productive" }));
 
-      const loaded = await repo.load("user-a", "abandon_verb_01");
+      const loaded = await repo.load(USER_A, "abandon_verb_01");
       expect(loaded!.mastery).toBe("Productive");
-      expect(await repo.listCards("user-a")).toHaveLength(1);
+      expect(await repo.listCards(USER_A)).toHaveLength(1);
     });
 
     it("DM-6: appendReviewLog + logsForWord returns logs in append order", async () => {
@@ -125,7 +126,7 @@ export function describeCardRepositoryContract(
         reviewLog({ reviewedAt: new Date("2026-07-02T00:00:00.000Z"), rating: "Again" }),
       );
 
-      const logs = await repo.logsForWord("user-a", "abandon_verb_01");
+      const logs = await repo.logsForWord(USER_A, "abandon_verb_01");
       expect(logs.map((l) => l.rating)).toEqual(["Good", "Again"]);
       expect(logs[0]!.fsrs.due.getTime()).toBe(fsrsReviewLog().due.getTime());
       expect(logs[0]!.scaffolded).toBe(false);
@@ -133,28 +134,28 @@ export function describeCardRepositoryContract(
 
     it("INV-4: logsForWord filters by user and word", async () => {
       const repo = await makeRepo();
-      await repo.appendReviewLog(reviewLog({ userId: "user-a", senseId: "abandon_verb_01" }));
-      await repo.appendReviewLog(reviewLog({ userId: "user-a", senseId: "afford_verb_01" }));
-      await repo.appendReviewLog(reviewLog({ userId: "user-b", senseId: "abandon_verb_01" }));
+      await repo.appendReviewLog(reviewLog({ userId: USER_A, senseId: "abandon_verb_01" }));
+      await repo.appendReviewLog(reviewLog({ userId: USER_A, senseId: "afford_verb_01" }));
+      await repo.appendReviewLog(reviewLog({ userId: USER_B, senseId: "abandon_verb_01" }));
 
-      const logs = await repo.logsForWord("user-a", "abandon_verb_01");
+      const logs = await repo.logsForWord(USER_A, "abandon_verb_01");
       expect(logs).toHaveLength(1);
     });
 
     it("multi-tenant: listCards scopes to one user", async () => {
       const repo = await makeRepo();
-      await repo.save(card({ userId: "user-a", senseId: "abandon_verb_01" }));
-      await repo.save(card({ userId: "user-a", senseId: "afford_verb_01" }));
-      await repo.save(card({ userId: "user-b", senseId: "abandon_verb_01" }));
+      await repo.save(card({ userId: USER_A, senseId: "abandon_verb_01" }));
+      await repo.save(card({ userId: USER_A, senseId: "afford_verb_01" }));
+      await repo.save(card({ userId: USER_B, senseId: "abandon_verb_01" }));
 
-      expect(await repo.listCards("user-a")).toHaveLength(2);
-      expect(await repo.listCards("user-b")).toHaveLength(1);
+      expect(await repo.listCards(USER_A)).toHaveLength(2);
+      expect(await repo.listCards(USER_B)).toHaveLength(1);
     });
 
     it("tolerates a review log with no scaffolded flag (cued tier)", async () => {
       const repo = await makeRepo();
       await repo.appendReviewLog(reviewLog({ tier: "cued", scaffolded: undefined }));
-      const logs = await repo.logsForWord("user-a", "abandon_verb_01");
+      const logs = await repo.logsForWord(USER_A, "abandon_verb_01");
       expect(logs[0]!.scaffolded).toBeUndefined();
     });
   });

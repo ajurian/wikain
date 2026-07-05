@@ -1,33 +1,37 @@
 import { describe, it, expect } from "vitest";
-import { composeSession, composeReviewPass, composeWords } from "./composition.js";
-import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
+import { composeSession, composeReviewPass, composeWords, DEV_JUDGE_VERSIONS } from "./composition.js";
+import { makeTestStores } from "./testStores.js";
 import { FakeJudge } from "./fakeJudge.js";
 import { startSession } from "../application/startSession.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import { readWordsList } from "../application/readWordsList.js";
 import { readWordDetail } from "../application/readWordDetail.js";
+import { USER_A } from "./testIds.js";
 
 /**
- * Smoke test of the per-word read-models (spec/10) over the REAL catalog + REAL ts-fsrs + an in-memory
- * repo — no external services. Proves the wiring end-to-end: seed a session, climb a word Seen →
- * Recognized through the real `runReviewPass`, then read it back through `readWordsList` /
+ * Smoke test of the per-word read-models (spec/10) over the REAL catalog + REAL ts-fsrs + pglite-backed
+ * Drizzle stores — no external services. Proves the wiring end-to-end: seed a session, climb a word
+ * Seen → Recognized through the real `runReviewPass`, then read it back through `readWordsList` /
  * `readWordDetail` and see the mastery + replayed history reflect the persisted logs.
  */
 describe("words read-models (smoke: real catalog + ts-fsrs)", () => {
   const BAND = "B2";
   const t0 = new Date("2026-07-02T00:00:00Z");
   const t1 = new Date("2026-07-03T00:00:00Z");
-  const USER = "u1";
 
-  it("composeWords wires without throwing", () => {
-    expect(() => composeWords()).not.toThrow();
+  it("composeWords wires without throwing", async () => {
+    const { cards } = await makeTestStores();
+    expect(() => composeWords(cards)).not.toThrow();
   });
 
   it("CNT-2/CNT-3: readWordsList lists seeded words with a real live retrievability", async () => {
-    const cards = new InMemoryCardRepository();
-    const { seeded } = await startSession({ userId: USER, frontierBand: BAND, now: t0 }, composeSession(cards));
+    const { cards, marks } = await makeTestStores();
+    const { seeded } = await startSession(
+      { userId: USER_A, frontierBand: BAND, now: t0 },
+      composeSession(cards, marks),
+    );
 
-    const { words } = await readWordsList({ userId: USER, now: t0 }, composeWords(cards));
+    const { words } = await readWordsList({ userId: USER_A, now: t0 }, composeWords(cards));
 
     expect(words.map((w) => w.senseId).sort()).toEqual(seeded.map((c) => c.senseId).sort());
     for (const w of words) {
@@ -40,18 +44,18 @@ describe("words read-models (smoke: real catalog + ts-fsrs)", () => {
   });
 
   it("SM-3: a cloze pass shows up as a Seen → Recognized move in readWordDetail history", async () => {
-    const cards = new InMemoryCardRepository();
-    const sessionDeps = composeSession(cards);
-    const { seeded } = await startSession({ userId: USER, frontierBand: BAND, now: t0 }, sessionDeps);
+    const { cards, marks, memo } = await makeTestStores();
+    const sessionDeps = composeSession(cards, marks);
+    const { seeded } = await startSession({ userId: USER_A, frontierBand: BAND, now: t0 }, sessionDeps);
     const senseId = seeded[0]!.senseId;
     const word = sessionDeps.catalog.get(senseId)!.word;
 
-    const reviewDeps: RunReviewPassDeps = { ...composeReviewPass(new FakeJudge()), cards };
+    const reviewDeps: RunReviewPassDeps = composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS);
     // Two deterministic passes: recognition (MCQ, no move) then cloze (Seen → Recognized).
-    await runReviewPass({ userId: USER, senseId, response: word, now: t0 }, reviewDeps);
-    await runReviewPass({ userId: USER, senseId, response: word, now: t1 }, reviewDeps);
+    await runReviewPass({ userId: USER_A, senseId, response: word, now: t0 }, reviewDeps);
+    await runReviewPass({ userId: USER_A, senseId, response: word, now: t1 }, reviewDeps);
 
-    const detail = await readWordDetail({ userId: USER, senseId, now: t1 }, composeWords(cards));
+    const detail = await readWordDetail({ userId: USER_A, senseId, now: t1 }, composeWords(cards));
 
     expect(detail).not.toBeNull();
     expect(detail!.mastery).toBe("Recognized");
@@ -61,9 +65,9 @@ describe("words read-models (smoke: real catalog + ts-fsrs)", () => {
   });
 
   it("returns null from readWordDetail for a word the user has no card for", async () => {
-    const cards = new InMemoryCardRepository();
+    const { cards } = await makeTestStores();
     const detail = await readWordDetail(
-      { userId: USER, senseId: "not_a_real_sense_99", now: t0 },
+      { userId: USER_A, senseId: "not_a_real_sense_99", now: t0 },
       composeWords(cards),
     );
     expect(detail).toBeNull();

@@ -18,23 +18,23 @@ import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowRight, CircleCheck, CircleX, CloudOff, Lightbulb, Loader2, X } from "lucide-react";
 
-import { startSessionFn, resolvePromptFn, ruleCheckFn, submitReviewFn } from "../server/review";
-import type { ReviewPrompt } from "../../application/resolveReviewPrompt.js";
-import type { ReviewOutcomeView } from "../../application/presentReviewOutcome.js";
-import type { MasteryState } from "../mock/learner";
+import { startSessionFn, resolvePromptFn, ruleCheckFn, submitReviewFn } from "../../server/review";
+import type { ReviewPrompt } from "../../../application/resolveReviewPrompt.js";
+import type { ReviewOutcomeView } from "../../../application/presentReviewOutcome.js";
+import type { MasteryState } from "../../../domain/card.js";
 
-import { BounceCallout } from "../components/bounce-callout";
-import { CheckingIndicator } from "../components/checking-indicator";
-import { SessionSummary, type StepOutcome } from "../components/session-summary";
-import { VerdictPanel } from "../components/verdict-panel";
-import { MasteryChip } from "../components/mastery-chip";
+import { BounceCallout } from "../../components/bounce-callout";
+import { CheckingIndicator } from "../../components/checking-indicator";
+import { SessionSummary, type StepOutcome } from "../../components/session-summary";
+import { VerdictPanel } from "../../components/verdict-panel";
+import { MasteryChip } from "../../components/mastery-chip";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/review")({
+export const Route = createFileRoute("/_authenticated/review")({
   component: ReviewSession,
 });
 

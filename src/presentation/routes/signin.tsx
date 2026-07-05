@@ -1,10 +1,13 @@
 /*
- * /signin — VISUAL ONLY. BetterAuth (STACK-4) is deferred; this form submits
- * nowhere and navigates straight to the dashboard for the design demo.
+ * /signin — wired to BetterAuth (STACK-4). Email+password sign-in; on success the router is
+ * invalidated (so `__root.beforeLoad` re-reads the now-authenticated session) and we land on the
+ * dashboard. Public route (no guard).
  */
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "motion/react";
 
+import { signIn } from "../lib/auth-client";
 import { Wordmark } from "../components/wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +19,27 @@ export const Route = createFileRoute("/signin")({
 
 function SignIn() {
   const navigate = useNavigate();
+  const router = useRouter();
   const reduced = useReducedMotion();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setPending(true);
+    const res = await signIn.email({ email, password });
+    if (res.error) {
+      setError(res.error.message ?? "Sign in failed. Check your email and password.");
+      setPending(false);
+      return;
+    }
+    await router.invalidate(); // re-run beforeLoad so the guard sees the session
+    navigate({ to: "/" });
+  }
+
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-4 py-10">
       <motion.div
@@ -29,28 +52,35 @@ function SignIn() {
           <Wordmark className="text-3xl" />
           <p className="text-sm text-ink-soft">Welcome back. Your words kept their schedule.</p>
         </div>
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            navigate({ to: "/" }); // MOCK — replace with real auth
-          }}
-        >
+        <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" placeholder="you@example.com" required />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <div className="flex items-baseline justify-between">
               <Label htmlFor="password">Password</Label>
-              <button type="button" className="text-xs text-ink-faint hover:text-ink">
-                Forgot?
-              </button>
             </div>
-            <Input id="password" type="password" autoComplete="current-password" required />
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
-          <Button type="submit" size="lg" className="w-full">
-            Sign in
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+          <Button type="submit" size="lg" className="w-full" disabled={pending}>
+            {pending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
         <p className="text-center text-sm text-ink-faint">

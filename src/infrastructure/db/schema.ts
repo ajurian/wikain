@@ -23,17 +23,23 @@ import {
   serial,
   text,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 import type { MasteryState } from "../../domain/card.js";
 import type { ReviewTier } from "../../domain/review.js";
 import type { Rating } from "../../domain/rating.js";
 import type { JudgeVerdict } from "../../domain/verdict.js";
 
+// BetterAuth core tables (user/session/account/verification). Re-exported so drizzle-kit + the pglite
+// migrator + the drizzleAdapter all see one schema. `user.id` is `uuid` — the app-table `user_id`
+// columns below are the same type (STACK-4).
+export * from "./authSchema.js";
+
 /** One FSRS card per (user, word) — SM-2, DM-5. `mastery` kept apart from `fsrs_state` (DM-7). */
 export const cards = pgTable(
   "cards",
   {
-    userId: text("user_id").notNull(),
+    userId: uuid("user_id").notNull(),
     senseId: text("sense_id").notNull(),
     mastery: text("mastery").$type<MasteryState>().notNull(),
     // FsrsCardState (src/domain/card.ts), expanded.
@@ -57,7 +63,7 @@ export const cards = pgTable(
  */
 export const reviewLogs = pgTable("review_logs", {
   seq: serial("seq").primaryKey(),
-  userId: text("user_id").notNull(),
+  userId: uuid("user_id").notNull(),
   senseId: text("sense_id").notNull(),
   tier: text("tier").$type<ReviewTier>().notNull(),
   rating: text("rating").$type<Rating>().notNull(),
@@ -88,7 +94,7 @@ export const reviewLogs = pgTable("review_logs", {
 export const verdictMemos = pgTable(
   "verdict_memos",
   {
-    userId: text("user_id").notNull(),
+    userId: uuid("user_id").notNull(),
     // The pure memoKey() (domain/verdictMemo.ts): normalized_sentence + lemma + sense_id (MEMO-2).
     memoKey: text("memo_key").notNull(),
     modelVersion: text("model_version").notNull(),
@@ -107,8 +113,20 @@ export const verdictMemos = pgTable(
 export const placementMarks = pgTable(
   "placement_marks",
   {
-    userId: text("user_id").notNull(),
+    userId: uuid("user_id").notNull(),
     senseId: text("sense_id").notNull(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.senseId] })],
 );
+
+/**
+ * Per-user preferences (spec/10 CNT-8). One row per user (PK `user_id`); absent row = defaults
+ * (`DEFAULT_USER_SETTINGS`), resolved in the adapter. `daily_goal` is the learner-adjustable USE goal;
+ * `timezone` anchors the "separate calendar days" logic (SM-5b/CNT-2). FK-less by app-table convention.
+ */
+export const settings = pgTable("settings", {
+  userId: uuid("user_id").primaryKey(),
+  dailyGoal: integer("daily_goal").notNull(),
+  levelBand: text("level_band").notNull(),
+  timezone: text("timezone").notNull(),
+});

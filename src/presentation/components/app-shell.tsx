@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BookOpenText, House, Settings } from "lucide-react";
 import { Wordmark } from "./wordmark";
 import { usableCounterFn } from "../server/counter";
+import { useSession } from "../lib/auth-client";
 
 const NAV = [
   { to: "/", label: "Home", icon: House },
@@ -21,6 +22,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     queryKey: ["usable-counter"],
     queryFn: () => usableCounterFn(),
   });
+
+  // The authenticated user (STACK-4). The initial is the identity chrome; it links to /settings, where
+  // the account card + sign-out live.
+  const { data: session } = useSession();
+  const initial = session?.user.name?.trim()?.[0]?.toUpperCase() ?? "";
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -49,6 +55,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>{" "}
               usable
             </span>
+            {/* identity chrome — the user's initial, linking to the account card + sign-out (STACK-4) */}
+            {initial && (
+              <Link
+                to="/settings"
+                aria-label="Account and settings"
+                className="flex size-8 items-center justify-center rounded-full bg-ink/10 text-sm font-semibold text-ink hover:bg-ink/15"
+              >
+                {initial}
+              </Link>
+            )}
           </div>
         </div>
       </header>

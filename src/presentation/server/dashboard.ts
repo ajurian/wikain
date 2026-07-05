@@ -14,5 +14,5 @@ import { dashboardDeps } from "./composition.js";
  */
 export const dashboardSummaryFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<ReadDashboardSummaryResult> =>
-    readDashboardSummary({ userId: currentUserId() }, dashboardDeps()),
+    readDashboardSummary({ userId: await currentUserId() }, dashboardDeps()),
 );

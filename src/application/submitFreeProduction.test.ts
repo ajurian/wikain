@@ -16,7 +16,6 @@ import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";
 import { JudgeUnavailableError, type JudgePort, type JudgeRequest } from "./ports/judge.js";
 import type { Scheduler } from "./ports/scheduler.js";
 import type { MemoVersions } from "./ports/verdictMemo.js";
-import { InMemoryVerdictMemo } from "../infrastructure/inMemoryVerdictMemo.js";
 import { MAX_RULE_BOUNCE_RETRIES } from "../domain/constants.js";
 
 const TEST_VERSIONS: MemoVersions = { modelVersion: "test", rubricVersion: "test" };
@@ -191,8 +190,9 @@ function deps(
       analyzer,
       judge,
       tagalogLexicon,
-      // A fresh memo per deps() so no test's submission hits another's cached verdict.
-      memo: new InMemoryVerdictMemo(),
+      // No-op memo stub (always a miss): these tests assert rating/mastery/logs, not memo caching. The
+      // memo hit/skip behavior is covered by verdictMemo.smoke.test.ts over the real adapter.
+      memo: { lookup: async () => undefined, record: async () => {} },
       judgeVersions: TEST_VERSIONS,
     },
     calls,

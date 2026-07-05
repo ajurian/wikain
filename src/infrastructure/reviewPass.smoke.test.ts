@@ -1,22 +1,20 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import { ITEMS_PATH, composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
-import { InMemoryVerdictMemo } from "./inMemoryVerdictMemo.js";
-import { JsonCatalog } from "./catalog.js";
-import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
-import { WinkLemmatizer } from "./winkLemmatizer.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
+import { makeTestStores } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
+import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
 import type { LexicalItem } from "../domain/lexicalItem.js";
 import type { MasteryState } from "../domain/card.js";
+import { USER_A } from "./testIds.js";
 
 /**
  * End-to-end smoke test of the loop orchestrator (spec/11) over the REAL catalog with REAL wink +
  * ts-fsrs and a FAKE judge — proving tier routing (LOOP-1/SM-1): a Recognized card takes the
  * deterministic cued branch with NO judge call (LOOP-2), a Productive card takes the judged branch
- * (LOOP-3/LOOP-4). No network/auth/DeepSeek needed.
+ * (LOOP-3/LOOP-4). Persistence is pglite-backed Drizzle; no network/auth/DeepSeek needed.
  */
 describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", () => {
   const items = JSON.parse(fs.readFileSync(ITEMS_PATH, "utf8")) as LexicalItem[];
@@ -26,21 +24,10 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
   async function wire(
     judge: FakeJudge,
     mastery: MasteryState,
-  ): Promise<{ deps: RunReviewPassDeps; cards: InMemoryCardRepository }> {
-    const wink = new WinkLemmatizer();
-    const cards = new InMemoryCardRepository();
-    const deps: RunReviewPassDeps = {
-      catalog: new JsonCatalog(items),
-      cards,
-      scheduler: new TsFsrsScheduler(),
-      lemmatizer: wink,
-      analyzer: wink,
-      judge,
-      tagalogLexicon: TAGALOG_LEXICON,
-      memo: new InMemoryVerdictMemo(),
-      judgeVersions: DEV_JUDGE_VERSIONS,
-    };
-    await cards.save({ userId: "u1", senseId: item.sense_id, mastery, fsrs: new TsFsrsScheduler().newCard(now) });
+  ): Promise<{ deps: RunReviewPassDeps; cards: DrizzleCardRepository }> {
+    const { cards, memo } = await makeTestStores();
+    const deps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS);
+    await cards.save({ userId: USER_A, senseId: item.sense_id, mastery, fsrs: new TsFsrsScheduler().newCard(now) });
     return { deps, cards };
   }
 
@@ -49,7 +36,7 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
     const { deps, cards } = await wire(judge, "Recognized");
 
     const res = await runReviewPass(
-      { userId: "u1", senseId: item.sense_id, response: "abandon", now },
+      { userId: USER_A, senseId: item.sense_id, response: "abandon", now },
       deps,
     );
 
@@ -59,8 +46,9 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
       expect(res.outcome.mastery).toBe("Productive"); // SM-4
     }
     expect(judge.calls).toHaveLength(0); // LOOP-2: deterministic, no LLM
-    expect(cards.reviewLogs).toHaveLength(1);
-    expect(cards.reviewLogs[0]?.tier).toBe("cued");
+    const logs = await cards.logsForWord(USER_A, item.sense_id);
+    expect(logs).toHaveLength(1);
+    expect(logs[0]?.tier).toBe("cued");
   });
 
   it("LOOP-1/LOOP-4: a Productive card routes to the judged branch and rates on a real gate-passing sentence", async () => {
@@ -69,7 +57,7 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
 
     const res = await runReviewPass(
       {
-        userId: "u1",
+        userId: USER_A,
         senseId: item.sense_id,
         response: "The crew decided to abandon the sinking ship before dawn.",
         now,
@@ -83,11 +71,13 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
       expect(res.outcome.rating).toBe("Good");
     }
     expect(judge.calls).toHaveLength(1);
-    expect(cards.reviewLogs).toHaveLength(1);
-    expect(cards.reviewLogs[0]?.tier).toBe("free");
+    const logs = await cards.logsForWord(USER_A, item.sense_id);
+    expect(logs).toHaveLength(1);
+    expect(logs[0]?.tier).toBe("free");
   });
 
-  it("composeReviewPass wires the loop without throwing", () => {
-    expect(() => composeReviewPass(new FakeJudge())).not.toThrow();
+  it("composeReviewPass wires the loop without throwing", async () => {
+    const { cards, memo } = await makeTestStores();
+    expect(() => composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS)).not.toThrow();
   });
 });

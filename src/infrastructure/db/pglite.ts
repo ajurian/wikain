@@ -21,9 +21,31 @@ const MIGRATIONS_FOLDER = path.resolve(
   "drizzle",
 );
 
+/**
+ * Every live pglite client, so the test harness can free their WASM memory between tests. A pglite
+ * instance holds a non-trivial WASM heap that V8's GC never reclaims (it is off-heap), so without an
+ * explicit `close()` a suite that mints one DB per `it` exhausts the process (`Fatal … out of memory:
+ * Zone`). `vitest.setup.ts` calls `closeAllPglite()` in an `afterEach`.
+ */
+const OPEN_CLIENTS = new Set<PGlite>();
+
 /** A fresh, empty, fully-migrated in-memory Postgres database. Each call is fully isolated. */
 export async function makePgliteDb(): Promise<PgliteDatabase<typeof schema>> {
-  const db = drizzle(new PGlite(), { schema });
+  const client = new PGlite();
+  OPEN_CLIENTS.add(client);
+  const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
   return db;
+}
+
+/** Close and forget every pglite client made so far — releases their WASM heaps (test teardown only). */
+export async function closeAllPglite(): Promise<void> {
+  for (const client of OPEN_CLIENTS) {
+    try {
+      await client.close();
+    } catch {
+      // A client already closed/crashed is fine to ignore during teardown.
+    }
+  }
+  OPEN_CLIENTS.clear();
 }

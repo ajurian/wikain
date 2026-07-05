@@ -11,12 +11,12 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowRight, CircleCheck, CircleX } from "lucide-react";
 
-import { AppShell } from "../components/app-shell";
-import { MasteryChip } from "../components/mastery-chip";
-import { wordDetailFn } from "../server/words";
+import { AppShell } from "../../components/app-shell";
+import { MasteryChip } from "../../components/mastery-chip";
+import { wordDetailFn } from "../../server/words";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/words/$wordId")({
+export const Route = createFileRoute("/_authenticated/words/$wordId")({
   component: WordDetail,
 });
 
