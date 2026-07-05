@@ -6,6 +6,7 @@ import type { Catalog } from "./ports/catalog.js";
 import type { WordSource } from "./ports/wordSource.js";
 import type { CardRepository } from "./ports/cardRepository.js";
 import type { Scheduler } from "./ports/scheduler.js";
+import type { PlacementMarksStore } from "./ports/placementMarks.js";
 
 export interface SeedIntroductionsInput {
   userId: string;
@@ -13,7 +14,9 @@ export interface SeedIntroductionsInput {
   frontierBand: string;
   /**
    * SEED-2/3: per-word placement-known flags — the ONLY input that skips `Seen` (SM-11). Separate
-   * from the frontier band (which never marks words, SEED-3). Absent ⇒ no word skips `Seen`.
+   * from the frontier band (which never marks words, SEED-3). An explicit set here overrides the
+   * `marks` store (used by tests); when absent, the user's persisted marks are consulted instead
+   * (`deps.marks`), or no word skips `Seen` if neither is provided.
    */
   placementKnown?: ReadonlySet<string>;
   /** Defaults to `new Date()`; injectable for deterministic tests. */
@@ -25,6 +28,13 @@ export interface SeedIntroductionsDeps {
   wordSource: WordSource;
   cards: CardRepository;
   scheduler: Scheduler;
+  /**
+   * SEED-7: the user's persisted placement marks. Optional so unit tests can pass `placementKnown`
+   * directly without a store; the real wirings inject it so a word marked known in onboarding lazily
+   * cards at `Recognized` when the pacer reaches it. Consulted only when `input.placementKnown` is
+   * absent.
+   */
+  marks?: PlacementMarksStore;
 }
 
 const EMPTY: ReadonlySet<string> = new Set();
@@ -48,7 +58,9 @@ export async function seedIntroductions(
 ): Promise<Card[]> {
   const { userId, frontierBand } = input;
   const now = input.now ?? new Date();
-  const known = input.placementKnown ?? EMPTY;
+  // SEED-7: an explicit set wins (tests); otherwise consult the user's persisted marks; else none.
+  const known: ReadonlySet<string> =
+    input.placementKnown ?? (deps.marks ? new Set(await deps.marks.list(userId)) : EMPTY);
 
   const existing = await deps.cards.listCards(userId);
   const isFirstSession = existing.length === 0;

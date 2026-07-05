@@ -1,12 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { seedIntroductions } from "../../application/seedIntroductions.js";
 import { presentSeededWords, type SeededWordView } from "../../application/presentSeededWords.js";
+import { readPlacementSlate, type PlacementSlateWord } from "../../application/readPlacementSlate.js";
+import { recordPlacementMarks } from "../../application/recordPlacementMarks.js";
 import {
   judgeFirstProduction,
   type FirstProductionResult,
 } from "../../application/judgeFirstProduction.js";
 import { currentUserId } from "./currentUser.js";
-import { seedingDeps, reviewDeps } from "./composition.js";
+import { seedingDeps, reviewDeps, placementSlateDeps, recordMarksDeps } from "./composition.js";
+
+/** How many frontier candidates the "tune your level" step offers to tap (a UI slate size). */
+const PLACEMENT_SLATE_SIZE = 10;
 
 export interface SeedFirstSessionInput {
   /** The catalog band the coarse level step chose (SEED-2/5, via `frontierBandForCoarseLevel`). */
@@ -16,9 +21,9 @@ export interface SeedFirstSessionInput {
 /**
  * Seed the new user's first-session introductions (spec/09 SEED-1/6) at the coarse frontier band the
  * onboarding level step chose, and return the seeded words' display fields for the seeds + first-win
- * screens. Placement-known marking (SEED-2/3) is deferred — it needs a per-user placement-marks store
- * (arrives with per-user state / BetterAuth), so no `placementKnown` is passed and every first-session
- * word enters at `Seen` (SM-11). `userId` is resolved server-side (never trusted from the client).
+ * screens. No `placementKnown` is passed here — the win comes BEFORE the "tune your level" step, so any
+ * word the learner later flags known is consumed by the seeder from the shared marks store (SEED-7) on
+ * a subsequent session. `userId` is resolved server-side (never trusted from the client).
  */
 export const seedFirstSessionFn = createServerFn({ method: "POST" })
   .validator((input: unknown): SeedFirstSessionInput => {
@@ -64,3 +69,44 @@ export const judgeFirstProductionFn = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }): Promise<FirstProductionResult> => judgeFirstProduction(data, reviewDeps()));
+
+/**
+ * The frontier candidates the "tune your level" step offers for placement marking (spec/09 SEED-2).
+ * A pure read (never seeds/marks): reuses the same list-stack word source the seeder selects from,
+ * excluding words the user already has a card for (SEED-7). GET + a `frontierBand` validator, mirroring
+ * `wordDetailFn`. `userId` is resolved server-side.
+ */
+export const placementSlateFn = createServerFn({ method: "GET" })
+  .validator((frontierBand: unknown): string => {
+    if (typeof frontierBand !== "string" || frontierBand.length === 0) {
+      throw new Error("placementSlateFn: frontierBand (non-empty string) required");
+    }
+    return frontierBand;
+  })
+  .handler(async ({ data }): Promise<PlacementSlateWord[]> =>
+    readPlacementSlate(
+      { userId: currentUserId(), frontierBand: data, count: PLACEMENT_SLATE_SIZE },
+      placementSlateDeps(),
+    ),
+  );
+
+export interface RecordPlacementMarksFnInput {
+  senseIds: string[];
+}
+
+/**
+ * Persist the senseIds the learner flagged placement-known in onboarding (spec/09 SEED-2). Idempotent
+ * + additive; its sole later effect is that `seedIntroductions` enters a marked word at `Recognized`
+ * (SEED-7 / SM-11) when the pacer reaches it. `userId` is resolved server-side. POST (a write).
+ */
+export const recordPlacementMarksFn = createServerFn({ method: "POST" })
+  .validator((input: unknown): RecordPlacementMarksFnInput => {
+    const o = input as Partial<RecordPlacementMarksFnInput> | null;
+    if (!o || !Array.isArray(o.senseIds) || o.senseIds.some((s) => typeof s !== "string")) {
+      throw new Error("recordPlacementMarksFn: { senseIds: string[] } required");
+    }
+    return { senseIds: o.senseIds };
+  })
+  .handler(async ({ data }): Promise<void> => {
+    await recordPlacementMarks({ userId: currentUserId(), senseIds: data.senseIds }, recordMarksDeps());
+  });

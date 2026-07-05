@@ -14,14 +14,19 @@
  */
 import { useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { useMutation, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowRight, CircleCheck, CloudOff, Loader2 } from "lucide-react";
 
 import { frontierBandForCoarseLevel, type CoarseLevel } from "../../domain/placement.js";
 import type { RuleBounceReason } from "../../domain/ruleLayer.js";
 import type { SeededWordView } from "../../application/presentSeededWords.js";
-import { seedFirstSessionFn, judgeFirstProductionFn } from "../server/onboarding";
+import {
+  seedFirstSessionFn,
+  judgeFirstProductionFn,
+  placementSlateFn,
+  recordPlacementMarksFn,
+} from "../server/onboarding";
 import { ruleCheckFn } from "../server/review";
 import { BounceCallout } from "../components/bounce-callout";
 import { CheckingIndicator } from "../components/checking-indicator";
@@ -92,7 +97,9 @@ function Onboarding() {
             {step === "firstWin" ? (
               <FirstWinStep word={seeds.data?.[0]} onNext={() => setStep("tune")} />
             ) : null}
-            {step === "tune" ? <TuneStep /> : null}
+            {step === "tune" && level !== null ? (
+              <TuneStep frontierBand={frontierBandForCoarseLevel(level)} />
+            ) : null}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -335,27 +342,42 @@ function FirstWinStep({ word, onNext }: { word: SeededWordView | undefined; onNe
 
 /**
  * Optional placement AFTER the win (SEED-2/3/4): per-word marking + LexTALE entry, both skippable.
- * VISUAL ONLY for now — persisting the marks (so flagged words lazily card at `Recognized`, SEED-7)
- * needs a per-user placement-marks store that does not exist yet; it lands with per-user state. The
- * LexTALE instrument (SEED-4) is likewise deferred. So `known` is collected but not yet sent anywhere.
+ * WIRED (SEED-2/7): the chips are REAL frontier candidates from `placementSlateFn` (drawn from the same
+ * band the level step chose), marked BY senseId; on finish `recordPlacementMarksFn` persists them so the
+ * seeder enters a flagged word at `Recognized` (SM-11) when the pacer next reaches it. The LexTALE
+ * instrument (SEED-4) stays deferred (a visual entry point only).
  */
-function TuneStep() {
+function TuneStep({ frontierBand }: { frontierBand: string }) {
   const navigate = useNavigate();
   const [known, setKnown] = useState<Set<string>>(new Set());
 
-  // A slice of common frontier words to tap — display-only chips until marks persist (SEED-2/7).
-  const placementWords = [
-    "allocate", "coherent", "diligent", "feasible", "meticulous",
-    "advocate", "adverse", "compile", "concise", "viable",
-  ];
+  // Real frontier candidates to tap (SEED-2), excluding words already carded (SEED-7) — server-resolved.
+  const slate = useQuery({
+    queryKey: ["placement-slate", frontierBand],
+    queryFn: () => placementSlateFn({ data: frontierBand }),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
 
-  const toggle = (w: string) =>
+  // Persist the marks then move on. Navigate regardless (the marks are additive — a failed write just
+  // means those words card at `Seen`, no worse than skipping), so a store hiccup never traps the user.
+  const record = useMutation({
+    mutationFn: (senseIds: string[]) => recordPlacementMarksFn({ data: { senseIds } }),
+    onSettled: () => navigate({ to: "/" }),
+  });
+
+  const toggle = (senseId: string) =>
     setKnown((prev) => {
       const next = new Set(prev);
-      if (next.has(w)) next.delete(w);
-      else next.add(w);
+      if (next.has(senseId)) next.delete(senseId);
+      else next.add(senseId);
       return next;
     });
+
+  const finish = () => {
+    if (known.size === 0) navigate({ to: "/" });
+    else record.mutate([...known]);
+  };
 
   return (
     <div className="space-y-6">
@@ -365,23 +387,31 @@ function TuneStep() {
         <p className="mt-0.5 text-xs text-ink-faint">
           Known words skip the flashcard stage and go straight to production practice.
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {placementWords.map((w) => (
-            <button
-              key={w}
-              type="button"
-              onClick={() => toggle(w)}
-              className={cn(
-                "rounded-full border px-3 py-1.5 font-serif text-base transition-colors duration-150",
-                known.has(w)
-                  ? "border-amber-deep bg-amber-wash text-ink"
-                  : "border-line bg-paper text-ink-soft hover:border-ink-faint",
-              )}
-            >
-              {w}
-            </button>
-          ))}
-        </div>
+        {slate.isPending ? (
+          <div className="mt-3">
+            <Loading label="Loading words…" />
+          </div>
+        ) : slate.isError || slate.data === undefined ? (
+          <p className="mt-3 text-sm text-terracotta">Couldn’t load words — you can skip this step.</p>
+        ) : (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {slate.data.map((w) => (
+              <button
+                key={w.senseId}
+                type="button"
+                onClick={() => toggle(w.senseId)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 font-serif text-base transition-colors duration-150",
+                  known.has(w.senseId)
+                    ? "border-amber-deep bg-amber-wash text-ink"
+                    : "border-line bg-paper text-ink-soft hover:border-ink-faint",
+                )}
+              >
+                {w.lemma}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="rounded-xl border border-line bg-paper-raised p-5">
         <p className="text-sm font-medium text-ink">Prefer precision?</p>
@@ -393,7 +423,7 @@ function TuneStep() {
           Take the placement test
         </Button>
       </div>
-      <Button size="lg" className="w-full" onClick={() => navigate({ to: "/" })}>
+      <Button size="lg" className="w-full" disabled={record.isPending} onClick={finish}>
         {known.size > 0 ? `Save ${known.size} known words and finish` : "Skip — keep going"}
       </Button>
     </div>

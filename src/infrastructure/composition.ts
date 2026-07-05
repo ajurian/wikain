@@ -15,9 +15,13 @@ import type { ReadWordDetailDeps } from "../application/readWordDetail.js";
 import type { SeedIntroductionsDeps } from "../application/seedIntroductions.js";
 import type { StartSessionDeps } from "../application/startSession.js";
 import type { ResolveReviewPromptDeps } from "../application/resolveReviewPrompt.js";
+import type { ReadPlacementSlateDeps } from "../application/readPlacementSlate.js";
+import type { RecordPlacementMarksDeps } from "../application/recordPlacementMarks.js";
 import type { JudgePort } from "../application/ports/judge.js";
 import type { CardRepository } from "../application/ports/cardRepository.js";
 import type { Scheduler } from "../application/ports/scheduler.js";
+import type { PlacementMarksStore } from "../application/ports/placementMarks.js";
+import { InMemoryPlacementMarks } from "./inMemoryPlacementMarks.js";
 import { JsonCatalog } from "./catalog.js";
 import { JsonWordSource } from "./jsonWordSource.js";
 import { InMemoryCardRepository } from "./inMemoryCardRepository.js";
@@ -149,26 +153,53 @@ export function composeReviewPassLive(itemsPath: string = ITEMS_PATH): RunReview
 export function composeSeeding(
   cards: CardRepository = new InMemoryCardRepository(),
   itemsPath: string = ITEMS_PATH,
+  marks: PlacementMarksStore = new InMemoryPlacementMarks(),
 ): SeedIntroductionsDeps {
   return {
     catalog: JsonCatalog.fromFile(itemsPath),
     wordSource: JsonWordSource.fromFile(itemsPath),
     cards,
     scheduler: new TsFsrsScheduler(),
+    // SEED-7: the seeder consults persisted marks to enter a marked word at Recognized. Pass the SHARED
+    // store so a mark recorded in onboarding is seen by later sessions; the default is a fresh empty one.
+    marks,
   };
 }
 
 /**
  * Wiring for a session start (spec/11 LOOP-1 step 1). `StartSessionDeps === SeedIntroductionsDeps`
  * (the queue ordering needs only `cards`, already in the seeding set), so this reuses the seeding
- * wiring — named separately for intent + a stable call site. Pass the SHARED repository so the queued
- * cards are the same ones the review pass reads/writes; the default constructs a standalone repo.
+ * wiring — named separately for intent + a stable call site. Pass the SHARED repository + marks store so
+ * the queued cards are the same ones the review pass reads/writes and marks lazily card at Recognized.
  */
 export function composeSession(
   cards: CardRepository = new InMemoryCardRepository(),
   itemsPath: string = ITEMS_PATH,
+  marks: PlacementMarksStore = new InMemoryPlacementMarks(),
 ): StartSessionDeps {
-  return composeSeeding(cards, itemsPath);
+  return composeSeeding(cards, itemsPath, marks);
+}
+
+/**
+ * Wiring for the onboarding placement-marking step (spec/09 SEED-2). The slate read reuses the same
+ * list-stack word source + catalog the seeder selects from; the record write persists the marks to the
+ * SHARED store the seeder then consults (SEED-7). Defaults construct standalone instances for tests.
+ */
+export function composePlacementSlate(
+  cards: CardRepository = new InMemoryCardRepository(),
+  itemsPath: string = ITEMS_PATH,
+): ReadPlacementSlateDeps {
+  return {
+    wordSource: JsonWordSource.fromFile(itemsPath),
+    cards,
+    catalog: JsonCatalog.fromFile(itemsPath),
+  };
+}
+
+export function composeRecordPlacementMarks(
+  marks: PlacementMarksStore = new InMemoryPlacementMarks(),
+): RecordPlacementMarksDeps {
+  return { marks };
 }
 
 /**

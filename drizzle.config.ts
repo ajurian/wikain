@@ -1,4 +1,7 @@
 import { defineConfig } from "drizzle-kit";
+import { config } from "dotenv";
+
+config({ path: ".env.local" });
 
 /**
  * drizzle-kit config (STACK-6). Generates SQL migrations from the single schema source
@@ -9,4 +12,7 @@ export default defineConfig({
   schema: "./src/infrastructure/db/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
+  dbCredentials: {
+    url: process.env.DATABASE_URL!,
+  },
 });

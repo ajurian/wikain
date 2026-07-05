@@ -2,6 +2,8 @@ import { InMemoryCardRepository } from "../../infrastructure/inMemoryCardReposit
 import { DrizzleCardRepository, type DrizzleDb } from "../../infrastructure/drizzleCardRepository.js";
 import { InMemoryVerdictMemo } from "../../infrastructure/inMemoryVerdictMemo.js";
 import { DrizzleVerdictMemo } from "../../infrastructure/drizzleVerdictMemo.js";
+import { InMemoryPlacementMarks } from "../../infrastructure/inMemoryPlacementMarks.js";
+import { DrizzlePlacementMarks } from "../../infrastructure/drizzlePlacementMarks.js";
 import { neonDbFromEnv } from "../../infrastructure/db/neon.js";
 import {
   composeReviewPass,
@@ -11,6 +13,8 @@ import {
   composeUsableCounter,
   composeDashboardSummary,
   composeWords,
+  composePlacementSlate,
+  composeRecordPlacementMarks,
   liveJudge,
   liveJudgeVersions,
   DEV_JUDGE_VERSIONS,
@@ -19,6 +23,7 @@ import { devVerdict } from "../../infrastructure/devJudge.js";
 import type { JudgePort } from "../../application/ports/judge.js";
 import type { CardRepository } from "../../application/ports/cardRepository.js";
 import type { MemoVersions, VerdictMemoPort } from "../../application/ports/verdictMemo.js";
+import type { PlacementMarksStore } from "../../application/ports/placementMarks.js";
 import type { StartSessionDeps } from "../../application/startSession.js";
 import type { SeedIntroductionsDeps } from "../../application/seedIntroductions.js";
 import type { RunReviewPassDeps } from "../../application/runReviewPass.js";
@@ -27,6 +32,8 @@ import type { ReadUsableCounterDeps } from "../../application/readUsableCounter.
 import type { ReadDashboardSummaryDeps } from "../../application/readDashboardSummary.js";
 import type { ReadWordsListDeps } from "../../application/readWordsList.js";
 import type { ReadWordDetailDeps } from "../../application/readWordDetail.js";
+import type { ReadPlacementSlateDeps } from "../../application/readPlacementSlate.js";
+import type { RecordPlacementMarksDeps } from "../../application/recordPlacementMarks.js";
 
 /**
  * Server-only composition for the deterministic review slice. Imported only by server-function
@@ -61,6 +68,15 @@ const cards: CardRepository = db
 const memo: VerdictMemoPort = db ? new DrizzleVerdictMemo(db) : new InMemoryVerdictMemo();
 
 /**
+ * The placement-marks store (spec/09 SEED-2/7) is URL-gated exactly like `cards`/`memo`: Drizzle over
+ * the same handle when `DATABASE_URL` is set (durable per-user marks), else in-memory. ONE instance
+ * shared across every server-function call — so a mark recorded by `recordPlacementMarksFn` in
+ * onboarding is the very mark `seedFirstSessionFn`/`startSessionFn` consult to enter a word at
+ * `Recognized` (SM-11), even on a later request in the same running server.
+ */
+const marks: PlacementMarksStore = db ? new DrizzlePlacementMarks(db) : new InMemoryPlacementMarks();
+
+/**
  * The judged branch is **key-gated** (NET-7). With `DEEPSEEK_API_KEY` set we use the real DeepSeek
  * transport (`liveJudge`, spec/06/08); otherwise a content-varying **dev judge** (`devVerdict`) drives
  * every judged UI state — pass / polish / sense-fail / transient failure — with NO network and NO key,
@@ -81,13 +97,26 @@ const judgeVersions: MemoVersions = process.env.DEEPSEEK_API_KEY
   : DEV_JUDGE_VERSIONS;
 
 export function sessionDeps(): StartSessionDeps {
-  return composeSession(cards);
+  return composeSession(cards, undefined, marks);
 }
 
-/** Deps for first-session seeding (spec/09 SEED-1). Shares the same store so onboarding-seeded cards
- * are the very cards the review pass / dashboard / words reads then see. */
+/** Deps for first-session seeding (spec/09 SEED-1). Shares the same card store so onboarding-seeded
+ * cards are the very cards the review pass / dashboard / words reads then see, AND the same marks store
+ * so a word the learner flagged known enters at `Recognized` (SEED-7 / SM-11). */
 export function seedingDeps(): SeedIntroductionsDeps {
-  return composeSeeding(cards);
+  return composeSeeding(cards, undefined, marks);
+}
+
+/** Deps for the onboarding placement slate (spec/09 SEED-2) — the frontier candidates offered for
+ * marking. Shares the same card store so already-carded words are excluded (SEED-7). */
+export function placementSlateDeps(): ReadPlacementSlateDeps {
+  return composePlacementSlate(cards);
+}
+
+/** Deps for recording placement marks (spec/09 SEED-2). Shares the SAME store `seedingDeps` reads, so
+ * a mark recorded here is consulted when the seeder later reaches that word. */
+export function recordMarksDeps(): RecordPlacementMarksDeps {
+  return composeRecordPlacementMarks(marks);
 }
 
 export function reviewDeps(): RunReviewPassDeps {

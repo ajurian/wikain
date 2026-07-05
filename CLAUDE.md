@@ -380,6 +380,37 @@ called out):
     resubmission ⇒ **1** judge call; a different sentence ⇒ 2). *Note: `db:generate` produced the migration; run
     `npm run db:migrate` once against Neon before the `DATABASE_URL` path.*
 
+19. **Wire the placement-marks store** (branch `wire/placement-marks`; the first *per-user-state* slice — proves
+    the store-backed per-user pieces need NO BetterAuth, only the existing `currentUserId()` seam). Persists the
+    per-word placement-known flags the onboarding "tune your level" step collects, so a flagged word skips `Seen`
+    and lazily cards at `Recognized` when the pacer reaches it (SEED-7 / SM-11). The three SEED-2/3 placement
+    mechanisms stay **structurally separate** — the coarse level sets WHERE the frontier is (slice 17), the marks
+    say WHICH words are known (this slice), and neither is the list-stack source. application (TDD): narrow
+    `ports/placementMarks.ts` (`PlacementMarksStore` `record`/`list`, per-`userId`, idempotent + additive);
+    `seedIntroductions` gains an **optional** `marks` dep and derives its known-set as `input.placementKnown ??
+    (marks ? new Set(await marks.list) : ∅)` — an explicit input still wins (tests unchanged), else the persisted
+    marks feed SM-11 (byte-preserving every prior seeding test); `recordPlacementMarks.ts` (thin write use-case)
+    + `readPlacementSlate.ts` (the frontier candidates offered for marking — reuses the seeder's word source,
+    excludes already-carded senseIds per SEED-7, fail-loud on missing catalog). infra: `inMemoryPlacementMarks.ts`
+    + `drizzlePlacementMarks.ts` behind the shared `placementMarksContract.ts` (SOLID-3, run over both in-mem +
+    pglite; `record` `.onConflictDoNothing()` + empty-array early-return since an empty SQL insert errors);
+    `db/schema.ts` `placement_marks` table (PK `(user_id, sense_id)`); migration `drizzle/0002_purple_doomsday.sql`;
+    `placementMarks.smoke.test.ts` (slate→record→seed over the REAL catalog + shared store: marked word → `Recognized`,
+    others `Seen`; empty store → all `Seen`). composition: `composeSeeding`/`composeSession` take a shared `marks`
+    param; `composePlacementSlate`/`composeRecordPlacementMarks` added. presentation-server: `marks` is **URL-gated**
+    over the SAME Neon handle as `cards`/`memo` (built once), else in-memory — ONE shared instance so a mark
+    recorded in onboarding is the mark the seeder later consults; `placementSlateFn` (GET) + `recordPlacementMarksFn`
+    (POST) in `server/onboarding.ts`; `sessionDeps`/`seedingDeps` thread the shared store. presentation-UI:
+    `routes/onboarding.tsx` `TuneStep` **wired** — chips are REAL frontier candidates from `placementSlateFn` (drawn
+    from the level's band), marked BY senseId; on finish `recordPlacementMarksFn` persists them (navigate on settle,
+    so a store hiccup never traps the user). **Design (user-confirmed): the win still records nothing** — the marks
+    persist for the NEXT session's seeder (the win comes before the tune step; SEED-1 stays judge-don't-persist).
+    **Covers (wired):** SEED-2/3/7, SM-11. **Verified:** both typecheck gates, `npm test` (292), `npm run build`
+    (no `readPlacementSlate`/`recordPlacementMarks`/`DrizzlePlacementMarks`/`neonDbFromEnv`/`drizzle-orm` in the
+    client bundle), `/onboarding` SSR. *Note: run `npm run db:migrate` once against Neon before the `DATABASE_URL`
+    path. Deferred still: LexTALE (SEED-4); learner-adjustable daily goal + counter yesterday-delta + `app-shell`
+    real user identity + `/settings` (the identity pieces need the BetterAuth STACK-4 swap).*
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -391,33 +422,35 @@ called out):
 
 **Deferred — do NOT build until pulled into scope (`PRAG-1`):** LexTALE instrument + per-user FSRS
 optimization (SEED-4/8); the **BetterAuth (STACK-4) adapter** (presentation stubs a dev user at the
-`currentUser` seam). *(The verdict memo is no longer deferred — slice 18 wired it.)* *Note: `/review` is
-**wired** (slices 13–14) — the judged
+`currentUser` seam). *(The verdict memo — slice 18 — and the placement-marks store — slice 19 — are no longer
+deferred.)* *Note: `/review` is **wired** (slices 13–14) — the judged
 loop, EDIT-7 render, NET-2/3/5, and the usable-words counter (CNT-2/3/4/6) run on real use-cases/DB. The
 **dashboard `/` is now wired too** (slice 15): SM-1 ladder, CNT-8 goal ring (real sentences-today, fixed
 default goal), and the SEED-6 Today due/new counts. **`/words`+`/words/$wordId` are now wired too** (slice
 16): per-word CNT-1/2/3 (counted-status + live retrievability) and the SM-3..SM-7 mastery history (replayed
 from logs; sentence text dropped for v1). **`/onboarding` is now wired too** (slice 17): SEED-1 first-session
-seeding + the real judge-don't-persist first win (its placement-marks + LexTALE stay visual-only). The
-**verdict memo** is now wired too (slice 18): MEMO-1..6 + DM-8, invisible (no gate-outcome change), the
-judged loop is complete. Still **mock-only design** (slice 12, awaiting wiring): the `app-shell` user
-identity (name/email) and `/settings`.*
+seeding + the real judge-don't-persist first win. The **verdict memo** is wired (slice 18): MEMO-1..6 + DM-8,
+invisible (no gate-outcome change), the judged loop is complete. The **placement-marks store** is wired (slice
+19): SEED-2/3/7 + SM-11 — the onboarding TuneStep persists per-word known flags (URL-gated Neon, else in-memory)
+so flagged words lazily card at `Recognized`. Still **mock-only design** (slice 12, awaiting wiring): the
+`app-shell` user identity (name/email) and `/settings` — both need the BetterAuth real principal.*
 
-**Natural next slice:** the judged loop is now complete (slice 18) and every mock learning surface is wired
-— the one remaining big cluster is **per-user state**, gated on the **BetterAuth (STACK-4) swap** (only
-`currentUser.ts` changes). It unlocks, together: the onboarding **placement-marks store** (SEED-2/7 — flagged
-words lazily card at `Recognized`), a learner-**adjustable** daily goal (CNT-8), the counter's
-**yesterday-delta** (needs a persisted daily snapshot), and the `app-shell`/`/settings` **real user identity**
-— all over the already-wired Neon DB (multi-tenant). *(The `/words` history sentence text still awaits a
-schema change — the verdict memo stores the normalized sentence, but re-attaching it to history is a separate
-DM-6/DM-8 decision, not done in slice 18.)*
+**Natural next slice:** the judged loop is complete (slice 18) and the first per-user-state piece is wired
+(slice 19 — placement marks, which proved the **store-backed** per-user pieces need only the existing
+`currentUserId()` seam, NOT BetterAuth). What remains splits by dependency: (a) the pieces that need only a new
+**store + read-model** over the already-wired Neon DB — a learner-**adjustable** daily goal (CNT-8, a
+`settings` store) and the counter's **yesterday-delta** (a persisted daily snapshot) — and (b) the pieces that
+genuinely need the **BetterAuth (STACK-4) swap** for a real principal: the `app-shell`/`/settings` **user
+identity** (name/email). Pick (a) for more spec coverage without the auth dependency, or (b) to unblock the
+identity chrome. *(The `/words` history sentence text still awaits a DM-6/DM-8 schema decision — separate.)*
 
-> **Status (2026-07-04):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
-> 13–18 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
-> `wire/verdict-memo`; `git log` to confirm). `/review`, the `/` dashboard (counter + ladder + goal ring
-> + Today counts), `/words`, **and `/onboarding`** are wired to real use-cases, and the **verdict memo** (slice
-> 18) caches judged verdicts per user (Neon when `DATABASE_URL` is set, else in-memory; DeepSeek when
-> `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run
+> **Status (2026-07-05):** runtime backend (slices 1–11) on **`master`**; the UI slices — **12 (design),
+> 13–19 (backend wiring)** — land on **`design/brand-ui-system`** and descendant wiring branches (currently
+> `wire/placement-marks`; `git log` to confirm). `/review`, the `/` dashboard (counter + ladder + goal ring
+> + Today counts), `/words`, **and `/onboarding`** (including the now-wired placement-marks TuneStep) run on
+> real use-cases; the **verdict memo** (slice 18) caches judged verdicts and the **placement-marks store**
+> (slice 19) persists per-word known flags — both Neon when `DATABASE_URL` is set, else in-memory (DeepSeek
+> when `DEEPSEEK_API_KEY` is set, else the offline dev judge). Backend gate = `npm run
 > typecheck` (NodeNext) + `npm test`; presentation gate = `npm run typecheck:web`. Test count moves each slice
 > — do not trust any number written here; run `npm test`. Re-confirm state with `git log`, `npm test`, and
 > `npm run dev` at session start.

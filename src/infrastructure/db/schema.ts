@@ -97,3 +97,18 @@ export const verdictMemos = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.memoKey] })],
 );
+
+/**
+ * Per-user placement marks (spec/09 SEED-2/7). The existence of a row IS the mark: the user flagged
+ * this word placement-known, so the seeder enters it at `Recognized` (SM-11) when the pacer lazily
+ * creates its card. No extra columns — a mark carries no state beyond (user, sense). Never shared
+ * across accounts (`user_id` is part of the PK). Idempotent inserts (`onConflictDoNothing`, SEED-2).
+ */
+export const placementMarks = pgTable(
+  "placement_marks",
+  {
+    userId: text("user_id").notNull(),
+    senseId: text("sense_id").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.senseId] })],
+);

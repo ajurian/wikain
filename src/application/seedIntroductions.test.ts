@@ -180,6 +180,39 @@ describe("seedIntroductions", () => {
     expect(coldStarts.every((c) => (c?.difficulty ?? 0) > 0)).toBe(true);
   });
 
+  it("SEED-7: with no explicit placementKnown, a persisted mark makes that word enter Recognized", async () => {
+    const { deps } = makeDeps(["w1", "w2"]);
+    // The store, not the input, carries the mark — the real wiring path (onboarding recorded it).
+    deps.marks = {
+      record: async () => {},
+      list: async () => ["w2"],
+    };
+    const created = await seedIntroductions({ userId: "u1", frontierBand: "B2", now: NOW }, deps);
+    const byId = Object.fromEntries(created.map((c) => [c.senseId, c.mastery]));
+    expect(byId["w1"]).toBe("Seen");
+    expect(byId["w2"]).toBe("Recognized");
+  });
+
+  it("SEED-7: an explicit placementKnown overrides the marks store (store not consulted)", async () => {
+    const { deps } = makeDeps(["w1", "w2"]);
+    let listed = false;
+    deps.marks = {
+      record: async () => {},
+      list: async () => {
+        listed = true;
+        return ["w1"];
+      },
+    };
+    const created = await seedIntroductions(
+      { userId: "u1", frontierBand: "B2", placementKnown: new Set(["w2"]), now: NOW },
+      deps,
+    );
+    const byId = Object.fromEntries(created.map((c) => [c.senseId, c.mastery]));
+    expect(byId["w2"]).toBe("Recognized"); // from the explicit set
+    expect(byId["w1"]).toBe("Seen"); // the store's "w1" was ignored
+    expect(listed).toBe(false);
+  });
+
   it("SEED-6: not first session with a due backlog caps new introductions below NEW_PER_DAY", async () => {
     // 10 due cards (not first session) → pacing cap = floor(0.4286*10)=4 < NEW_PER_DAY(5).
     const existing = Array.from({ length: 10 }, (_, i) => seededCard(`old${i}`, NOW));
