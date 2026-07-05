@@ -1,16 +1,16 @@
 # Graph Report - wikain  (2026-07-05)
 
 ## Corpus Check
-- 234 files · ~120,076 words
+- 246 files · ~118,406 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1465 nodes · 2949 edges · 217 communities (87 shown, 130 thin omitted)
+- 1505 nodes · 3024 edges · 219 communities (87 shown, 132 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 11 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `cd8701d7`
+- Built from commit: `a92a9121`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -223,37 +223,40 @@
 - [[_COMMUNITY_edited-sentence.tsx|edited-sentence.tsx]]
 - [[_COMMUNITY_Component inventory|Component inventory]]
 - [[_COMMUNITY_coldStart.ts|coldStart.ts]]
+- [[_COMMUNITY_words.ts|words.ts]]
 - [[_COMMUNITY_sessionQueue.test.ts|sessionQueue.test.ts]]
 - [[_COMMUNITY_composition.ts|composition.ts]]
 - [[_COMMUNITY_deepSeekJudge.ts|deepSeekJudge.ts]]
 - [[_COMMUNITY_MemoVersions|MemoVersions]]
+- [[_COMMUNITY_DrizzleSettings|DrizzleSettings]]
 - [[_COMMUNITY_CardRepository|CardRepository]]
 - [[_COMMUNITY_seedIntroductions.ts|seedIntroductions.ts]]
-- [[_COMMUNITY_cardRepositoryContract.ts|cardRepositoryContract.ts]]
+- [[_COMMUNITY__authenticated.tsx|_authenticated.tsx]]
+- [[_COMMUNITY_{ signIn, signUp, signOut, useSession }|{ signIn, signUp, signOut, useSession }]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `CardRepository` - 44 edges
-2. `Card` - 39 edges
-3. `JudgeVerdict` - 38 edges
-4. `cn()` - 36 edges
-5. `Catalog` - 35 edges
+1. `CardRepository` - 42 edges
+2. `MasteryState` - 38 edges
+3. `cn()` - 36 edges
+4. `Catalog` - 35 edges
+5. `Card` - 35 edges
 6. `LexicalItem` - 34 edges
-7. `ReviewLog` - 34 edges
-8. `MasteryState` - 32 edges
+7. `JudgeVerdict` - 33 edges
+8. `ReviewLog` - 30 edges
 9. `Scheduler` - 29 edges
 10. `FsrsCardState` - 25 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `FirstProductionJudged` --references--> `JudgeVerdict`  [EXTRACTED]
-  src/application/judgeFirstProduction.ts → src/domain/verdict.ts
+- `WordSummary` --references--> `MasteryState`  [EXTRACTED]
+  src/application/readWordsList.ts → src/domain/card.ts
+- `StartSessionResult` --references--> `Card`  [EXTRACTED]
+  src/application/startSession.ts → src/domain/card.ts
+- `MasteryMove` --references--> `MasteryState`  [EXTRACTED]
+  src/domain/masteryHistory.ts → src/domain/card.ts
 - `GradeBanner()` --calls--> `cn()`  [EXTRACTED]
-  src/presentation/routes/review.tsx → src/presentation/lib/utils.ts
+  src/presentation/routes/_authenticated/review.tsx → src/presentation/lib/utils.ts
 - `WordDetail()` --calls--> `cn()`  [EXTRACTED]
-  src/presentation/routes/words.$wordId.tsx → src/presentation/lib/utils.ts
-- `CheckFreeProductionRuleLayerDeps` --references--> `Catalog`  [EXTRACTED]
-  src/application/checkFreeProductionRuleLayer.ts → src/application/ports/catalog.ts
-- `CheckFreeProductionRuleLayerDeps` --references--> `Lemmatizer`  [EXTRACTED]
-  src/application/checkFreeProductionRuleLayer.ts → src/application/ports/lemmatizer.ts
+  src/presentation/routes/_authenticated/words.$wordId.tsx → src/presentation/lib/utils.ts
 
 ## Import Cycles
 - 1-file cycle: `src/infrastructure/db/pglite.ts -> src/infrastructure/db/pglite.ts`
@@ -266,27 +269,27 @@
 - **Mastery ladder New→Seen→Recognized→Productive→Fluent** — spec_01_state_machine_state_new, spec_01_state_machine_state_seen, spec_01_state_machine_state_recognized, spec_01_state_machine_state_productive, spec_01_state_machine_state_fluent [EXTRACTED 1.00]
 - **Judged free-production pipeline: rule layer → memo → judge → edit resolution** — spec_04_rule_layer, spec_05_verdict_memo, spec_06_cloud_judge, spec_07_edit_resolution [EXTRACTED 1.00]
 
-## Communities (217 total, 130 thin omitted)
+## Communities (219 total, 132 thin omitted)
 
 ### Community 0 - "Repository & Scheduler Ports"
-Cohesion: 0.07
-Nodes (26): FirstProductionResult, presentSeededWords(), SeededWordView, card(), makeFsrs(), PlacementSlateWord, bandBaseDifficulty(), CEFR_DIFFICULTY (+18 more)
+Cohesion: 0.10
+Nodes (17): FirstProductionResult, CoarseLevel, frontierBandForCoarseLevel(), Onboarding(), Route, Step, STEPS, placementSlateDeps() (+9 more)
 
 ### Community 1 - "Cloud Judge & Verdict"
-Cohesion: 0.15
-Nodes (6): DeepSeekConfig, HttpPost, FakeHttp, Outcome, PASSING_VERDICT_JSON, REQUEST
+Cohesion: 0.23
+Nodes (10): SettingsStore, readSettings(), ReadSettingsDeps, ReadSettingsInput, updateSettings(), UpdateSettingsDeps, UpdateSettingsInput, DEFAULT_USER_SETTINGS (+2 more)
 
 ### Community 2 - "Catalog & Lexical Item"
-Cohesion: 0.09
-Nodes (43): ColdStart, runReviewPass(), RunReviewPassDeps, RunReviewPassInput, seedIntroductions(), startSession(), submitCloze(), submitCuedReview() (+35 more)
+Cohesion: 0.26
+Nodes (16): runReviewPass(), RunReviewPassDeps, composeFreeProduction(), composeReviewPass(), composeSession(), DEV_JUDGE_VERSIONS, ITEMS_PATH, FakeJudge (+8 more)
 
 ### Community 3 - "Grading & Rule Layer"
 Cohesion: 0.19
 Nodes (10): card(), catalog, deps(), healthyAnalyzer, lemmatizer, makeFsrs(), makeRepo(), makeScheduler() (+2 more)
 
 ### Community 4 - "Review Use-Cases"
-Cohesion: 0.07
-Nodes (35): BounceResult, CheckFreeProductionRuleLayerInput, RuleLayerCheck, catalog, healthyAnalyzer, lemmatizer, Lemmatizer, SentenceAnalyzer (+27 more)
+Cohesion: 0.10
+Nodes (22): BounceResult, checkFreeProductionRuleLayer(), CheckFreeProductionRuleLayerInput, RuleLayerCheck, catalog, healthyAnalyzer, lemmatizer, judgeFirstProduction() (+14 more)
 
 ### Community 5 - "Product Specs & Docs"
 Cohesion: 0.06
@@ -301,12 +304,12 @@ Cohesion: 0.11
 Nodes (17): compilerOptions, esModuleInterop, forceConsistentCasingInFileNames, lib, module, moduleResolution, noEmit, noFallthroughCasesInSwitch (+9 more)
 
 ### Community 10 - "Free-Production Tests"
-Cohesion: 0.31
-Nodes (8): makeCatalog(), makeDeps(), makeFsrs(), makeRepo(), makeScheduler(), makeWordSource(), NOW, seededCard()
+Cohesion: 0.15
+Nodes (16): CardRepository, EMPTY, SeedIntroductionsDeps, makeCatalog(), makeDeps(), makeFsrs(), makeRepo(), makeScheduler() (+8 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.13
-Nodes (13): cards, reviewLogs, CardInsert, CardRow, DrizzleCardRepository, DrizzleDb, fromCardRow(), fromLogRow() (+5 more)
+Cohesion: 0.12
+Nodes (16): cards, placementMarks, reviewLogs, settings, verdictMemos, CardInsert, CardRow, DrizzleCardRepository (+8 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.08
@@ -365,8 +368,8 @@ Cohesion: 0.17
 Nodes (11): 08 — Online Inference & Failure Path, Deferred (non-normative — [v2] / enable-later), NET-1 — Online required; no offline mode, NET-2 — "checking…" appears only after the rule layer passes, NET-3 — Timeout / 5xx / transient network error, NET-4 — 429 / rate limit, NET-5 — No connectivity at submit time, NET-6 — Transport retry is not a learner signal (+3 more)
 
 ### Community 62 - "Community 62"
-Cohesion: 0.17
-Nodes (16): readUsableCounter(), ReadUsableCounterInput, readWordDetail(), ReadWordDetailDeps, ReadWordDetailInput, WordDetail, readWordsList(), CounterMembershipInput (+8 more)
+Cohesion: 0.12
+Nodes (21): Scheduler, readUsableCounter(), ReadUsableCounterDeps, ReadUsableCounterInput, readWordDetail(), ReadWordDetailDeps, ReadWordDetailInput, WordDetail (+13 more)
 
 ### Community 64 - "Community 64"
 Cohesion: 0.20
@@ -441,20 +444,20 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 170 - "submitFreeProduction.test.ts"
-Cohesion: 0.09
-Nodes (22): presentReviewOutcome(), ReviewEditView, ReviewOutcomeView, due, RunReviewPassResult, dropOverlapsByPriority(), EditResolution, REASON_PRIORITY (+14 more)
+Cohesion: 0.14
+Nodes (13): presentReviewOutcome(), ReviewEditView, ReviewOutcomeView, due, RunReviewPassResult, dropOverlapsByPriority(), EditResolution, REASON_PRIORITY (+5 more)
 
 ### Community 171 - "seedIntroductions.test.ts"
-Cohesion: 0.47
-Nodes (3): DeterministicReviewInput, DeterministicReviewStrategy, deriveRating()
+Cohesion: 0.18
+Nodes (13): seedIntroductions(), composeCuedReview(), composePlacementSlate(), composeResolvePrompt(), composeSeeding(), composeWords(), HERE, liveJudge() (+5 more)
 
 ### Community 172 - "Scheduler"
-Cohesion: 0.12
-Nodes (18): Scheduler, card(), fsrs(), FSRS_STUB, log(), NOW, twoSpacedPasses(), JudgedResult (+10 more)
+Cohesion: 0.11
+Nodes (19): ColdStart, card(), fsrs(), FSRS_STUB, log(), NOW, twoSpacedPasses(), card() (+11 more)
 
 ### Community 173 - "startSession.test.ts"
-Cohesion: 0.12
-Nodes (10): BounceCallout(), MockBounceKind, FreeState, GradeBanner(), JudgedView, moveOf(), RecognitionCard(), Route (+2 more)
+Cohesion: 0.27
+Nodes (8): Auth, AuthConfig, makeAuth(), makeTestAuth(), account, session, user, verification
 
 ### Community 174 - "submitCloze.test.ts"
 Cohesion: 0.27
@@ -465,20 +468,20 @@ Cohesion: 0.27
 Nodes (8): catalog, deps(), lemmatizer, makeFsrs(), makeRepo(), makeScheduler(), NOW, recognizedCard()
 
 ### Community 176 - "submitRecognition.test.ts"
-Cohesion: 0.25
-Nodes (7): Button(), buttonVariants, Input(), Label(), Wordmark(), Route, Route
+Cohesion: 0.15
+Nodes (14): AppShell(), NAV, Button(), buttonVariants, Input(), Label(), Wordmark(), authClient (+6 more)
 
 ### Community 177 - "cardRepositoryContract.ts"
 Cohesion: 0.21
-Nodes (11): ReadWordsListInput, WordSummary, MasteryState, MasteryMove, LADDER, LadderEntry, tallyMastery(), card() (+3 more)
+Nodes (9): JudgedResult, MasteryState, introductionState(), LADDER, LadderEntry, tallyMastery(), card(), fsrs() (+1 more)
 
 ### Community 178 - "review.tsx"
 Cohesion: 0.19
 Nodes (14): Badge(), badgeVariants, Card(), CardAction(), CardContent(), CardDescription(), CardFooter(), CardHeader() (+6 more)
 
 ### Community 179 - "ruleLayer.ts"
-Cohesion: 0.15
-Nodes (13): Catalog, ReadWordsListDeps, card(), fsrs(), FSRS_STUB, log(), NOW, twoSpacedPasses() (+5 more)
+Cohesion: 0.18
+Nodes (10): promptDeps(), reviewDeps(), sessionDeps(), resolvePromptFn, ruleCheckFn, RuleCheckInput, RuleCheckResult, startSessionFn (+2 more)
 
 ### Community 180 - "compilerOptions"
 Cohesion: 0.11
@@ -490,51 +493,55 @@ Nodes (17): aliases, components, hooks, lib, ui, utils, iconLibrary, rsc (+9 mor
 
 ### Community 182 - "dependencies"
 Cohesion: 0.11
-Nodes (18): dependencies, class-variance-authority, clsx, drizzle-orm, @fontsource-variable/fraunces, @fontsource-variable/inter, lucide-react, @neondatabase/serverless (+10 more)
+Nodes (19): dependencies, better-auth, class-variance-authority, clsx, drizzle-orm, @fontsource-variable/fraunces, @fontsource-variable/inter, lucide-react (+11 more)
 
 ### Community 183 - "submitFreeProduction.ts"
-Cohesion: 0.24
-Nodes (9): StartSessionDeps, catalog, fsrs(), makeDeps(), makeRepo(), makeWordSource(), NOW, reviewCard() (+1 more)
+Cohesion: 0.27
+Nodes (8): catalog, fsrs(), makeDeps(), makeRepo(), makeWordSource(), NOW, reviewCard(), scheduler
 
 ### Community 184 - "devDependencies"
-Cohesion: 0.13
-Nodes (15): devDependencies, dotenv, drizzle-kit, @electric-sql/pglite, shadcn, tailwindcss, @tailwindcss/vite, tsx (+7 more)
+Cohesion: 0.12
+Nodes (16): devDependencies, csv-parse, dotenv, drizzle-kit, @electric-sql/pglite, shadcn, tailwindcss, @tailwindcss/vite (+8 more)
 
 ### Community 185 - "JudgeVerdict"
-Cohesion: 0.18
-Nodes (6): RecordingJudge, UnavailableJudge, JudgePort, JudgeRequest, RecordingJudge, UnavailableJudge
+Cohesion: 0.31
+Nodes (7): catalog, deps(), makeFsrs(), makeRepo(), makeScheduler(), NOW, seenCard()
 
 ### Community 186 - "deepSeekJudge.test.ts"
 Cohesion: 0.17
 Nodes (11): catalog, deps(), healthyAnalyzer, lemmatizer, makeFsrs(), makeRepo(), makeScheduler(), NOW (+3 more)
 
 ### Community 187 - "editResolution.ts"
-Cohesion: 0.18
-Nodes (13): EditedSentence(), REASON_TEXT, VerdictPanel(), MOCK_CATALOG, mockItem(), MockLexicalItem, containsLemma(), MockJudgeResult (+5 more)
+Cohesion: 0.15
+Nodes (15): BounceCallout(), EditedSentence(), REASON_TEXT, VerdictPanel(), MOCK_CATALOG, mockItem(), MockLexicalItem, containsLemma() (+7 more)
 
 ### Community 188 - "constants.ts"
-Cohesion: 0.13
-Nodes (13): CheckFreeProductionRuleLayerDeps, FirstProductionJudged, FirstProductionUnavailable, JudgeFirstProductionDeps, JudgeFirstProductionInput, catalog, healthyAnalyzer, lemmatizer (+5 more)
+Cohesion: 0.11
+Nodes (18): CheckFreeProductionRuleLayerDeps, FirstProductionJudged, FirstProductionUnavailable, JudgeFirstProductionDeps, JudgeFirstProductionInput, catalog, healthyAnalyzer, lemmatizer (+10 more)
 
 ### Community 189 - "package.json"
 Cohesion: 0.33
 Nodes (5): description, name, private, type, version
 
 ### Community 190 - "sessionQueue.test.ts"
-Cohesion: 0.21
-Nodes (8): readDashboardSummary(), ReadDashboardSummaryDeps, ReadDashboardSummaryInput, EMPTY, SeedIntroductionsInput, introductionState(), newIntroductionsAllowed(), PacingInput
+Cohesion: 0.31
+Nodes (6): readDashboardSummary(), ReadDashboardSummaryDeps, ReadDashboardSummaryInput, ReadDashboardSummaryResult, newIntroductionsAllowed(), PacingInput
 
 ### Community 193 - "index.tsx"
-Cohesion: 0.20
-Nodes (8): ReadDashboardSummaryResult, UsableCounterResult, CounterStat(), GoalRing(), Route, usableCounterFn, currentUserId(), dashboardSummaryFn
+Cohesion: 0.31
+Nodes (4): CounterStat(), GoalRing(), Route, dashboardSummaryFn
+
+### Community 194 - "__root.tsx"
+Cohesion: 0.25
+Nodes (5): Route, Route, auth, getSessionFn, SessionView
 
 ### Community 196 - "Catalog"
-Cohesion: 0.19
-Nodes (7): FoldMode, nextSeenTier(), SeenTier, ReviewLog, ReviewTier, resolveReviewTier(), selectTier()
+Cohesion: 0.13
+Nodes (14): assembleOptions(), required(), resolveReviewPrompt(), ResolveReviewPromptDeps, ResolveReviewPromptInput, ReviewPrompt, fsrs(), makeDeps() (+6 more)
 
 ### Community 197 - "session-summary.tsx"
-Cohesion: 0.22
-Nodes (9): MasteryChip(), STYLES, isUp(), ORDER, SessionSummary(), StepOutcome, MasteryState, MOCK_LEARNER (+1 more)
+Cohesion: 0.11
+Nodes (13): CheckingIndicator(), isUp(), ORDER, SessionSummary(), StepOutcome, FreeState, GradeBanner(), JudgedView (+5 more)
 
 ### Community 198 - "Wikain voice — microcopy catalog"
 Cohesion: 0.22
@@ -550,7 +557,7 @@ Nodes (8): `/` — dashboard, Deterministic tiers (instant grade — NET-2, LOOP
 
 ### Community 201 - "DeepSeekJudge"
 Cohesion: 0.15
-Nodes (11): ReadWordsListResult, AppShell(), NAV, FILTERS, Route, Route, TIER_LABEL, WordDetail() (+3 more)
+Nodes (11): ReadWordsListResult, MasteryChip(), STYLES, FILTERS, Route, Route, TIER_LABEL, WordDetail() (+3 more)
 
 ### Community 202 - "Wikain palette — full values & usage rules"
 Cohesion: 0.29
@@ -565,68 +572,68 @@ Cohesion: 0.29
 Nodes (6): Layout, Motion principles (details in `references/motion.md`), Non-negotiables (spec-driven), Source of truth, Type scale, Wikain — Design System
 
 ### Community 205 - "readWordDetail.test.ts"
-Cohesion: 0.29
-Nodes (4): card(), fsrs(), FSRS_STUB, NOW
+Cohesion: 0.38
+Nodes (4): UsableCounterResult, settingsDeps(), usableCounterFn, currentUserId()
 
 ### Community 206 - "edited-sentence.tsx"
-Cohesion: 0.15
-Nodes (20): checkFreeProductionRuleLayer(), judgeFirstProduction(), submitFreeProduction(), SubmitFreeProductionInput, SubmitFreeProductionResult, FluentGateInput, qualifiesForFluent(), demoteOneRung() (+12 more)
+Cohesion: 0.07
+Nodes (44): Lemmatizer, RunReviewPassInput, submitCloze(), SubmitClozeDeps, SubmitClozeInput, SubmitClozeResult, submitCuedReview(), SubmitCuedReviewDeps (+36 more)
 
 ### Community 207 - "Component inventory"
 Cohesion: 0.40
 Nodes (4): Component inventory, Composites, Iconography, Primitives (ui/)
 
 ### Community 208 - "coldStart.ts"
-Cohesion: 0.25
+Cohesion: 0.22
 Nodes (6): card(), fsrs(), FSRS_STUB, FUTURE, NOW, PAST
 
+### Community 209 - "words.ts"
+Cohesion: 0.53
+Nodes (4): bandBaseDifficulty(), CEFR_DIFFICULTY, clamp(), coldStartDifficulty()
+
 ### Community 210 - "sessionQueue.test.ts"
-Cohesion: 0.29
-Nodes (6): StartSessionInput, StartSessionResult, Card, interleaveEvenly(), orderSessionQueue(), NOW
+Cohesion: 0.31
+Nodes (7): SeedIntroductionsInput, startSession(), StartSessionDeps, StartSessionInput, StartSessionResult, interleaveEvenly(), orderSessionQueue()
 
 ### Community 211 - "composition.ts"
-Cohesion: 0.31
-Nodes (8): composeDashboardSummary(), composeRecordPlacementMarks(), composeUsableCounter(), makeNeonDb(), neonDbFromEnv(), counterDeps(), dashboardDeps(), recordMarksDeps()
+Cohesion: 0.15
+Nodes (14): composeDashboardSummary(), composeUsableCounter(), makeNeonDb(), neonDbFromEnv(), BETTER_AUTH_SECRET, cards, counterDeps(), dashboardDeps() (+6 more)
 
 ### Community 212 - "deepSeekJudge.ts"
-Cohesion: 0.15
-Nodes (15): DeepSeekJudge, extractContent(), HttpResponse, invalid(), isRegisterFit(), isReplacementReason(), isRetryable(), parseReplacements() (+7 more)
+Cohesion: 0.09
+Nodes (21): DeepSeekConfig, DeepSeekJudge, extractContent(), HttpPost, HttpResponse, invalid(), isRegisterFit(), isReplacementReason() (+13 more)
 
 ### Community 213 - "MemoVersions"
-Cohesion: 0.17
-Nodes (7): MemoVersions, VerdictMemoPort, JudgeVerdict, DrizzleVerdictMemo, Entry, describeVerdictMemoContract(), V1
+Cohesion: 0.23
+Nodes (5): MemoVersions, VerdictMemoPort, DrizzleVerdictMemo, describeVerdictMemoContract(), V1
 
 ### Community 215 - "CardRepository"
-Cohesion: 0.15
-Nodes (9): CardRepository, WordSource, readPlacementSlate(), ReadPlacementSlateDeps, ReadPlacementSlateInput, ReadUsableCounterDeps, ResolveReviewPromptDeps, fsrs() (+1 more)
+Cohesion: 0.13
+Nodes (16): Catalog, WordSource, presentSeededWords(), SeededWordView, card(), makeFsrs(), PlacementSlateWord, readPlacementSlate() (+8 more)
 
 ### Community 216 - "seedIntroductions.ts"
-Cohesion: 0.19
-Nodes (7): PlacementMarksStore, recordPlacementMarks(), RecordPlacementMarksDeps, RecordPlacementMarksInput, SeedIntroductionsDeps, InMemoryPlacementMarks, describePlacementMarksContract()
-
-### Community 219 - "cardRepositoryContract.ts"
-Cohesion: 0.27
-Nodes (7): card(), describeCardRepositoryContract(), fsrsCardState(), fsrsReviewLog(), reviewLog(), makePgliteDb(), MIGRATIONS_FOLDER
+Cohesion: 0.15
+Nodes (11): PlacementMarksStore, recordPlacementMarks(), RecordPlacementMarksDeps, RecordPlacementMarksInput, describeCardRepositoryContract(), composeRecordPlacementMarks(), closeAllPglite(), makePgliteDb() (+3 more)
 
 ## Knowledge Gaps
-- **623 isolated node(s):** `npx`, `$schema`, `style`, `rsc`, `tsx` (+618 more)
+- **640 isolated node(s):** `npx`, `$schema`, `style`, `rsc`, `tsx` (+635 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **130 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **132 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `CardRepository` connect `CardRepository` to `Catalog & Lexical Item`, `Grading & Rule Layer`, `Review Use-Cases`, `Free-Production Tests`, `Community 23`, `seedIntroductions.test.ts`, `Scheduler`, `submitCloze.test.ts`, `submitCuedReview.test.ts`, `cardRepositoryContract.ts`, `ruleLayer.ts`, `submitFreeProduction.ts`, `deepSeekJudge.test.ts`, `sessionQueue.test.ts`, `Community 62`, `Catalog`, `readWordDetail.test.ts`, `edited-sentence.tsx`, `coldStart.ts`, `composition.ts`, `seedIntroductions.ts`, `cardRepositoryContract.ts`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `JudgeVerdict` connect `MemoVersions` to `Catalog & Lexical Item`, `Grading & Rule Layer`, `submitFreeProduction.test.ts`, `Scheduler`, `edited-sentence.tsx`, `cardRepositoryContract.ts`, `deepSeekJudge.ts`, `JudgeVerdict`, `deepSeekJudge.test.ts`, `constants.ts`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **Why does `ReviewLog` connect `Catalog` to `Catalog & Lexical Item`, `Grading & Rule Layer`, `Free-Production Tests`, `Scheduler`, `readWordDetail.test.ts`, `submitCloze.test.ts`, `submitCuedReview.test.ts`, `coldStart.ts`, `edited-sentence.tsx`, `ruleLayer.ts`, `Community 23`, `CardRepository`, `submitFreeProduction.ts`, `deepSeekJudge.test.ts`, `cardRepositoryContract.ts`, `Community 62`?**
+- **Why does `MasteryState` connect `cardRepositoryContract.ts` to `Catalog & Lexical Item`, `Grading & Rule Layer`, `Catalog`, `session-summary.tsx`, `DeepSeekJudge`, `submitFreeProduction.test.ts`, `Scheduler`, `edited-sentence.tsx`, `submitCuedReview.test.ts`, `coldStart.ts`, `Community 23`, `deepSeekJudge.test.ts`, `editResolution.ts`, `Community 62`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `cn()` connect `review.tsx` to `Repository & Scheduler Ports`, `session-summary.tsx`, `DeepSeekJudge`, `submitRecognition.test.ts`, `editResolution.ts`?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **Why does `CardRepository` connect `Free-Production Tests` to `Grading & Rule Layer`, `Catalog`, `JudgeVerdict`, `seedIntroductions.test.ts`, `Scheduler`, `submitCloze.test.ts`, `submitCuedReview.test.ts`, `coldStart.ts`, `edited-sentence.tsx`, `composition.ts`, `Community 23`, `CardRepository`, `submitFreeProduction.ts`, `deepSeekJudge.test.ts`, `sessionQueue.test.ts`, `Community 62`?**
   _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **What connects `npx`, `$schema`, `style` to the rest of the system?**
-  _660 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _677 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Repository & Scheduler Ports` be split into smaller, more focused modules?**
-  _Cohesion score 0.07317073170731707 - nodes in this community are weakly interconnected._
-- **Should `Catalog & Lexical Item` be split into smaller, more focused modules?**
-  _Cohesion score 0.08702198133092443 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09686609686609686 - nodes in this community are weakly interconnected._
 - **Should `Review Use-Cases` be split into smaller, more focused modules?**
-  _Cohesion score 0.06894049346879536 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10160427807486631 - nodes in this community are weakly interconnected._
+- **Should `Product Specs & Docs` be split into smaller, more focused modules?**
+  _Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected._
