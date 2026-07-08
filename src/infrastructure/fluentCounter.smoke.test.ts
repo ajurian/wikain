@@ -1,13 +1,11 @@
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
-import { ITEMS_PATH, composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
+import { composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { makeTestStores } from "./testStores.js";
+import { makeTestStores, loadCatalogItems } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import { readUsableCounter } from "../application/readUsableCounter.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
-import type { LexicalItem } from "../domain/lexicalItem.js";
 import type { Card, FsrsCardState } from "../domain/card.js";
 import { USER_A } from "./testIds.js";
 
@@ -19,7 +17,7 @@ import { USER_A } from "./testIds.js";
  * Persistence is pglite-backed Drizzle.
  */
 describe("SM-5 promotion + counter (smoke: real catalog + wink + ts-fsrs, fake judge)", () => {
-  const items = JSON.parse(fs.readFileSync(ITEMS_PATH, "utf8")) as LexicalItem[];
+  const items = loadCatalogItems();
   const item = items.find((i) => i.lemma === "abandon")!; // model_sentence present
   const USER = USER_A;
   const PASS = "The crew chose to abandon the leaking camp before dawn.";
@@ -44,8 +42,8 @@ describe("SM-5 promotion + counter (smoke: real catalog + wink + ts-fsrs, fake j
     cards: DrizzleCardRepository;
     scheduler: TsFsrsScheduler;
   }> {
-    const { cards, memo } = await makeTestStores();
-    const deps = composeReviewPass(new FakeJudge(passingVerdict()), cards, memo, DEV_JUDGE_VERSIONS);
+    const { cards, memo, catalog } = await makeTestStores();
+    const deps = composeReviewPass(new FakeJudge(passingVerdict()), cards, memo, DEV_JUDGE_VERSIONS, catalog);
     // TsFsrsScheduler is stateless; a fresh instance gives the same live retrievability the counter reads.
     return { deps, cards, scheduler: new TsFsrsScheduler() };
   }

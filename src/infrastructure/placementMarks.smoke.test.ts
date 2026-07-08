@@ -18,12 +18,12 @@ describe("placement marks (smoke: real catalog + word source, shared store)", ()
   const now = new Date("2026-07-04T00:00:00Z");
 
   it("SEED-2/7: a word marked via the store enters Recognized when the seeder reaches it", async () => {
-    const { cards, marks } = await makeTestStores();
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
 
     // 1. The onboarding slate offers real frontier candidates (excluding any already-carded — none yet).
     const slate = await readPlacementSlate(
       { userId: USER_A, frontierBand: BAND, count: 6 },
-      composePlacementSlate(cards),
+      composePlacementSlate(cards, catalog, wordSource),
     );
     expect(slate.length).toBeGreaterThan(0);
     const marked = slate[0]!.senseId;
@@ -35,7 +35,7 @@ describe("placement marks (smoke: real catalog + word source, shared store)", ()
     // 3. The seeder consults the SHARED marks store (no explicit placementKnown) — SEED-7.
     const created = await seedIntroductions(
       { userId: USER_A, frontierBand: BAND, now },
-      composeSeeding(cards, marks),
+      composeSeeding(cards, marks, catalog, wordSource),
     );
 
     const markedCard = created.find((c) => c.senseId === marked);
@@ -46,10 +46,10 @@ describe("placement marks (smoke: real catalog + word source, shared store)", ()
   });
 
   it("SEED-3: with an empty store, no word skips Seen", async () => {
-    const { cards, marks } = await makeTestStores();
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
     const created = await seedIntroductions(
       { userId: USER_A, frontierBand: BAND, now },
-      composeSeeding(cards, marks),
+      composeSeeding(cards, marks, catalog, wordSource),
     );
     expect(created.length).toBeGreaterThan(0);
     expect(created.every((c) => c.mastery === "Seen")).toBe(true);

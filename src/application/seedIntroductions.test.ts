@@ -14,17 +14,15 @@ import {
 
 const NOW = new Date("2026-07-02T00:00:00Z");
 
-function makeItem(senseId: string, cefr: Cefr = "B2", band = "B2"): LexicalItem {
+function makeItem(senseId: string, cefr: Cefr = "B2"): LexicalItem {
   return {
     word: senseId,
     lemma: senseId,
     part_of_speech: "noun",
     sense_id: senseId,
-    sense_hint: null,
     cefr,
-    list_rank: null,
-    band,
-    source: "oxford",
+    zipf: 4.0,
+    zipf_rank: 1000,
     intended_sense: null,
     recognition_meaning: null,
     distractors: null,
@@ -37,13 +35,10 @@ function makeItem(senseId: string, cefr: Cefr = "B2", band = "B2"): LexicalItem 
   };
 }
 
-/** Every requested senseId resolves to a B2 item unless overridden via `bands`. */
-function makeCatalog(bands: Record<string, { cefr: Cefr; band: string }> = {}): Catalog {
+/** Every requested senseId resolves to a B2 item unless overridden via `cefrs`. */
+function makeCatalog(cefrs: Record<string, Cefr> = {}): Catalog {
   return {
-    get: (id) => {
-      const b = bands[id];
-      return makeItem(id, b?.cefr ?? "B2", b?.band ?? "B2");
-    },
+    get: (id) => makeItem(id, cefrs[id] ?? "B2"),
   };
 }
 
@@ -110,7 +105,7 @@ function makeRepo(initial: Card[] = []): CardRepository {
 function makeDeps(
   pool: string[],
   initial: Card[] = [],
-  bands: Record<string, { cefr: Cefr; band: string }> = {},
+  cefrs: Record<string, Cefr> = {},
 ): {
   deps: SeedIntroductionsDeps;
   calls: { band: string; exclude: ReadonlySet<string>; count: number }[];
@@ -119,7 +114,7 @@ function makeDeps(
   const { wordSource, calls } = makeWordSource(pool);
   const { scheduler, coldStarts } = makeScheduler();
   return {
-    deps: { catalog: makeCatalog(bands), wordSource, cards: makeRepo(initial), scheduler },
+    deps: { catalog: makeCatalog(cefrs), wordSource, cards: makeRepo(initial), scheduler },
     calls,
     coldStarts,
   };

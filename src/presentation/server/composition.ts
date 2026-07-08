@@ -2,6 +2,8 @@ import { DrizzleCardRepository } from "../../infrastructure/drizzleCardRepositor
 import { DrizzleVerdictMemo } from "../../infrastructure/drizzleVerdictMemo.js";
 import { DrizzlePlacementMarks } from "../../infrastructure/drizzlePlacementMarks.js";
 import { DrizzleSettings } from "../../infrastructure/drizzleSettings.js";
+import { DrizzleCatalog } from "../../infrastructure/drizzleCatalog.js";
+import { DrizzleWordSource } from "../../infrastructure/drizzleWordSource.js";
 import { neonDbFromEnv } from "../../infrastructure/db/neon.js";
 import { makeAuth, type Auth } from "../../infrastructure/auth/auth.js";
 import {
@@ -70,6 +72,16 @@ const marks: PlacementMarksStore = new DrizzlePlacementMarks(db);
 const settings: SettingsStore = new DrizzleSettings(db);
 
 /**
+ * The catalog + frontier word source (spec/12 DM-2, SEED-5). The catalog is GLOBAL, immutable content —
+ * hydrated ONCE per instance here (top-level `await`: a single `SELECT *` at cold start), so `Catalog.get`
+ * stays synchronous on the hot paths (NET-2 instant bounce, prompt render) and NOTHING reads the
+ * filesystem at request time. The word source stays a live SQL selector (`ORDER BY zipf_rank … LIMIT`).
+ * Both go through the ONE shared Neon handle. Seed the table first with `npm run db:seed:catalog`.
+ */
+const catalog = await DrizzleCatalog.hydrate(db);
+const wordSource = new DrizzleWordSource(db);
+
+/**
  * The BetterAuth server instance (STACK-4), constructed over the shared Neon handle. The secret is read
  * here (server-side, NET-7) and injected; `BETTER_AUTH_URL` is optional (falls back to the request
  * origin). Used by the `/api/auth/$` handler route and `currentUserId()` for session→principal resolution.
@@ -88,20 +100,20 @@ const judge: JudgePort = liveJudge();
 const judgeVersions: MemoVersions = liveJudgeVersions();
 
 export function sessionDeps(): StartSessionDeps {
-  return composeSession(cards, marks);
+  return composeSession(cards, marks, catalog, wordSource);
 }
 
 /** Deps for first-session seeding (spec/09 SEED-1). Shares the same card store so onboarding-seeded
  * cards are the very cards the review pass / dashboard / words reads then see, AND the same marks store
  * so a word the learner flagged known enters at `Recognized` (SEED-7 / SM-11). */
 export function seedingDeps(): SeedIntroductionsDeps {
-  return composeSeeding(cards, marks);
+  return composeSeeding(cards, marks, catalog, wordSource);
 }
 
 /** Deps for the onboarding placement slate (spec/09 SEED-2) — the frontier candidates offered for
  * marking. Shares the same card store so already-carded words are excluded (SEED-7). */
 export function placementSlateDeps(): ReadPlacementSlateDeps {
-  return composePlacementSlate(cards);
+  return composePlacementSlate(cards, catalog, wordSource);
 }
 
 /** Deps for recording placement marks (spec/09 SEED-2). Shares the SAME store `seedingDeps` reads, so
@@ -111,11 +123,11 @@ export function recordMarksDeps(): RecordPlacementMarksDeps {
 }
 
 export function reviewDeps(): RunReviewPassDeps {
-  return composeReviewPass(judge, cards, memo, judgeVersions);
+  return composeReviewPass(judge, cards, memo, judgeVersions, catalog);
 }
 
 export function promptDeps(): ResolveReviewPromptDeps {
-  return composeResolvePrompt(cards);
+  return composeResolvePrompt(cards, catalog);
 }
 
 /** Deps for the "words you can use" counter read-model (spec/10). Shares the same store + a real
@@ -133,7 +145,7 @@ export function dashboardDeps(): ReadDashboardSummaryDeps {
 /** Deps for the per-word read-models (spec/10 CNT-1/2/3). Shares the same store + a real scheduler, so
  * `/words` shows the live retrievability + real mastery history the review pass writes. */
 export function wordsDeps(): ReadWordsListDeps & ReadWordDetailDeps {
-  return composeWords(cards);
+  return composeWords(cards, catalog);
 }
 
 /** Deps for the settings read/write use-cases (spec/10 CNT-8). The one settings store, shared with the

@@ -19,10 +19,10 @@ describe("session start → queue → loop (smoke: real catalog + ts-fsrs)", () 
   const now = new Date("2026-07-02T00:00:00Z");
 
   it("SEED-1/LOOP-1: a first session seeds FIRST_SESSION_SEED_WORDS Seen cards and queues them all", async () => {
-    const { cards, marks } = await makeTestStores();
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
     const { queue, seeded } = await startSession(
       { userId: USER_A, frontierBand: BAND, now },
-      composeSession(cards, marks),
+      composeSession(cards, marks, catalog, wordSource),
     );
 
     expect(seeded).toHaveLength(FIRST_SESSION_SEED_WORDS);
@@ -32,13 +32,13 @@ describe("session start → queue → loop (smoke: real catalog + ts-fsrs)", () 
   });
 
   it("LOOP-1: every queued word is reviewable end-to-end via runReviewPass", async () => {
-    const { cards, marks, memo } = await makeTestStores();
-    const sessionDeps = composeSession(cards, marks);
+    const { cards, marks, memo, catalog, wordSource } = await makeTestStores();
+    const sessionDeps = composeSession(cards, marks, catalog, wordSource);
     const { queue } = await startSession({ userId: USER_A, frontierBand: BAND, now }, sessionDeps);
 
     // Review pass shares the SAME repository the session seeded into.
     const judge = new FakeJudge();
-    const reviewDeps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS);
+    const reviewDeps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog);
 
     for (const senseId of queue) {
       const word = sessionDeps.catalog.get(senseId)!.word;
@@ -57,7 +57,7 @@ describe("session start → queue → loop (smoke: real catalog + ts-fsrs)", () 
   });
 
   it("composeSession wires a session without throwing", async () => {
-    const { cards, marks } = await makeTestStores();
-    expect(() => composeSession(cards, marks)).not.toThrow();
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
+    expect(() => composeSession(cards, marks, catalog, wordSource)).not.toThrow();
   });
 });

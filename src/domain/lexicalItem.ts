@@ -20,10 +20,8 @@ export type ControlledPos =
   | "prefix"
   | "other";
 
-/** CEFR levels present in the Oxford CSVs; `null` for NAWL-only items (DM-2). */
+/** CEFR levels; the source CSV carries A2–C1. `A1`/`null` retained for type tolerance (DM-2). */
 export type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | null;
-
-export type ItemSource = "oxford" | "nawl" | "both";
 
 /** A merged catalog item the runtime consumes (DM-2). Every field is read-only at runtime. */
 export interface LexicalItem {
@@ -32,11 +30,11 @@ export interface LexicalItem {
   lemma: string;
   part_of_speech: ControlledPos;
   sense_id: string;
-  sense_hint: string | null;
   cefr: Cefr;
-  list_rank: number | null;
-  band: string;
-  source: ItemSource;
+  /** Zipf frequency (SUBTLEX-scale) — higher = more frequent. */
+  zipf: number;
+  /** Dense frequency rank — 1 = most frequent. */
+  zipf_rank: number;
   // --- generated (build Stage B) ---
   intended_sense: string | null;
   recognition_meaning: string | null;

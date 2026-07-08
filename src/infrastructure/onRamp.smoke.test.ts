@@ -1,11 +1,9 @@
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
-import { ITEMS_PATH, composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
+import { composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge } from "./fakeJudge.js";
-import { makeTestStores } from "./testStores.js";
+import { makeTestStores, loadCatalogItems } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
-import type { LexicalItem } from "../domain/lexicalItem.js";
 import { USER_A } from "./testIds.js";
 
 /**
@@ -16,13 +14,13 @@ import { USER_A } from "./testIds.js";
  * `runReviewPass` no longer dead-ends on `Seen`. Persistence is pglite-backed Drizzle.
  */
 describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", () => {
-  const items = JSON.parse(fs.readFileSync(ITEMS_PATH, "utf8")) as LexicalItem[];
+  const items = loadCatalogItems();
   const item = items.find((i) => i.lemma === "abandon")!;
 
   it("SM-3: a Seen word climbs recognition → cloze → cued to Productive, never calling the judge", async () => {
     const judge = new FakeJudge();
-    const { cards, memo } = await makeTestStores();
-    const deps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS);
+    const { cards, memo, catalog } = await makeTestStores();
+    const deps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog);
 
     const userId = USER_A;
     const senseId = item.sense_id;

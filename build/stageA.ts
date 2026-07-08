@@ -1,40 +1,34 @@
 /**
  * Stage A — Assembly (docs/BUILD.md §3). Deterministic, NO LLM.
  *
- * Converts the three source CSVs into an assembled manifest (carried fields only) + a quarantine
- * side-file, then prints the Stage A exit-gate summary. Nothing here generates content; nothing
- * here invents a carried fact (§0, §8).
+ * Converts the single source CSV (`data/merged_oxford_a2c1_zipf.csv`, columns
+ * `word,pos,cefr,zipf,zipf_rank`) into an assembled manifest (carried fields only) + a quarantine
+ * side-file, then prints the Stage A exit-gate summary. Nothing here generates content; nothing here
+ * invents a carried fact (§0, §8).
  *
  * Run: `npm run stageA`.
  */
 import crypto from "node:crypto";
 import fs from "node:fs";
+import { pathToFileURL } from "node:url";
 import {
+  CEFR_LEVELS,
   CONTENT_POS,
-  FANOUT_PATH,
-  KEEP_FUNCTION_WORDS,
-  MANIFEST_PATH,
-  NAWL_BAND_DEFAULT,
-  NAWL_CSV,
+  manifestPath,
+  MERGED_CSV,
   OUT_DIR,
-  OXFORD_3000_CSV,
-  OXFORD_5000_CSV,
   POS_MAP,
   QREASON,
   QUARANTINE_PATH,
-  keepKey,
+  type CefrLevel,
 } from "./constants.js";
 import { readCsv } from "./csv.js";
-import type {
-  Cefr,
-  ControlledPos,
-  FanoutRecord,
-  ItemSource,
-  ManifestItem,
-  QuarantineEntry,
-} from "./types.js";
+import type { Cefr, ControlledPos, ManifestItem, QuarantineEntry } from "./types.js";
 
 const VALID_CEFR = new Set(["A1", "A2", "B1", "B2", "C1"]);
+
+/** CEFR ordinal for the low-CEFR-wins tiebreak when a (lemma,pos) appears at two levels. */
+const CEFR_ORDER: Record<string, number> = { A1: 0, A2: 1, B1: 2, B2: 3, C1: 4 };
 
 /** §3.1 — normalize a raw POS string; halt (throw) on anything not in the explicit map. */
 function normalizePos(rawPos: string, context: string): ControlledPos {
@@ -48,42 +42,6 @@ function normalizePos(rawPos: string, context: string): ControlledPos {
   return mapped;
 }
 
-/** §3.2 — slugify a sense hint for the sense_id. */
-function slug(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-}
-
-/** §3.2 — split an Oxford raw word into lemma + sense_hint + sense_id. */
-function splitSense(rawWord: string, pos: ControlledPos): {
-  lemma: string;
-  word: string;
-  sense_hint: string | null;
-  sense_id: string;
-} {
-  const open = rawWord.indexOf("(");
-  if (open === -1) {
-    const lemma = rawWord.trim();
-    return { lemma, word: lemma, sense_hint: null, sense_id: `${lemma.toLowerCase()}_${pos}_01` };
-  }
-  const close = rawWord.indexOf(")", open);
-  const lemma = rawWord.slice(0, open).trim();
-  const hint = rawWord.slice(open + 1, close === -1 ? undefined : close).trim();
-  return {
-    lemma,
-    word: lemma,
-    sense_hint: hint || null,
-    sense_id: `${lemma.toLowerCase()}_${pos}_${slug(hint || "01")}`,
-  };
-}
-
-/** §3.4 — is this (pos, lemma) in scope? */
-function inScope(pos: ControlledPos, lemma: string): boolean {
-  return CONTENT_POS.has(pos) || KEEP_FUNCTION_WORDS.has(keepKey(lemma, pos));
-}
-
 /** Canonical hash of the carried fields, so Stage B mutation can be detected (§0). */
 function carriedHash(it: Omit<ManifestItem, "_carried_hash">): string {
   const canonical = JSON.stringify([
@@ -91,262 +49,175 @@ function carriedHash(it: Omit<ManifestItem, "_carried_hash">): string {
     it.lemma,
     it.part_of_speech,
     it.sense_id,
-    it.sense_hint,
     it.cefr,
-    it.list_rank,
-    it.band,
-    it.source,
+    it.zipf,
+    it.zipf_rank,
   ]);
   return crypto.createHash("sha256").update(canonical).digest("hex");
 }
 
-interface OxfordRow {
-  rawWord: string;
-  rawPos: string;
-  pos: ControlledPos;
-  cefr: Cefr;
-  lemma: string;
-  word: string;
-  sense_hint: string | null;
+interface Collision {
   sense_id: string;
-  fromFile: string;
+  kept: string;
+  dropped: string;
 }
 
-function main(): void {
+export interface AssembleResult {
+  /** In-scope items grouped by CEFR level, each list sorted by zipf_rank ascending (most frequent first). */
+  manifests: Map<CefrLevel, ManifestItem[]>;
+  quarantine: QuarantineEntry[];
+  collisions: Collision[];
+}
+
+/**
+ * Pure assembly (§3): CSV rows → per-CEFR manifests (in-scope, deduped, frequency-sorted) + quarantine +
+ * CEFR collisions. No I/O — the caller reads/writes files. HALTs on unknown POS, invalid CEFR, a residual
+ * duplicate sense_id, or an in-scope item whose CEFR falls outside CEFR_LEVELS.
+ */
+export function assemble(rows: Record<string, string>[]): AssembleResult {
   const quarantine: QuarantineEntry[] = [];
+  const collisions: Collision[] = [];
+  const bySenseId = new Map<string, ManifestItem>();
 
-  // ---- Parse Oxford (both files; 3000 first so it wins sense_id collisions = lower CEFR) ----
-  const oxfordInScope = new Map<string, OxfordRow>(); // keyed by sense_id
-  const oxfordCollisions: { sense_id: string; kept: string; dropped: string }[] = [];
-
-  for (const [file, label] of [
-    [OXFORD_3000_CSV, "oxford-3000"],
-    [OXFORD_5000_CSV, "oxford-5000"],
-  ] as const) {
-    const { rows } = readCsv(file);
-    for (const r of rows) {
-      const rawWord = r.word!;
-      const rawPos = r.pos!;
-      const cefrRaw = r.cefr ?? "";
-      const pos = normalizePos(rawPos, `${label} word="${rawWord}"`);
-      const { lemma, word, sense_hint, sense_id } = splitSense(rawWord, pos);
-      const cefr: Cefr = VALID_CEFR.has(cefrRaw) ? (cefrRaw as Cefr) : null;
-      if (cefr === null) {
-        throw new Error(`[HALT] ${label} word="${rawWord}" has invalid CEFR "${cefrRaw}".`);
-      }
-
-      if (!inScope(pos, lemma)) {
-        quarantine.push({
-          word,
-          lemma,
-          part_of_speech: pos,
-          raw_pos: rawPos,
-          source: "oxford",
-          cefr,
-          list_rank: null,
-          reason: QREASON.OUT_OF_SCOPE_POS,
-        });
-        continue;
-      }
-
-      const existing = oxfordInScope.get(sense_id);
-      if (existing) {
-        // 3000/5000 (or intra-file) collision on sense_id — keep first (lower CEFR), flag it.
-        oxfordCollisions.push({
-          sense_id,
-          kept: `${existing.fromFile}:${existing.cefr}`,
-          dropped: `${label}:${cefr}`,
-        });
-        continue;
-      }
-      oxfordInScope.set(sense_id, {
-        rawWord,
-        rawPos,
-        pos,
-        cefr,
-        lemma,
-        word,
-        sense_hint,
-        sense_id,
-        fromFile: label,
-      });
-    }
-  }
-
-  // Index Oxford in-scope senses by (lemma,pos) for NAWL merge / fan-out.
-  const oxfordByLemmaPos = new Map<string, OxfordRow[]>();
-  for (const ox of oxfordInScope.values()) {
-    const k = keepKey(ox.lemma, ox.pos);
-    (oxfordByLemmaPos.get(k) ?? oxfordByLemmaPos.set(k, []).get(k)!).push(ox);
-  }
-
-  // ---- Parse NAWL, merge ranks into Oxford, collect NAWL-only items ----
-  const rankByLemmaPos = new Map<string, number>(); // for source="both" / nawl-only
-  const fanout: FanoutRecord[] = [];
-  const nawlOnly: ManifestItem[] = [];
-
-  const { rows: nawlRows } = readCsv(NAWL_CSV);
-  for (const r of nawlRows) {
-    const lemma = r.word!.trim();
+  for (const r of rows) {
+    const word = r.word!.trim();
     const rawPos = r.pos!;
-    const rank = Number(r.rank!);
-    const pos = normalizePos(rawPos, `nawl rank=${r.rank} word="${lemma}"`);
+    const cefrRaw = r.cefr ?? "";
+    const zipf = Number(r.zipf);
+    const zipf_rank = Number(r.zipf_rank);
+    const pos = normalizePos(rawPos, `word="${word}"`);
+    const lemma = word.toLowerCase();
 
-    // §3.3 — the 10 NAWL prefix morphemes are always quarantined (bound morphemes).
-    if (pos === "prefix") {
-      quarantine.push({
-        word: lemma,
-        lemma,
-        part_of_speech: pos,
-        raw_pos: rawPos,
-        source: "nawl",
-        cefr: null,
-        list_rank: rank,
-        reason: QREASON.NAWL_PREFIX,
-      });
-      continue;
+    const cefr: Cefr = VALID_CEFR.has(cefrRaw) ? (cefrRaw as Cefr) : null;
+    if (cefr === null) {
+      throw new Error(`[HALT] word="${word}" has invalid/empty CEFR "${cefrRaw}".`);
+    }
+    if (!Number.isFinite(zipf) || !Number.isFinite(zipf_rank)) {
+      throw new Error(`[HALT] word="${word}" has non-numeric zipf/zipf_rank ("${r.zipf}"/"${r.zipf_rank}").`);
     }
 
-    if (!inScope(pos, lemma)) {
+    // §3.4 scope filter: content POS only. Out-of-scope (modalv/auxiliaryv/…) → quarantine.
+    if (!CONTENT_POS.has(pos)) {
       quarantine.push({
-        word: lemma,
+        word,
         lemma,
         part_of_speech: pos,
         raw_pos: rawPos,
-        source: "nawl",
-        cefr: null,
-        list_rank: rank,
+        cefr,
+        zipf,
+        zipf_rank,
         reason: QREASON.OUT_OF_SCOPE_POS,
       });
       continue;
     }
 
-    const k = keepKey(lemma, pos);
-    rankByLemmaPos.set(k, rank);
-
-    const matchedSenses = oxfordByLemmaPos.get(k);
-    if (matchedSenses && matchedSenses.length > 0) {
-      // §3.5 — attach the same list_rank to EVERY matched sense; record fan-out if >1.
-      if (matchedSenses.length > 1) {
-        fanout.push({
-          lemma,
-          part_of_speech: pos,
-          list_rank: rank,
-          sense_ids: matchedSenses.map((s) => s.sense_id),
-        });
+    const sense_id = `${lemma}_${pos}_01`;
+    const existing = bySenseId.get(sense_id);
+    if (existing) {
+      // Same (lemma,pos) at two CEFR levels (a merge artifact in the source): keep the LOWER CEFR,
+      // flag the collision. zipf/zipf_rank are identical across the pair, so nothing else is lost.
+      const keepExisting = CEFR_ORDER[existing.cefr!]! <= CEFR_ORDER[cefr]!;
+      collisions.push({
+        sense_id,
+        kept: keepExisting ? existing.cefr! : cefr!,
+        dropped: keepExisting ? cefr! : existing.cefr!,
+      });
+      if (!keepExisting) {
+        const base = { word, lemma, part_of_speech: pos, sense_id, cefr, zipf, zipf_rank };
+        bySenseId.set(sense_id, { ...base, _carried_hash: carriedHash(base) });
       }
-      // rank applied below when building manifest from oxfordInScope.
-    } else {
-      // NAWL-only item.
-      const base = {
-        word: lemma,
-        lemma,
-        part_of_speech: pos,
-        sense_id: `${lemma.toLowerCase()}_${pos}_01`,
-        sense_hint: null,
-        cefr: null as Cefr,
-        list_rank: rank,
-        band: NAWL_BAND_DEFAULT,
-        source: "nawl" as ItemSource,
-      };
-      nawlOnly.push({ ...base, _carried_hash: carriedHash(base) });
+      continue;
     }
+
+    const base = { word, lemma, part_of_speech: pos, sense_id, cefr, zipf, zipf_rank };
+    bySenseId.set(sense_id, { ...base, _carried_hash: carriedHash(base) });
   }
 
-  // ---- Build the manifest: Oxford senses (with merged ranks) + NAWL-only items ----
-  const manifest: ManifestItem[] = [];
-  for (const ox of oxfordInScope.values()) {
-    const k = keepKey(ox.lemma, ox.pos);
-    const rank = rankByLemmaPos.get(k);
-    const source: ItemSource = rank !== undefined ? "both" : "oxford";
-    const base = {
-      word: ox.word,
-      lemma: ox.lemma,
-      part_of_speech: ox.pos,
-      sense_id: ox.sense_id,
-      sense_hint: ox.sense_hint,
-      cefr: ox.cefr,
-      list_rank: rank ?? null,
-      band: ox.cefr ?? NAWL_BAND_DEFAULT, // §3.6: Oxford/both → band = cefr
-      source,
-    };
-    manifest.push({ ...base, _carried_hash: carriedHash(base) });
-  }
-  manifest.push(...nawlOnly);
+  const manifest = [...bySenseId.values()];
 
-  // ---- Integrity: sense_id must be unique across the whole manifest ----
+  // ---- Integrity: sense_id must be unique across the whole manifest (dedup handled above). ----
   const seen = new Set<string>();
   for (const it of manifest) {
-    if (seen.has(it.sense_id)) {
-      throw new Error(`[HALT] duplicate sense_id in manifest: ${it.sense_id}`);
-    }
+    if (seen.has(it.sense_id)) throw new Error(`[HALT] duplicate sense_id in manifest: ${it.sense_id}`);
     seen.add(it.sense_id);
   }
 
-  // ---- Write artifacts ----
-  fs.mkdirSync(OUT_DIR, { recursive: true });
-  manifest.sort((a, b) => a.sense_id.localeCompare(b.sense_id));
-  fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
-  fs.writeFileSync(QUARANTINE_PATH, JSON.stringify(quarantine, null, 2));
-  fs.writeFileSync(FANOUT_PATH, JSON.stringify(fanout, null, 2));
+  // Group by CEFR level; sort each group by zipf_rank ascending (rank 1 = most frequent → generated first).
+  const manifests = new Map<CefrLevel, ManifestItem[]>();
+  for (const c of CEFR_LEVELS) manifests.set(c, []);
+  for (const it of manifest) {
+    if (it.cefr === null || !(CEFR_LEVELS as readonly string[]).includes(it.cefr)) {
+      throw new Error(
+        `[HALT] in-scope item ${it.sense_id} has out-of-range CEFR "${it.cefr}" ` +
+          `(expected one of ${CEFR_LEVELS.join("/")}).`,
+      );
+    }
+    manifests.get(it.cefr as CefrLevel)!.push(it);
+  }
+  for (const list of manifests.values()) list.sort((a, b) => a.zipf_rank - b.zipf_rank);
 
-  printSummary({ manifest, quarantine, fanout, oxfordCollisions });
+  return { manifests, quarantine, collisions };
+}
+
+function main(): void {
+  const { rows } = readCsv(MERGED_CSV);
+  const { manifests, quarantine, collisions } = assemble(rows);
+
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  // One manifest file per level (empty [] included, so feed/ingest never hit a missing file).
+  for (const cefr of CEFR_LEVELS) {
+    fs.writeFileSync(manifestPath(cefr), JSON.stringify(manifests.get(cefr) ?? [], null, 2));
+  }
+  fs.writeFileSync(QUARANTINE_PATH, JSON.stringify(quarantine, null, 2));
+
+  printSummary({ manifests, quarantine, collisions });
 }
 
 function printSummary(d: {
-  manifest: ManifestItem[];
+  manifests: Map<CefrLevel, ManifestItem[]>;
   quarantine: QuarantineEntry[];
-  fanout: FanoutRecord[];
-  oxfordCollisions: { sense_id: string; kept: string; dropped: string }[];
+  collisions: Collision[];
 }): void {
-  const { manifest, quarantine, fanout, oxfordCollisions } = d;
-  const by = <T extends string>(arr: { toString(): string }[], key: (x: any) => T) => {
+  const { manifests, quarantine, collisions } = d;
+  const manifest = [...manifests.values()].flat();
+  const by = <T extends string>(arr: unknown[], key: (x: any) => T) => {
     const m = new Map<T, number>();
     for (const x of arr) m.set(key(x), (m.get(key(x)) ?? 0) + 1);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   };
 
-  const senseSplits = manifest.filter((m) => m.sense_hint !== null);
-  const fw = manifest.filter((m) => !CONTENT_POS.has(m.part_of_speech));
-
   const line = "─".repeat(66);
   console.log(`\n${line}\n STAGE A — ASSEMBLY SUMMARY (gate before Stage B)\n${line}`);
   console.log(`\nManifest (in-scope items): ${manifest.length}`);
-  console.log("  by source:", Object.fromEntries(by(manifest, (x) => x.source)));
-  console.log("  by POS:   ", Object.fromEntries(by(manifest, (x) => x.part_of_speech)));
   console.log(
-    "  by CEFR:  ",
-    Object.fromEntries(by(manifest, (x) => String(x.cefr))),
+    "  per CEFR manifest:",
+    Object.fromEntries(CEFR_LEVELS.map((c) => [c, manifests.get(c)?.length ?? 0])),
   );
+  console.log("  by POS: ", Object.fromEntries(by(manifest, (x) => x.part_of_speech)));
 
   console.log(`\nQuarantine: ${quarantine.length}`);
   console.log("  by reason:", Object.fromEntries(by(quarantine, (x) => x.reason)));
   console.log("  by raw POS:", Object.fromEntries(by(quarantine, (x) => x.raw_pos)));
+  for (const q of quarantine) console.log(`  - ${q.word}/${q.raw_pos} (cefr=${q.cefr}, ${q.reason})`);
 
-  console.log(`\nSense-splits (sense_hint != null): ${senseSplits.length}`);
-  for (const s of senseSplits) console.log(`  - ${s.sense_id}  (hint="${s.sense_hint}")`);
-
-  console.log(`\nNAWL→multi-Oxford-sense fan-out (§3.5): ${fanout.length}`);
-  for (const f of fanout) console.log(`  - ${f.lemma}/${f.part_of_speech} rank=${f.list_rank} → ${f.sense_ids.join(", ")}`);
-
-  console.log(`\nOxford sense_id collisions (kept lower CEFR): ${oxfordCollisions.length}`);
-  for (const c of oxfordCollisions) console.log(`  - ${c.sense_id}: kept ${c.kept}, dropped ${c.dropped}`);
-
-  console.log(`\nKept function words (${fw.length}):`);
-  for (const w of fw) console.log(`  - ${w.sense_id}  rank=${w.list_rank}  source=${w.source}`);
+  console.log(`\nCEFR collisions on (lemma,pos), kept lower CEFR: ${collisions.length}`);
+  for (const c of collisions) console.log(`  - ${c.sense_id}: kept ${c.kept}, dropped ${c.dropped}`);
 
   console.log("\nNormalization map (raw → controlled):");
   console.log("  " + Object.entries(POS_MAP).map(([k, v]) => `${k}→${v}`).join(", "));
 
-  // Sample including the bank sense-split.
-  console.log("\nSample merged rows:");
-  const sample = manifest.filter((m) => m.lemma === "bank").concat(manifest.slice(0, 3));
-  for (const s of sample) {
+  console.log("\nSample rows:");
+  for (const s of manifest.slice(0, 4)) {
     console.log(`  ${JSON.stringify({ ...s, _carried_hash: s._carried_hash.slice(0, 8) + "…" })}`);
   }
 
-  console.log(`\nArtifacts written:\n  ${MANIFEST_PATH}\n  ${QUARANTINE_PATH}\n  ${FANOUT_PATH}`);
+  console.log(
+    "\nArtifacts written:\n  " +
+      CEFR_LEVELS.map((c) => manifestPath(c)).join("\n  ") +
+      `\n  ${QUARANTINE_PATH}`,
+  );
   console.log(`\n${line}\n GATE: review the above before running Stage B generation.\n${line}\n`);
 }
 
-main();
+const invokedDirectly = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) main();

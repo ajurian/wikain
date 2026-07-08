@@ -5,8 +5,6 @@
  * in tests). There is no in-memory adapter and no offline fallback (removed with STACK-4): the app
  * requires a real database, tests run against embedded pglite.
  */
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import type { SubmitCuedReviewDeps } from "../application/submitCuedReview.js";
 import type { SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
 import type { RunReviewPassDeps } from "../application/runReviewPass.js";
@@ -24,9 +22,9 @@ import type { CardRepository } from "../application/ports/cardRepository.js";
 import type { Scheduler } from "../application/ports/scheduler.js";
 import type { PlacementMarksStore } from "../application/ports/placementMarks.js";
 import type { SettingsStore } from "../application/ports/settings.js";
+import type { Catalog } from "../application/ports/catalog.js";
+import type { WordSource } from "../application/ports/wordSource.js";
 import type { MemoVersions, VerdictMemoPort } from "../application/ports/verdictMemo.js";
-import { JsonCatalog } from "./catalog.js";
-import { JsonWordSource } from "./jsonWordSource.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { WinkLemmatizer } from "./winkLemmatizer.js";
 import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
@@ -45,17 +43,14 @@ export const DEV_JUDGE_VERSIONS: MemoVersions = {
   rubricVersion: RUBRIC_VERSION,
 };
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-
-/** repo/build/out/items.json, resolved from src/infrastructure/. */
-export const ITEMS_PATH = path.resolve(HERE, "..", "..", "build", "out", "items.json");
-
-export function composeCuedReview(
-  cards: CardRepository,
-  itemsPath: string = ITEMS_PATH,
-): SubmitCuedReviewDeps {
+/**
+ * The catalog + word source are now injected (DB-backed, hydrated once at the composition root) rather
+ * than read from the filesystem per call — no `fs`/bundle-tracing on the serverless request path
+ * (spec/12 DM-2; STACK-3). The composers thread the already-built `catalog`/`wordSource` singletons in.
+ */
+export function composeCuedReview(cards: CardRepository, catalog: Catalog): SubmitCuedReviewDeps {
   return {
-    catalog: JsonCatalog.fromFile(itemsPath),
+    catalog,
     cards,
     scheduler: new TsFsrsScheduler(),
     lemmatizer: new WinkLemmatizer(),
@@ -71,11 +66,11 @@ export function composeFreeProduction(
   cards: CardRepository,
   memo: VerdictMemoPort,
   judgeVersions: MemoVersions,
-  itemsPath: string = ITEMS_PATH,
+  catalog: Catalog,
 ): SubmitFreeProductionDeps {
   const wink = new WinkLemmatizer();
   return {
-    catalog: JsonCatalog.fromFile(itemsPath),
+    catalog,
     cards,
     scheduler: new TsFsrsScheduler(),
     lemmatizer: wink,
@@ -96,9 +91,9 @@ export function composeReviewPass(
   cards: CardRepository,
   memo: VerdictMemoPort,
   judgeVersions: MemoVersions,
-  itemsPath: string = ITEMS_PATH,
+  catalog: Catalog,
 ): RunReviewPassDeps {
-  return composeFreeProduction(judge, cards, memo, judgeVersions, itemsPath);
+  return composeFreeProduction(judge, cards, memo, judgeVersions, catalog);
 }
 
 /**
@@ -126,11 +121,12 @@ export function liveJudgeVersions(): MemoVersions {
 export function composeSeeding(
   cards: CardRepository,
   marks: PlacementMarksStore,
-  itemsPath: string = ITEMS_PATH,
+  catalog: Catalog,
+  wordSource: WordSource,
 ): SeedIntroductionsDeps {
   return {
-    catalog: JsonCatalog.fromFile(itemsPath),
-    wordSource: JsonWordSource.fromFile(itemsPath),
+    catalog,
+    wordSource,
     cards,
     scheduler: new TsFsrsScheduler(),
     marks,
@@ -144,9 +140,10 @@ export function composeSeeding(
 export function composeSession(
   cards: CardRepository,
   marks: PlacementMarksStore,
-  itemsPath: string = ITEMS_PATH,
+  catalog: Catalog,
+  wordSource: WordSource,
 ): StartSessionDeps {
-  return composeSeeding(cards, marks, itemsPath);
+  return composeSeeding(cards, marks, catalog, wordSource);
 }
 
 /**
@@ -155,13 +152,10 @@ export function composeSession(
  */
 export function composePlacementSlate(
   cards: CardRepository,
-  itemsPath: string = ITEMS_PATH,
+  catalog: Catalog,
+  wordSource: WordSource,
 ): ReadPlacementSlateDeps {
-  return {
-    wordSource: JsonWordSource.fromFile(itemsPath),
-    cards,
-    catalog: JsonCatalog.fromFile(itemsPath),
-  };
+  return { wordSource, cards, catalog };
 }
 
 export function composeRecordPlacementMarks(
@@ -176,9 +170,9 @@ export function composeRecordPlacementMarks(
  */
 export function composeResolvePrompt(
   cards: CardRepository,
-  itemsPath: string = ITEMS_PATH,
+  catalog: Catalog,
 ): ResolveReviewPromptDeps {
-  return { catalog: JsonCatalog.fromFile(itemsPath), cards };
+  return { catalog, cards };
 }
 
 /**
@@ -209,8 +203,8 @@ export function composeDashboardSummary(
  */
 export function composeWords(
   cards: CardRepository,
+  catalog: Catalog,
   scheduler: Scheduler = new TsFsrsScheduler(),
-  itemsPath: string = ITEMS_PATH,
 ): ReadWordsListDeps & ReadWordDetailDeps {
-  return { cards, scheduler, catalog: JsonCatalog.fromFile(itemsPath) };
+  return { cards, scheduler, catalog };
 }

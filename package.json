@@ -12,11 +12,13 @@
     "start": "node dist/server/server.js",
     "stageA": "tsx build/stageA.ts",
     "feed": "tsx build/stageB.ts feed",
+    "generate": "tsx build/generate.ts",
     "ingest": "tsx build/stageB.ts ingest",
     "validate": "tsx build/stageC.ts",
     "combine": "tsx build/combine.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed:catalog": "tsx src/infrastructure/db/seedCatalog.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

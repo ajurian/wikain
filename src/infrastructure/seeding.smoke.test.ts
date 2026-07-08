@@ -20,19 +20,19 @@ describe("first-session seeding (smoke: real catalog + ts-fsrs)", () => {
 
   /** Deterministic frontier picks for a fresh user (selection is stable — SEED-5). */
   async function firstPicks(): Promise<string[]> {
-    const { cards, marks } = await makeTestStores();
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
     const created = await seedIntroductions(
       { userId: USER_A, frontierBand: BAND, now },
-      composeSeeding(cards, marks),
+      composeSeeding(cards, marks, catalog, wordSource),
     );
     return created.map((c) => c.senseId);
   }
 
   it("SEED-1/6/7: a brand-new user is seeded FIRST_SESSION_SEED_WORDS lazily-created cards, all Seen", async () => {
-    const { cards, marks } = await makeTestStores();
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
     const created = await seedIntroductions(
       { userId: USER_A, frontierBand: BAND, now },
-      composeSeeding(cards, marks),
+      composeSeeding(cards, marks, catalog, wordSource),
     );
 
     expect(created).toHaveLength(FIRST_SESSION_SEED_WORDS);
@@ -47,10 +47,10 @@ describe("first-session seeding (smoke: real catalog + ts-fsrs)", () => {
   it("SM-11/SEED-3: a placement-known word enters Recognized; an unmarked one stays Seen", async () => {
     const picks = await firstPicks();
     const known = picks[0]!;
-    const { cards, marks } = await makeTestStores();
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
     const created = await seedIntroductions(
       { userId: USER_A, frontierBand: BAND, placementKnown: new Set([known]), now },
-      composeSeeding(cards, marks),
+      composeSeeding(cards, marks, catalog, wordSource),
     );
 
     const knownCard = created.find((c) => c.senseId === known)!;
@@ -62,10 +62,10 @@ describe("first-session seeding (smoke: real catalog + ts-fsrs)", () => {
   it("end-to-end: a placement-known seeded card (Recognized) is immediately reviewable via runReviewPass", async () => {
     const picks = await firstPicks();
     const known = picks[0]!;
-    const { cards, marks, memo } = await makeTestStores();
+    const { cards, marks, memo, catalog, wordSource } = await makeTestStores();
 
     // Seed the word as placement-known → it enters Recognized (the cued tier, SM-1/SM-11).
-    const seedDeps = composeSeeding(cards, marks);
+    const seedDeps = composeSeeding(cards, marks, catalog, wordSource);
     await seedIntroductions(
       { userId: USER_A, frontierBand: BAND, placementKnown: new Set([known]), now },
       seedDeps,
@@ -77,6 +77,7 @@ describe("first-session seeding (smoke: real catalog + ts-fsrs)", () => {
       cards,
       memo,
       DEV_JUDGE_VERSIONS,
+      catalog,
     );
     const lemma = seedDeps.catalog.get(known)!.lemma;
     const res = await runReviewPass({ userId: USER_A, senseId: known, response: lemma, now }, reviewDeps);
@@ -89,7 +90,7 @@ describe("first-session seeding (smoke: real catalog + ts-fsrs)", () => {
   });
 
   it("composeSeeding wires seeding without throwing", async () => {
-    const { cards, marks } = await makeTestStores();
-    expect(() => composeSeeding(cards, marks)).not.toThrow();
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
+    expect(() => composeSeeding(cards, marks, catalog, wordSource)).not.toThrow();
   });
 });

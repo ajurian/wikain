@@ -15,34 +15,55 @@ export const OUT_DIR = path.join(here, "out");
 /** §5 authoritative field-authoring rules — the single source of truth for generation. */
 export const GENERATION_RULES_PATH = path.join(DOCS_DIR, "GENERATION_RULES.md");
 
-/** Input files (real names — BUILD.md §2 lists `NAWL_1_2.csv`; the actual file is `NAWL_1.2.csv`). */
-export const NAWL_CSV = path.join(DATA_DIR, "NAWL_1.2.csv");
-export const OXFORD_3000_CSV = path.join(DATA_DIR, "american_oxford_3000_by_cefr_level.csv");
-export const OXFORD_5000_CSV = path.join(DATA_DIR, "american_oxford_5000_by_cefr_level.csv");
+/**
+ * Input file (§2). A single flat CSV — header `word,pos,cefr,zipf,zipf_rank` — replacing the earlier
+ * three-CSV NAWL + Oxford-3000/5000 stack. Every row carries a real CEFR (A2–C1) and a dense frequency
+ * rank; there are no parentheticals, no NAWL, no A1.
+ */
+export const MERGED_CSV = path.join(DATA_DIR, "merged_oxford_a2c1_zipf.csv");
 
-/** Output artifacts. */
-export const MANIFEST_PATH = path.join(OUT_DIR, "_manifest.json");
+/**
+ * The CEFR levels the source carries. Stage A emits one manifest per level (sorted by zipf_rank), and
+ * feed/generate/ingest fan out over these — the generation loop is split by band so each frontier-LLM
+ * prompt is level-homogeneous (§4 band-homogeneous distractors, §4.5 CEFR-aware sense).
+ */
+export const CEFR_LEVELS = ["A2", "B1", "B2", "C1"] as const;
+export type CefrLevel = (typeof CEFR_LEVELS)[number];
+
+/** Shared, single-file output artifacts (span all levels). */
 export const QUARANTINE_PATH = path.join(OUT_DIR, "_quarantine.json");
-export const FANOUT_PATH = path.join(OUT_DIR, "_fanout.json");
 export const DONE_PATH = path.join(OUT_DIR, "_done.json");
-export const PENDING_BATCH_PATH = path.join(OUT_DIR, "_pending_batch.json");
-export const GENERATED_BATCH_PATH = path.join(OUT_DIR, "_generated_batch.json");
 export const REVIEW_PATH = path.join(OUT_DIR, "_review.json");
 export const ITEMS_PATH = path.join(OUT_DIR, "items.json");
 
-/** §6 batch size `[DEFAULT]` — confirmed 25 by the user. */
+/** Per-CEFR-level output artifacts (§5/§6 — the loop fans out over CEFR_LEVELS). */
+export const manifestPath = (cefr: CefrLevel): string =>
+  path.join(OUT_DIR, `_manifest_${cefr}.json`);
+export const pendingBatchPath = (cefr: CefrLevel): string =>
+  path.join(OUT_DIR, `_pending_batch_${cefr}.json`);
+export const generatedBatchPath = (cefr: CefrLevel): string =>
+  path.join(OUT_DIR, `_generated_batch_${cefr}.json`);
+/** The markdown prompt the user pastes into a frontier-LLM free chat (build/generate.ts). */
+export const promptPath = (cefr: CefrLevel): string =>
+  path.join(OUT_DIR, `_prompt_${cefr}.md`);
+
+/** §6 batch size `[DEFAULT]` — confirmed 25 by the user, per CEFR level. */
 export const BATCH_SIZE = 25;
 
-/** Provenance stamps (§4). The in-session generator is Claude Code / Opus 4.8. */
-export const GEN_MODEL = "claude-opus-4-8";
-export const GEN_SPEC_VERSION = "gen-spec v1";
+/**
+ * Provenance stamps (§4). Generation is now hand-authored via frontier-LLM free chats (varying models),
+ * so the model stamp is a generic marker rather than a specific API model — edit it if you want to record
+ * the exact model used for a run.
+ */
+export const GEN_MODEL = "manual-frontier-llm";
+export const GEN_SPEC_VERSION = "gen-spec v3";
 
 /**
- * §3.1 POS normalization map — explicit and exhaustive over every POS string observed in the
- * three real CSVs. Any string NOT present here must HALT and flag (§3.1 / §2.2 [VALIDATE]):
- * never silently bucket as `other`, never guess a mapping. The closed-class exotics
- * (exclam/modalv/auxiliaryv/ndet/infinitivemarker/detadj) are mapped to `other` explicitly and
- * are all quarantined by the §3.4 scope filter regardless.
+ * §3.1 POS normalization map — explicit and exhaustive over every POS string observed in the source
+ * CSV. Any string NOT present here must HALT and flag (§3.1 / §2.2 [VALIDATE]): never silently bucket
+ * as `other`, never guess a mapping. The closed-class exotics (exclam/modalv/auxiliaryv/ndet/
+ * infinitivemarker/detadj) are mapped to `other` explicitly and are all quarantined by the §3.4 scope
+ * filter regardless (the merged CSV carries `modalv`/`auxiliaryv` — e.g. `need`, `ought`, `have`).
  */
 export const POS_MAP: Readonly<Record<string, ControlledPos>> = {
   // content + common closed-class (identity)
@@ -76,26 +97,7 @@ export const CONTENT_POS: ReadonlySet<ControlledPos> = new Set<ControlledPos>([
   "adv",
 ]);
 
-/**
- * §3.4 kept NAWL function words: `(lemma, normalized-pos)` retained despite being closed-class.
- * The user chose to keep exactly these four.
- */
-export const KEEP_FUNCTION_WORDS: ReadonlySet<string> = new Set<string>([
-  "whoever|pron",
-  "whichever|det",
-  "amongst|prep",
-  "minus|prep",
-]);
-
-/** §3.3 the 10 NAWL `prefix` morphemes are always quarantined (bound morphemes). */
-export const NAWL_BAND_DEFAULT = "B2-C1";
-
 /** Quarantine reason strings (stable, for auditability). */
 export const QREASON = {
-  NAWL_PREFIX: "nawl-prefix-morpheme",
   OUT_OF_SCOPE_POS: "out-of-scope-pos",
 } as const;
-
-export function keepKey(lemma: string, pos: ControlledPos): string {
-  return `${lemma.toLowerCase()}|${pos}`;
-}

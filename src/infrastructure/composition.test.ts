@@ -1,10 +1,8 @@
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
-import { ITEMS_PATH, composeCuedReview } from "./composition.js";
+import { composeCuedReview } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { makeTestStores } from "./testStores.js";
 import { submitCuedReview } from "../application/submitCuedReview.js";
-import type { LexicalItem } from "../domain/lexicalItem.js";
 import { USER_A } from "./testIds.js";
 
 /**
@@ -14,12 +12,11 @@ import { USER_A } from "./testIds.js";
  */
 describe("cued-review slice (smoke: real catalog + ts-fsrs + wink)", () => {
   it("grades a correct cued response, promotes Recognized → Productive, schedules, and logs", async () => {
-    const items = JSON.parse(fs.readFileSync(ITEMS_PATH, "utf8")) as LexicalItem[];
+    const { cards, items, catalog } = await makeTestStores();
     expect(items.length).toBeGreaterThan(0);
     const item = items[0]!;
 
-    const { cards } = await makeTestStores();
-    const deps = composeCuedReview(cards);
+    const deps = composeCuedReview(cards, catalog);
     const now = new Date("2026-06-30T00:00:00Z");
     await cards.save({
       userId: USER_A,

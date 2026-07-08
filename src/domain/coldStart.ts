@@ -16,29 +16,21 @@ const CEFR_DIFFICULTY: Record<Exclude<Cefr, null>, number> = {
   C1: 7,
 };
 
-/** A word with no CEFR (NAWL-only, DM-2) still carries a CEFR-like `band` label — read its level. */
+/** Fallback base if an item ever carries a null CEFR (the catalog is A2–C1, so this is defensive). */
 const DEFAULT_BASE = CEFR_DIFFICULTY.B1;
-
-function bandBaseDifficulty(band: string): number {
-  // `band` is a CEFR-like label ("A1".."C1") or a hybrid span like "B2-C1"; key off the first token.
-  const token = band.split("-")[0] as Exclude<Cefr, null>;
-  return CEFR_DIFFICULTY[token] ?? DEFAULT_BASE;
-}
 
 const clamp = (n: number): number => Math.min(MAX_DIFFICULTY, Math.max(MIN_DIFFICULTY, n));
 
 /**
- * SEED-8: the FSRS cold-start difficulty estimate for a newly introduced card, derived from CEFR ×
- * frequency band. CEFR is the primary signal; `band` supplies the level when CEFR is null (NAWL) and
- * refines it for a level-spanning band (e.g. "B2-C1" nudges toward the harder end).
+ * SEED-8: the FSRS cold-start difficulty estimate for a newly introduced card, derived from CEFR
+ * (every catalog item carries a real A2–C1 level — DM-2).
  *
  * This is a *starting estimate* only: ts-fsrs recomputes difficulty/stability from its own init
  * weights on the first graded review, so the seed governs the pre-first-review estimate (queue
  * ordering / display), not a permanent override. Target retention is `REQUEST_RETENTION`, applied as
  * engine config in the scheduler adapter — a separate axis of SEED-8, kept out of this pure policy.
  */
-export function coldStartDifficulty(cefr: Cefr, band: string): number {
-  const base = cefr !== null ? CEFR_DIFFICULTY[cefr] : bandBaseDifficulty(band);
-  const spanBump = band.includes("-") ? 0.5 : 0;
-  return clamp(base + spanBump);
+export function coldStartDifficulty(cefr: Cefr): number {
+  const base = cefr !== null ? CEFR_DIFFICULTY[cefr] : DEFAULT_BASE;
+  return clamp(base);
 }

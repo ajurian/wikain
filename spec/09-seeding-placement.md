@@ -77,6 +77,13 @@ LexTALE run MAY be optional (per-word "I know this" tapping is acceptable for a 
 the productive target zone. Because PH receptive proficiency is high, the **default starting frontier
 MUST be ~B2 + NAWL**, not the NGSL core. The LexTALE level (if taken) nudges the band.
 
+> [FLAG] Data drift vs. the implemented build. The pipeline ships a **single** source list
+> (`data/merged_oxford_a2c1_zipf.csv` — Oxford A2–C1 ranked by SUBTLEX `zipf`), not the NGSL → NAWL +
+> Oxford-5000 stack this requirement names. At runtime the frontier "band" is a **CEFR level** and
+> selection order is `zipf_rank` ascending (`DM-2`/`DM-3`, `JsonWordSource`). Reconcile against PRD
+> §8/§11 before treating either the NGSL/NAWL wording or the single-CSV reality as normative — do not
+> silently adopt one side.
+
 ### SEED-6 — Introduction pacing
 **Trace:** PRD §8.
 **Requirement:** Introduction MUST be a small fixed batch interleaved with due reviews: **~`NEW_PER_DAY`

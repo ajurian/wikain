@@ -24,11 +24,11 @@ describe("review flow (smoke: prompt tier always matches graded tier)", () => {
   const now = new Date("2026-07-02T00:00:00Z");
 
   it("LOOP-1/TIER-2: each queued word resolves a prompt and passes at the SAME tier it is graded", async () => {
-    const { cards, marks, memo } = await makeTestStores();
-    const sessionDeps = composeSession(cards, marks);
-    const promptDeps: ResolveReviewPromptDeps = composeResolvePrompt(cards);
+    const { cards, marks, memo, catalog, wordSource } = await makeTestStores();
+    const sessionDeps = composeSession(cards, marks, catalog, wordSource);
+    const promptDeps: ResolveReviewPromptDeps = composeResolvePrompt(cards, catalog);
     const judge = new FakeJudge();
-    const reviewDeps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS);
+    const reviewDeps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog);
 
     const { queue } = await startSession({ userId: USER_A, frontierBand: "B2", now }, sessionDeps);
     expect(queue.length).toBeGreaterThan(0);

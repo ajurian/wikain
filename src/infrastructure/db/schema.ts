@@ -16,6 +16,7 @@
 import {
   boolean,
   doublePrecision,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -29,6 +30,7 @@ import type { MasteryState } from "../../domain/card.js";
 import type { ReviewTier } from "../../domain/review.js";
 import type { Rating } from "../../domain/rating.js";
 import type { JudgeVerdict } from "../../domain/verdict.js";
+import type { ControlledPos } from "../../domain/lexicalItem.js";
 
 // BetterAuth core tables (user/session/account/verification). Re-exported so drizzle-kit + the pglite
 // migrator + the drizzleAdapter all see one schema. `user.id` is `uuid` — the app-table `user_id`
@@ -130,3 +132,44 @@ export const settings = pgTable("settings", {
   levelBand: text("level_band").notNull(),
   timezone: text("timezone").notNull(),
 });
+
+/**
+ * The built lexical catalog (spec/12-data-model.md DM-2). GLOBAL, read-only content — the runtime's
+ * store of record for the catalog, seeded from `build/out/items.json` at deploy (`db:seed:catalog`),
+ * NOT read from the filesystem at request time (serverless: no `fs`/bundle-tracing on the hot path).
+ *
+ * This is the ONE app table that is NOT `user_id`-scoped (unlike cards/memos/marks/settings — slice 20):
+ * the catalog is shared across every learner, so a per-user column would be meaningless. Columns mirror
+ * `LexicalItem` (domain/lexicalItem.ts, the consumption contract). Carried fields are NOT NULL (Stage A
+ * always fills them); generated fields are nullable (DM-4: some items carry `model_sentence: null`, and
+ * an ungenerated item has all-null generated fields). `distractors` is a jsonb `string[]` (no Date, so a
+ * blob is lossless — cf. the FSRS-state note above). The `(cefr, zipf_rank)` index backs the frontier
+ * selection query (`DrizzleWordSource`, SEED-5): `WHERE cefr = ? ORDER BY zipf_rank ASC`.
+ */
+export const lexicalItems = pgTable(
+  "lexical_items",
+  {
+    // carried (build Stage A)
+    senseId: text("sense_id").primaryKey(),
+    word: text("word").notNull(),
+    lemma: text("lemma").notNull(),
+    partOfSpeech: text("part_of_speech").$type<ControlledPos>().notNull(),
+    // Plain text (not `$type<Cefr>`): `WordSource.nextFrontierWords(band: string)` filters on it, and a
+    // Cefr-typed column would reject a plain-string band in `eq(...)`. Cast back to Cefr on read.
+    cefr: text("cefr"),
+    zipf: doublePrecision("zipf").notNull(),
+    zipfRank: integer("zipf_rank").notNull(),
+    // generated (build Stage B)
+    intendedSense: text("intended_sense"),
+    recognitionMeaning: text("recognition_meaning"),
+    distractors: jsonb("distractors").$type<string[]>(),
+    clozedSentence: text("clozed_sentence"),
+    productiveMeaning: text("productive_meaning"),
+    modelSentence: text("model_sentence"),
+    selfReferencePrompt: text("self_reference_prompt"),
+    // provenance
+    genModel: text("gen_model").notNull(),
+    genSpecVersion: text("gen_spec_version").notNull(),
+  },
+  (t) => [index("lexical_items_cefr_rank_idx").on(t.cefr, t.zipfRank)],
+);

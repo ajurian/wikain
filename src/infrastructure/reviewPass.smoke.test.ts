@@ -1,12 +1,10 @@
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
-import { ITEMS_PATH, composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
+import { composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { makeTestStores } from "./testStores.js";
+import { makeTestStores, loadCatalogItems } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
-import type { LexicalItem } from "../domain/lexicalItem.js";
 import type { MasteryState } from "../domain/card.js";
 import { USER_A } from "./testIds.js";
 
@@ -17,7 +15,7 @@ import { USER_A } from "./testIds.js";
  * (LOOP-3/LOOP-4). Persistence is pglite-backed Drizzle; no network/auth/DeepSeek needed.
  */
 describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", () => {
-  const items = JSON.parse(fs.readFileSync(ITEMS_PATH, "utf8")) as LexicalItem[];
+  const items = loadCatalogItems();
   const item = items.find((i) => i.lemma === "abandon")!; // model_sentence present
   const now = new Date("2026-06-30T00:00:00Z");
 
@@ -25,8 +23,8 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
     judge: FakeJudge,
     mastery: MasteryState,
   ): Promise<{ deps: RunReviewPassDeps; cards: DrizzleCardRepository }> {
-    const { cards, memo } = await makeTestStores();
-    const deps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS);
+    const { cards, memo, catalog } = await makeTestStores();
+    const deps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog);
     await cards.save({ userId: USER_A, senseId: item.sense_id, mastery, fsrs: new TsFsrsScheduler().newCard(now) });
     return { deps, cards };
   }
@@ -77,7 +75,9 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
   });
 
   it("composeReviewPass wires the loop without throwing", async () => {
-    const { cards, memo } = await makeTestStores();
-    expect(() => composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS)).not.toThrow();
+    const { cards, memo, catalog } = await makeTestStores();
+    expect(() =>
+      composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS, catalog),
+    ).not.toThrow();
   });
 });

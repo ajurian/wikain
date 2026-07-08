@@ -9,6 +9,10 @@ dist/
 .tanstack/
 src/presentation/routeTree.gen.ts
 
+data/Subtlex.US.txt
+gen.ts
+merge_data.ts
+
 .env*
 
 # graphify (commit the graph + skill; ignore transient cache + dated backups)

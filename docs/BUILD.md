@@ -1,29 +1,31 @@
 # Wikain — Build-Time Content Generation Spec
 
-**Version:** gen-spec v1
-**Generator (Stage B):** Claude Code (Opus 4.8), **in-session** — the deterministic harness feeds
-carried fields and the in-session model returns the generated fields. **No external API / API key.**
-**Output format:** raw JSON (one array file per batch + a combiner) — see §6
+**Version:** gen-spec v3
+**Generator (Stage B):** **manual, via frontier-LLM free chats** (no API). The catalog is split by CEFR
+level: `feed` stages one batch per level (A2/B1/B2/C1), `generate` turns each into a markdown prompt
+(`_prompt_<cefr>.md`) the user pastes into a frontier LLM, the user saves each result to
+`_generated_batch_<cefr>.json`, and `ingest` validates + commits all present levels. No API key needed.
+**Output format:** raw JSON (one array file per committed batch + a combiner) — see §6
 **Read these first:** `PRD.md` (the product). This spec operationalizes them; if this spec and the PRD ever disagree, **stop and flag it** — do not pick one.
 
 ---
 
 ## 0. What this document is, and how to run it
 
-This is a **three-stage offline batch pipeline** that converts two word lists into runtime-ready
+This is a **three-stage offline batch pipeline** that converts one word list into runtime-ready
 **lexical items** for Wikain. The stages are deliberately separated and **gated** — do not blend them:
 
 | Stage | Nature | LLM? | Gate before next stage |
 | --- | --- | --- | --- |
-| **A — Assemble** | Deterministic data engineering (parse, normalize, sense-split, quarantine, merge) | **No** | Human reviews the assembled manifest + quarantine list |
-| **B — Generate** | Per-item linguistic content generation | **Claude Code (Opus 4.8), in-session** | Human spot-checks the first batch against §5 + §7 |
+| **A — Assemble** | Deterministic data engineering (parse, normalize, scope-filter, quarantine, dedup) | **No** | Human reviews the assembled manifest + quarantine list |
+| **B — Generate** | Per-item linguistic content generation | **Frontier LLM (manual free chat via `_prompt_<cefr>.md`)** | Human spot-checks the first batch against §5 + §7 |
 | **C — Validate** | Auto-asserts + flagged human spot-check | Mostly no | All asserts pass; flagged items reviewed |
 
 **The single most important rule:** Stage A produces every item **exactly once** with its **carried
-fields** already filled from the source CSVs. Stage B **only generates the linguistic fields** and
-**must never write, overwrite, infer, or "correct" a carried field** (CEFR, POS, list membership,
-rank). Carried = fact from the source; generated = produced by the model. Mixing them is how factual
-hallucination enters the data. See §4 for which is which.
+fields** already filled from the source CSV. Stage B **only generates the linguistic fields** and
+**must never write, overwrite, infer, or "correct" a carried field** (CEFR, POS, frequency). Carried =
+fact from the source; generated = produced by the model. Mixing them is how factual hallucination
+enters the data. See §4 for which is which.
 
 ---
 
@@ -35,42 +37,33 @@ grades sense + grammar. Recognition/cloze/cued are on-ramps; **the produced sent
 (PRD §1, research Finding 1–4). Every generated field exists to serve one tier of that ladder.
 
 **Non-goals (do NOT generate these):**
-- No definitions/example sentences copied or paraphrased from Oxford or any dictionary — **generate
-  original content** (PRD §4.1 licensing decision). Use the lists only as a *membership + CEFR +
-  frequency ordering*.
+- No definitions/example sentences copied or paraphrased from any dictionary — **generate original
+  content** (PRD §4.1 licensing decision). Use the list only as a *membership + CEFR + frequency
+  ordering*.
 - No pronunciation, audio, IPA, etymology, or images (out of scope for v1, PRD §1).
 - No grammar-correction logic, no judge rubric — that is runtime (PRD §5), not build-time.
-- No A1–B1 / function-word cards unless §3.4 says so.
+- No function-word cards; content POS only (§3.4).
 
 ---
 
-## 2. Inputs (exact formats — both verified against the real files)
+## 2. Input (exact format — verified against the real file)
 
-### 2.1 NAWL — `data/NAWL_1.2.csv`
-- Header: `rank,word,pos`. 956 data rows. **Frequency-ranked** (rank 1 = most frequent). CRLF line
-  endings — strip `\r`.
-- `pos` vocabulary observed: `noun` (561), `adj` (202), `verb` (125), `adv` (55), `prefix` (10),
-  `prep` (2), `det` (1), `pron` (1).
-- **One POS per row.** A word with two POS appears as two rows (rare in NAWL).
-- No sense splits, no CEFR, no parentheticals. `word` is the bare lemma.
+### 2.1 Merged word list — `data/merged_oxford_a2c1_zipf.csv`
+- Header: `word,pos,cefr,zipf,zipf_rank`. 4,397 data rows. One flat file — this **replaces** the
+  earlier three-CSV stack (NAWL + Oxford-3000/5000), and with it all the reconciliation machinery
+  (sense-parenthetical splitting, NAWL rank fan-out, 3000-vs-5000 collision, function-word allowlist,
+  `source`/`band` tags).
+- **Every row carries a real CEFR** — `A2/B1/B2/C1` only (no A1). `zipf` is a SUBTLEX-scale frequency
+  (higher = more frequent); `zipf_rank` is a **dense** rank (1 = most frequent) present on every row.
+- **One POS per row.** A word with two POS appears as two rows (e.g. `circle,noun` and `circle,verb`).
+  `word` is the bare lemma — **no parentheticals**.
+- `pos` vocabulary observed: `noun`, `verb`, `adj`, `adv` (in scope) plus a few `modalv`/`auxiliaryv`
+  (out of scope → quarantined, §3.4). Normalize per §3.1.
+- A handful of `(word,pos)` pairs recur at two CEFR levels (a merge artifact — `race`, `ring`,
+  `survive`). Stage A keeps the **lower** CEFR and records the collision (§3.5).
 
-### 2.2 Oxford 5000 — user-converted CSVs `word,pos,cefr`
-- Ships as **two** files read as one union: `data/american_oxford_3000_by_cefr_level.csv`
-  (A1–B2, carries the sense parentheticals) + `data/american_oxford_5000_by_cefr_level.csv`
-  (B2–C1 extension). Together they are the full Oxford 5000. Stage A reads 3000 first so it wins
-  any `(lemma,pos,sense)` collision (keeps the lower CEFR).
-- The user converted the official A1–C1 Oxford 5000 to these CSVs. **This supersedes the scrambled
-  PDF/markdown** — use the CSVs, not the markdown.
-- Multi-POS = **separate rows** (e.g. `bid,noun,…` and `bid,verb,…`).
-- **Sense splits survive as a glued parenthetical on the word:** `bank(river),noun,A1` and
-  `bank(money),noun,A1`. The parenthetical is a **sense disambiguator** (see §3.2).
-- CEFR is on each row → **per `(word, pos, sense)`**.
-- `pos` vocabulary includes content POS (`noun/verb/adj/adv`) **and** closed-class values such as
-  `indefinitearticle` (concatenated, no spaces). Normalize per §3.1; filter per §3.4.
-
-> **`[VALIDATE]` before Stage A:** confirm the Oxford CSV's POS strings against the normalization map
-> in §3.1. If a POS string appears that the map doesn't cover, **halt and flag** — do not guess a
-> mapping.
+> **`[VALIDATE]` before Stage A:** confirm the CSV's POS strings against the normalization map in §3.1.
+> If a POS string appears that the map doesn't cover, **halt and flag** — do not guess a mapping.
 
 ---
 
@@ -80,71 +73,42 @@ Output of this stage: an **assembled manifest** — every in-scope item with its
 and its generated fields empty — plus a **quarantine list** (excluded items + reason). Gate on human
 review before Stage B.
 
+Stage A is now a **single parse loop** over the one CSV (`build/stageA.ts` → `assemble(rows)`):
+per row → normalize POS → scope-filter → validate CEFR/zipf → derive `sense_id` → dedup. No
+sense-splitting, no NAWL merge, no rank fan-out, no `source`/`band` derivation (all removed with the
+three-CSV stack).
+
 ### 3.1 Normalize POS
-Map both files to one controlled vocabulary: `noun, verb, adj, adv, prep, pron, det, num, article,
-conj, prefix, other`. Examples: `indefinitearticle`/`definitearticle` → `article`; spelled-out
-forms → the tag above. **Unknown POS string → halt and flag**, never silently bucket as `other`.
+Map to one controlled vocabulary: `noun, verb, adj, adv, prep, pron, det, num, article, conj, prefix,
+other`. The closed-class exotics in the CSV (`modalv`, `auxiliaryv`) map to `other` explicitly.
+**Unknown POS string → halt and flag**, never silently bucket as `other`.
 
-### 3.2 Split sense parentheticals (Oxford only)
-For a raw word like `bank(river)`:
-- `lemma` = text **before** `(` → `"bank"`
-- `word` (display) = same as `lemma` → `"bank"` *(kept as a separate field per the word≠lemma
-  decision; equal in value here, but the field stays distinct)*
-- `sense_hint` = text **inside** `()` → `"river"` (else `null`)
-- `sense_id` = `{lemma}_{pos}_{slug(sense_hint or "01")}` → `bank_noun_river`
+### 3.2 Derive lemma + sense_id
+There are no parentheticals, so: `lemma` = lowercased `word`; `word` (display) = the CSV `word`
+verbatim; `sense_id = {lemma}_{pos}_01`. (`word` stays a separate field from `lemma` per the
+word≠lemma decision, even though they differ only in case.)
 
-For words with no parenthetical: `sense_hint = null`, `sense_id = {lemma}_{pos}_01`.
-For NAWL words: `word = lemma = csv word`, `sense_hint = null`, `sense_id = {lemma}_{pos}_01`.
+### 3.3 Validate carried numerics
+`cefr` must be one of `A2/B1/B2/C1` (empty/invalid → **halt**); `zipf` and `zipf_rank` must be finite
+numbers (non-numeric → **halt**). Never invent a carried value.
 
-> The `sense_hint` is a **seed** for the generated `intended_sense` (§5), not the final sense text.
-> It directly mitigates the PRD §5.7 polysemy risk (off-sense false-rejections, now unrecoverable in
-> v4). Treat any Oxford parenthetical as authoritative sense scope.
-
-### 3.3 Quarantine (exclude from generation, keep in a side file with reason)
-- **All 10 NAWL `prefix` entries** (`ex, non, pre, trans, anti, sub, micro, semi, multi, neo`) —
-  bound morphemes; unusable in every productive tier and would false-match inside unrelated words at
-  the §5.2.1 gate. `[DECIDED]`
-- Anything the §3.4 scope filter drops.
-
-### 3.4 `[DECISION — confirm before running]` v1 scope filter
-**Recommended default:** generate only items whose normalized POS ∈ `{noun, verb, adj, adv}`,
-**plus** the 4 NAWL function words the user chose to keep (`whoever/pron`, `whichever/det`,
-`amongst/prep`, `minus/prep`). Quarantine all other closed-class items (articles, numbers,
-conjunctions, and Oxford's pronouns/prepositions/determiners).
+### 3.4 Scope filter (content POS only)
+Keep items whose normalized POS ∈ `{noun, verb, adj, adv}`. Quarantine everything else (the
+`modalv`/`auxiliaryv` rows — `need`, `ought`, `have`) into `_quarantine.json` with reason
+`out-of-scope-pos`.
 
 *Rationale:* Wikain is a **productive** vocabulary app targeting **upper-intermediate enrichment**
-(PRD §1, §8 frontier ≈ B2 + NAWL). Articles/pronouns/etc. (a) cannot host a meaningful
-self-reference production task and (b) sit below the frontier — the PH learner already produces them.
-Generating cards for `an`/`the`/`of` would waste Opus calls and pollute the deck.
+(PRD §1, §8). Modals/auxiliaries cannot host a meaningful self-reference production task and sit below
+the frontier — the PH learner already produces them.
 
-**Open sub-decision:** a **CEFR floor.** A1–A2 Oxford content words (`buy`, `go`) are also largely
-below frontier. Options: (i) no floor for v1 (generate all content words, let FSRS/seeding handle
-ordering — PRD §8 paces introduction anyway); (ii) floor at B1; (iii) floor at B2. **Recommended:
-(i) no floor for v1**, because §8's seeder already starts at the frontier and paces introduction, so
-below-frontier items simply never get introduced — they cost storage, not learner time. But confirm,
-because it changes the generated-item count by thousands.
-
-### 3.5 Merge / dedup (key = `(lemma, pos)`, case-insensitive)
-The merged catalog is the **union** of both files, deduped on `(lemma, pos)`. Per-item fields:
-
-| Field | Oxford-only | NAWL-only | In both |
-| --- | --- | --- | --- |
-| `cefr` | from Oxford | `null` | from Oxford |
-| `list_rank` | `null` | from NAWL | from NAWL |
-| `source` | `"oxford"` | `"nawl"` | `"both"` |
-| `sense_hint` / senses | Oxford senses kept distinct | single (`null`) | see note |
-
-> **`[FLAG]` merge multiplicity.** When NAWL `(bank, noun)` matches **multiple** Oxford senses
-> (`bank(river)`, `bank(money)`), attach the **same `list_rank` to every matched sense** — NAWL ranks
-> the `(lemma, pos)`, not a sense. Record this fan-out in the manifest so it's auditable.
-
-### 3.6 Derive `band` (coarse cold-start signal, PRD §8 `band × frequency`)
-- Oxford/both → `band = cefr` (`"A1"`…`"C1"`).
-- NAWL-only → `band = "B2-C1"` (the §8 default frontier zone for NAWL; **coarse and honest**, not a
-  fabricated per-word level). `cefr` stays `null` for these — do **not** invent a CEFR.
+### 3.5 Dedup (key = `sense_id`)
+The source occasionally lists the same `(lemma, pos)` at two CEFR levels (`race`, `ring`, `survive`).
+Stage A keeps the **lower** CEFR (`A2 < B1 < B2 < C1`) and records the collision in the gate summary.
+`zipf`/`zipf_rank` are identical across such a pair, so nothing else is lost. A residual duplicate
+`sense_id` after dedup is an integrity **halt**.
 
 **Stage A exit gate:** human reviews (a) the quarantine list, (b) total in-scope count, (c) a sample
-of merged/fanned-out rows, (d) any halted-and-flagged POS. Only then start Stage B.
+of rows, (d) any halted-and-flagged POS. Only then start Stage B.
 
 ---
 
@@ -152,18 +116,16 @@ of merged/fanned-out rows, (d) any halted-and-flagged POS. Only then start Stage
 
 ```jsonc
 {
-  // ---- CARRIED (facts from source CSVs — Stage A fills, Stage B MUST NOT touch) ----
-  "word": "specialist",          // display form
-  "lemma": "specialist",         // §5.2.1 presence-gate key (separate field by decision)
-  "part_of_speech": "noun",      // item key with word; one item per (word,pos,sense)
+  // ---- CARRIED (facts from the source CSV — Stage A fills, Stage B MUST NOT touch) ----
+  "word": "specialist",          // display form (CSV verbatim)
+  "lemma": "specialist",         // §5.2.1 presence-gate key (lowercased word)
+  "part_of_speech": "noun",      // item key with word; one item per (word,pos)
   "sense_id": "specialist_noun_01",
-  "sense_hint": null,            // Oxford parenthetical, or null
-  "cefr": "B2",                  // ← from the Oxford CSV VERBATIM; null for NAWL-only. NEVER invent.
-  "list_rank": 412,              // ← from NAWL VERBATIM; null for Oxford-only.
-  "band": "B2",                  // derived in §3.6 for cold-start
-  "source": "both",              // oxford | nawl | both
+  "cefr": "B2",                  // ← from the CSV VERBATIM (A2–C1). NEVER invent.
+  "zipf": 4.12,                  // ← from the CSV VERBATIM; SUBTLEX-scale, higher = more frequent
+  "zipf_rank": 4200,             // ← from the CSV VERBATIM; dense rank, 1 = most frequent
 
-  // ---- GENERATED by Opus 4.8 (Stage B) ----
+  // ---- GENERATED by a frontier LLM (Stage B, manual) ----
   "intended_sense": "string",          // tight sense def; the judge's anchor (PRD §5.4)
   "recognition_meaning": "string",     // MCQ prompt gloss (meaning→word)
   "distractors": ["w1", "w2", "w3"],   // 3 wrong WORDS, same POS (PRD §4)
@@ -173,26 +135,29 @@ of merged/fanned-out rows, (d) any halted-and-flagged POS. Only then start Stage
   "self_reference_prompt": "string",   // concise per-word personal nudge
 
   // ---- PROVENANCE ----
-  "gen_model": "claude-opus-4-8",
-  "gen_spec_version": "gen-spec v1"
+  "gen_model": "manual-frontier-llm",
+  "gen_spec_version": "gen-spec v3"
 }
 ```
 
-> The carried-field values shown above (`cefr: "B2"`, `list_rank: 412`) are **illustrative
-> placeholders**. The real values come from the CSVs at Stage A. If `specialist` is not in the Oxford
-> CSV, its `cefr` is `null` — do not assert a level from memory. This discipline is the whole point of
-> the carried/generated split.
+> The carried-field values shown above are **illustrative placeholders**. The real values come from
+> the CSV at Stage A. This discipline — carried facts filled once, never touched by generation — is
+> the whole point of the carried/generated split.
 
 ---
 
-## 5. Stage B — Generation rules (Claude Code / Opus 4.8, in-session, per item)
+## 5. Stage B — Generation rules (manual frontier LLM, per CEFR batch)
 
-The in-session generator (Claude Code / Opus 4.8) receives one item's **carried fields** and returns
-**only the generated fields** as JSON — fed by the `feed`/`ingest` harness, not an external API call.
-Deterministic code then merges generated + carried into the schema above. Generate field-by-field to
-these rules; every rule maps to a PRD section or research finding.
+`build/generate.ts` reads each level's pending batch and writes a self-contained markdown prompt
+(`_prompt_<cefr>.md`) carrying the batch's **carried fields** plus the authoring rules; the user pastes
+it into a frontier-LLM free chat and gets back **only the generated fields** as `{"items":[…]}`, then
+saves that to `_generated_batch_<cefr>.json`. The single source of truth for field content and quality
+is **`docs/GENERATION_RULES.md`** — `generate` inlines it into the prompt (the model can't open a path).
+`ingest` then merges generated + carried into the schema above. The field-by-field rules below still
+describe the intent; every rule maps to a PRD section or research finding, and the code-enforced subset
+is auto-asserted in §7.1.
 
-**`intended_sense`** — One tight sentence naming the precise sense (POS- and `sense_hint`-scoped). It
+**`intended_sense`** — One tight sentence naming the precise sense (POS-scoped). It
 must be specific enough that a judge can rule a *near-miss* sense wrong (PRD §5.4/§5.7). Vague senses
 cause both false passes and now-unrecoverable false rejections.
 
@@ -245,36 +210,41 @@ glosses share no content-word stem; the cloze reads with the bare lemma; the mod
 "I" and anchors the sense via the "rather than a general practitioner" contrast; the prompt hides the
 word form.
 
-### 5.2 Per-item generation prompt template (Claude Code fills `{…}`)
-```
-You are generating ESL learning content for ONE English lexical item. Return ONLY valid JSON with
-exactly these keys: intended_sense, recognition_meaning, distractors, clozed_sentence,
-productive_meaning, model_sentence, self_reference_prompt. No prose, no markdown.
+### 5.2 Batch generation prompt (assembled by `build/generate.ts` → `_prompt_<cefr>.md`)
+The prompt is one markdown string (`buildPrompt`: the system section + a blank line + the user section).
+The system section carries: the full text of `docs/GENERATION_RULES.md` (authoritative), the §5.1 gold
+one-shot, the code-enforced HARD CONSTRAINTS (a restatement of §7.1 so the model passes on the first
+try), and the output contract. The user section carries the batch's per-item carried context:
 
-Target item:
-- word: {word}
-- part_of_speech: {part_of_speech}
-- sense_hint: {sense_hint}        // may be null; if present, it constrains the sense
-- cefr/band: {band}               // difficulty register to aim the example/gloss at
-
-Rules: [paste §5 field rules + the §5.1 example as a one-shot]. Generate ORIGINAL content; do not
-copy dictionary text. en-US spelling. If you cannot satisfy a rule (e.g. an adjective with no clean
-3 same-POS distractors), set that field to null and add "_flags": ["reason"] — do NOT force it.
 ```
+word, part_of_speech, cefr, zipf_rank   // difficulty register + frequency signal
+```
+
+Output contract: return `{"items": [ … ]}`, one element per input item, each with `sense_id` + the 7
+generated keys (+ optional `_flags`). Generate ORIGINAL content, en-US. If a rule genuinely cannot be
+satisfied for an item, set that field to null and add `"_flags": ["reason"]` — do NOT force it.
 
 ---
 
 ## 6. Output files, batching, resumability (raw JSON)
 
-- **Batch size:** `[DEFAULT]` 25 items/batch. Small enough to spot-check, large enough to be cheap.
-- **Per batch:** write `out/batch_{NNNN}.json` = a **JSON array** of fully-merged items
-  (carried + generated). Raw JSON, as requested.
-- **Combiner:** a deterministic step concatenates all `batch_*.json` arrays into `out/items.json`
-  (one array). Re-runnable; last-write-wins by `sense_id`.
-- **Resumability:** maintain `out/_done.json` = list of completed `sense_id`s. Before generating,
-  skip any `sense_id` already in `_done`. A crashed run never regenerates or duplicates.
-- **Provenance:** stamp `gen_model` + `gen_spec_version` on every item (§4) so a model/spec change
-  can invalidate stale content later (mirrors PRD §5.3 `model_version`).
+- **Manifests:** Stage A emits one manifest per CEFR level — `out/_manifest_{A2,B1,B2,C1}.json` — each
+  sorted by `zipf_rank` ascending (most-frequent word first).
+- **Commands:** `feed` (stage the next batch **per level** → `_pending_batch_<cefr>.json`) → `generate`
+  (build one markdown prompt per level → `_prompt_<cefr>.md`; **no API**) → *paste each into a frontier
+  LLM, save the result to `_generated_batch_<cefr>.json`* → `ingest` (validate + commit **all present
+  levels** in one run). There is no automated loop — the user drives the manual generation.
+- **Batch size:** `[DEFAULT]` 25 items/batch **per level** (4 × 25 = 100 per feed). Small enough to
+  spot-check.
+- **Per level:** `ingest` commits each level independently as `out/batch_{NNNN}.json` (a **JSON array**
+  of fully-merged carried + generated items). A level with any hard-fail commits nothing (recorded to
+  `_review.json`) and does not block the other levels.
+- **Combiner:** `combine` concatenates all `batch_*.json` arrays into `out/items.json` (one array).
+  Re-runnable; last-write-wins by `sense_id`.
+- **Resumability:** maintain `out/_done.json` = list of completed `sense_id`s (shared across levels).
+  `feed` skips anything already in `_done`. A crashed/partial run never regenerates or duplicates.
+- **Provenance:** stamp `gen_model` (`manual-frontier-llm`) + `gen_spec_version` on every item (§4) so a
+  model/spec change can invalidate stale content later (mirrors PRD §5.3 `model_version`).
 
 ---
 
@@ -282,9 +252,9 @@ copy dictionary text. en-US spelling. If you cannot satisfy a rule (e.g. an adje
 
 ### 7.1 Auto-assert (deterministic; fail the batch on any miss)
 - Item key `(word, part_of_speech, sense_id)` unique across the whole catalog.
-- `lemma`, `word`, `part_of_speech`, `sense_id` non-empty; `cefr` ∈ {A1…C1, null};
-  carried fields **unchanged** from the Stage-A manifest (diff them — Stage B must not have touched
-  them).
+- `lemma`, `word`, `part_of_speech`, `sense_id` non-empty; `cefr` ∈ {A2…C1};
+  carried fields **unchanged** from the Stage-A manifest (`ingest` reloads carried from the manifest
+  and rejects any carried key the generator echoes back — Stage B must not touch them).
 - `distractors`: exactly 3, all distinct, none equal to `word` (case-insensitive).
 - `clozed_sentence`: contains exactly one `_`; inserting the bare `lemma` yields no double space /
   broken spacing.
@@ -301,7 +271,6 @@ copy dictionary text. en-US spelling. If you cannot satisfy a rule (e.g. an adje
 - Does `model_sentence` actually instantiate `intended_sense` (not a different sense)?
 - Does `clozed_sentence` admit **only** the target in the blank?
 - Is `intended_sense` tight enough to reject a near-miss sense?
-- For Oxford sense-split items: do the two senses' generated content stay cleanly separated?
 
 > Keep these spot-checked items as the seed of the PRD §5.7 **~30-item gold set** for runtime
 > judge-FNR monitoring. Build-time and runtime validation reuse the same labeled examples.
@@ -315,10 +284,10 @@ distractor or sense to clear a flag.
 ---
 
 ## 8. Hard "do nots" (recap — these protect data integrity)
-1. **Never write or alter a carried field** (`cefr`, `part_of_speech`, `list_rank`, membership).
-   Carried = source fact. (§0, §4)
-2. **Never invent CEFR.** NAWL-only items have `cefr: null`. (§3.6)
-3. **Never copy/paraphrase Oxford or dictionary text** — generate original content. (PRD §4.1)
+1. **Never write or alter a carried field** (`cefr`, `part_of_speech`, `zipf`, `zipf_rank`,
+   membership). Carried = source fact. (§0, §4)
+2. **Never invent a carried value** — halt on an invalid CEFR/zipf rather than guessing. (§3.3)
+3. **Never copy/paraphrase dictionary text** — generate original content. (PRD §4.1)
 4. **Never one-shot the catalog** — batch + validate + gate. (§6, §0)
 5. **Never let a distractor satisfy `recognition_meaning`.** (§5, §7)
 6. **Never put `I`/`my` in `model_sentence`** or any target-word form in `self_reference_prompt`. (§5)
@@ -327,13 +296,24 @@ distractor or sense to clear a flag.
 
 ---
 
-## 9. Decisions — RESOLVED (confirmed by the human before the run)
-1. **§3.4 scope filter** — ✅ content POS `{noun, verb, adj, adv}` **+** the 4 NAWL function words
-   (`whoever/pron`, `whichever/det`, `amongst/prep`, `minus/prep`); **no CEFR floor** for v1.
-2. **§6 batch size** — ✅ **25** items/batch.
-3. **§3.5 merge fan-out** — ✅ attach the **same `list_rank` to all matched senses**.
+## 9. Change log & run state
 
-Implemented in `build/` (TypeScript). Stage A run produced **5,904** in-scope items
-(oxford 4957 / both 520 / nawl 427) and **293** quarantined (283 out-of-scope POS + 10 NAWL
-prefixes); 3 `bank` senses; 0 NAWL→multi-sense fan-out; 7 Oxford `(lemma,pos,sense)` collisions
-deduped to the lower CEFR.
+**v3 (CEFR-split manifests + manual frontier-LLM generation).** Stage A now emits **four CEFR-grouped
+manifests** (`_manifest_{A2,B1,B2,C1}.json`), each sorted by `zipf_rank` ascending, instead of one
+`_manifest.json`. Generation moved **off the DeepSeek API entirely**: `generate` writes a markdown prompt
+per level (`_prompt_<cefr>.md`) that the user pastes into a frontier-LLM free chat and hand-authors the
+result into `_generated_batch_<cefr>.json`; `ingest` commits all present levels in one run (each level
+independently). Removed: `build/deepSeekClient.ts`, `build/tokenCost.ts`, `build/batchAll.ts`, the
+`batch:all` script, and all token/cost accounting. Provenance stamp is now `manual-frontier-llm`.
+
+**v2 (single CSV).** The input collapsed from three CSVs (NAWL + Oxford-3000/5000) to the one merged file
+`data/merged_oxford_a2c1_zipf.csv`. Dropped with the old inputs: sense parentheticals, NAWL rank fan-out,
+3000-vs-5000 collision handling, the function-word allowlist, and the `source`/`band`/`sense_hint`/
+`list_rank` carried fields. Added: `zipf`/`zipf_rank`. The build was **reset to batch 0**.
+
+**Stage A run:** **4,391** in-scope items (noun 2330 / verb 1018 / adj 836 / adv 207; by CEFR
+A2 705 / B1 1059 / B2 1289 / C1 1338), **3** quarantined (`have`/auxiliaryv, `need`/`ought`/modalv),
+and **3** CEFR collisions deduped to the lower level (`race`, `ring`, `survive`).
+
+**Decisions (still in force):** scope = content POS `{noun, verb, adj, adv}`; batch size **25 per CEFR
+level**; generation is manual (no API key, no cost accounting).

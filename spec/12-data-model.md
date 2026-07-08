@@ -40,8 +40,8 @@ semantics); `02` (card/log usage); `05` (memo rows).
 fields. The runtime MUST treat all of these as read-only inputs and MUST NOT regenerate or mutate
 them at runtime.
 
-Carried (build-time Stage A): `word`, `lemma`, `part_of_speech`, `sense_id`, `sense_hint`, `cefr`,
-`list_rank`, `band`, `source`.
+Carried (build-time Stage A): `word`, `lemma`, `part_of_speech`, `sense_id`, `cefr`, `zipf`,
+`zipf_rank`.
 Generated (build-time Stage B): `intended_sense`, `recognition_meaning`, `distractors` (3),
 `clozed_sentence`, `productive_meaning`, `model_sentence`, `self_reference_prompt`.
 Provenance: `gen_model`, `gen_spec_version`.
@@ -69,7 +69,7 @@ reads the right field.
 | `intended_sense` | judge sense gate (`06`); memo key `intended_sense_id` (`MEMO-2`) |
 | `lemma` | presence/deterministic grading (`RL-2`, `TIER-5`); memo key (`MEMO-2`) |
 | `sense_id` | item identity; memo key `intended_sense_id` (`MEMO-2`) |
-| `band` / `cefr` / `list_rank` | seeding band + FSRS cold-start (`SEED-5`, `SEED-8`) |
+| `cefr` / `zipf_rank` | seeding band (the frontier is a CEFR level) + frequency order + FSRS cold-start (`SEED-5`, `SEED-8`) |
 
 ### DM-4 — `model_sentence: null` items are tolerated
 **Trace:** `docs/BUILD.md §7.3` (flag-don't-fix), PRD §5.2.

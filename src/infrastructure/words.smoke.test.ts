@@ -20,18 +20,18 @@ describe("words read-models (smoke: real catalog + ts-fsrs)", () => {
   const t1 = new Date("2026-07-03T00:00:00Z");
 
   it("composeWords wires without throwing", async () => {
-    const { cards } = await makeTestStores();
-    expect(() => composeWords(cards)).not.toThrow();
+    const { cards, catalog } = await makeTestStores();
+    expect(() => composeWords(cards, catalog)).not.toThrow();
   });
 
   it("CNT-2/CNT-3: readWordsList lists seeded words with a real live retrievability", async () => {
-    const { cards, marks } = await makeTestStores();
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
     const { seeded } = await startSession(
       { userId: USER_A, frontierBand: BAND, now: t0 },
-      composeSession(cards, marks),
+      composeSession(cards, marks, catalog, wordSource),
     );
 
-    const { words } = await readWordsList({ userId: USER_A, now: t0 }, composeWords(cards));
+    const { words } = await readWordsList({ userId: USER_A, now: t0 }, composeWords(cards, catalog));
 
     expect(words.map((w) => w.senseId).sort()).toEqual(seeded.map((c) => c.senseId).sort());
     for (const w of words) {
@@ -44,18 +44,18 @@ describe("words read-models (smoke: real catalog + ts-fsrs)", () => {
   });
 
   it("SM-3: a cloze pass shows up as a Seen → Recognized move in readWordDetail history", async () => {
-    const { cards, marks, memo } = await makeTestStores();
-    const sessionDeps = composeSession(cards, marks);
+    const { cards, marks, memo, catalog, wordSource } = await makeTestStores();
+    const sessionDeps = composeSession(cards, marks, catalog, wordSource);
     const { seeded } = await startSession({ userId: USER_A, frontierBand: BAND, now: t0 }, sessionDeps);
     const senseId = seeded[0]!.senseId;
     const word = sessionDeps.catalog.get(senseId)!.word;
 
-    const reviewDeps: RunReviewPassDeps = composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS);
+    const reviewDeps: RunReviewPassDeps = composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS, catalog);
     // Two deterministic passes: recognition (MCQ, no move) then cloze (Seen → Recognized).
     await runReviewPass({ userId: USER_A, senseId, response: word, now: t0 }, reviewDeps);
     await runReviewPass({ userId: USER_A, senseId, response: word, now: t1 }, reviewDeps);
 
-    const detail = await readWordDetail({ userId: USER_A, senseId, now: t1 }, composeWords(cards));
+    const detail = await readWordDetail({ userId: USER_A, senseId, now: t1 }, composeWords(cards, catalog));
 
     expect(detail).not.toBeNull();
     expect(detail!.mastery).toBe("Recognized");
@@ -65,10 +65,10 @@ describe("words read-models (smoke: real catalog + ts-fsrs)", () => {
   });
 
   it("returns null from readWordDetail for a word the user has no card for", async () => {
-    const { cards } = await makeTestStores();
+    const { cards, catalog } = await makeTestStores();
     const detail = await readWordDetail(
       { userId: USER_A, senseId: "not_a_real_sense_99", now: t0 },
-      composeWords(cards),
+      composeWords(cards, catalog),
     );
     expect(detail).toBeNull();
   });

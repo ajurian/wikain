@@ -12,7 +12,7 @@ import type { Card } from "./card.js";
  *    (most-overdue-first — the sensible FSRS-surfacing default; order among due cards is not otherwise
  *    normative), tiebroken by `senseId` for determinism.
  *  - **Intros** — the due cards named in `introSenseIds` (freshly created this session), kept in the
- *    caller's given order (the list-stack / list_rank order the seeder returned), then **evenly
+ *    caller's given order (the list-stack / zipf_rank order the seeder returned), then **evenly
  *    interleaved** among the reviews (SEED-6: "interleaved with due reviews"). With no reviews the
  *    queue is just the intros.
  *

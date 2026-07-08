@@ -80,7 +80,7 @@ export async function seedIntroductions(
     if (!item) throw new Error(`seedIntroductions: word source returned unknown senseId ${senseId}`);
 
     const fsrs = deps.scheduler.newCard(now, {
-      difficulty: coldStartDifficulty(item.cefr, item.band),
+      difficulty: coldStartDifficulty(item.cefr),
     });
     const card: Card = {
       userId,

@@ -1,10 +1,10 @@
 /**
  * Shared schema for the Wikain build-time content pipeline (docs/BUILD.md §4).
  *
- * CARRIED fields are facts from the source CSVs. Stage A fills them; Stage B (generation)
- * MUST NOT touch them (§0, §8). GENERATED fields are produced by the in-session generator
- * (Claude Code / Opus 4.8) in Stage B. These types are intended to be reused by the eventual
- * Electron runtime as the lexical-item contract.
+ * CARRIED fields are facts from the source CSV. Stage A fills them; Stage B (generation)
+ * MUST NOT touch them (§0, §8). GENERATED fields are produced in Stage B by a frontier LLM (manual,
+ * via the markdown prompt build/generate.ts writes). These types are the lexical-item contract the v4
+ * runtime consumes (mirrored by src/domain/lexicalItem.ts; drift is caught by lexicalItem.test.ts).
  */
 
 /** §3.1 controlled POS vocabulary. */
@@ -22,29 +22,24 @@ export type ControlledPos =
   | "prefix"
   | "other";
 
-/** CEFR levels present in the Oxford CSVs; `null` for NAWL-only items (never invented — §8 #2). */
+/** CEFR levels; the source CSV carries A2–C1. `A1`/`null` retained for runtime-type tolerance (§8 #2). */
 export type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | null;
 
-export type ItemSource = "oxford" | "nawl" | "both";
-
-/** Carried fields — facts from the source CSVs (Stage A). */
+/** Carried fields — facts from the source CSV (Stage A). */
 export interface CarriedFields {
   /** Display form. */
   word: string;
-  /** §5.2.1 presence-gate key (kept distinct from `word` by decision). */
+  /** §5.2.1 presence-gate key (lowercased `word`; no parentheticals in the source). */
   lemma: string;
   part_of_speech: ControlledPos;
-  /** `{lemma}_{pos}_{slug(sense_hint||"01")}` — unique item key. */
+  /** `{lemma}_{pos}_01` — unique item key. */
   sense_id: string;
-  /** Oxford parenthetical sense disambiguator, or null. */
-  sense_hint: string | null;
-  /** From the Oxford CSV verbatim; null for NAWL-only. Never invented. */
+  /** From the CSV verbatim (A2–C1). Never invented. */
   cefr: Cefr;
-  /** From NAWL verbatim; null for Oxford-only. */
-  list_rank: number | null;
-  /** Coarse cold-start band (§3.6): Oxford/both → cefr; NAWL-only → "B2-C1". */
-  band: string;
-  source: ItemSource;
+  /** Zipf frequency (SUBTLEX-scale) from the CSV verbatim — higher = more frequent. */
+  zipf: number;
+  /** Dense frequency rank from the CSV verbatim — 1 = most frequent. */
+  zipf_rank: number;
 }
 
 /** Generated fields — produced in Stage B (§5). */
@@ -83,16 +78,8 @@ export interface QuarantineEntry {
   part_of_speech: string;
   /** Original, pre-normalization POS string from the source. */
   raw_pos: string;
-  source: "oxford" | "nawl";
   cefr: Cefr;
-  list_rank: number | null;
+  zipf: number;
+  zipf_rank: number;
   reason: string;
-}
-
-/** Records a NAWL (lemma,pos) whose list_rank fanned out onto multiple Oxford senses (§3.5). */
-export interface FanoutRecord {
-  lemma: string;
-  part_of_speech: ControlledPos;
-  list_rank: number;
-  sense_ids: string[];
 }

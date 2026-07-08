@@ -1,12 +1,10 @@
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
-import { ITEMS_PATH, composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
+import { composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { makeTestStores } from "./testStores.js";
+import { makeTestStores, loadCatalogItems } from "./testStores.js";
 import { submitFreeProduction, type SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
-import type { LexicalItem } from "../domain/lexicalItem.js";
 import { USER_A } from "./testIds.js";
 
 /**
@@ -15,15 +13,15 @@ import { USER_A } from "./testIds.js";
  * Persistence is pglite-backed Drizzle; no network/auth/DeepSeek needed.
  */
 describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judge)", () => {
-  const items = JSON.parse(fs.readFileSync(ITEMS_PATH, "utf8")) as LexicalItem[];
+  const items = loadCatalogItems();
   const item = items.find((i) => i.lemma === "abandon")!; // model_sentence present
   const now = new Date("2026-06-30T00:00:00Z");
 
   async function wire(
     judge: FakeJudge,
   ): Promise<{ deps: SubmitFreeProductionDeps; cards: DrizzleCardRepository }> {
-    const { cards, memo } = await makeTestStores();
-    const deps = composeFreeProduction(judge, cards, memo, DEV_JUDGE_VERSIONS);
+    const { cards, memo, catalog } = await makeTestStores();
+    const deps = composeFreeProduction(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog);
     return { deps, cards };
   }
 
@@ -85,7 +83,9 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
   });
 
   it("composeFreeProduction wires the slice without throwing", async () => {
-    const { cards, memo } = await makeTestStores();
-    expect(() => composeFreeProduction(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS)).not.toThrow();
+    const { cards, memo, catalog } = await makeTestStores();
+    expect(() =>
+      composeFreeProduction(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS, catalog),
+    ).not.toThrow();
   });
 });

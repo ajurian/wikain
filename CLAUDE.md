@@ -70,9 +70,10 @@ as the test runner; there is still **no linter** — do not invent one. The buil
 ```bash
 npm install
 npm run typecheck   # tsc --noEmit
-npm run stageA      # Stage A: assemble data/ CSVs → build/out/_manifest.json + _quarantine.json
-npm run feed        # Stage B: stage the next 25-item batch → build/out/_pending_batch.json
-npm run ingest      # Stage B: merge the in-session-generated batch → build/out/batch_NNNN.json
+npm run stageA      # Stage A: assemble data/merged_oxford_a2c1_zipf.csv → build/out/_manifest_{A2,B1,B2,C1}.json + _quarantine.json
+npm run feed        # Stage B: stage the next 25-item batch PER CEFR level → build/out/_pending_batch_<cefr>.json
+npm run generate    # Stage B: write a markdown prompt per level → build/out/_prompt_<cefr>.md (NO API; paste into a frontier LLM)
+npm run ingest      # Stage B: merge every _generated_batch_<cefr>.json + carried, Stage C, commit → build/out/batch_NNNN.json
 npm run validate    # Stage C: §7.1 auto-asserts over build/out/items.json (or pass a path)
 npm run combine     # concat all batch_*.json → build/out/items.json
 ```
@@ -170,6 +171,25 @@ code + `spec/` IDs for detail:
     allowed). *Deferred still: LexTALE (SEED-4), per-user FSRS optimization (SEED-8), the counter's
     yesterday-delta (needs a persisted daily snapshot).*
 
+21. **DB-backed catalog (serverless)** (`wire/betterauth-identity`). Moved the global lexical catalog off
+    the filesystem so nothing on the serverless request path reads `node:fs` or depends on bundle file-tracing.
+    New GLOBAL (not `user_id`-scoped) `lexical_items` table (`db/schema.ts`, migration `0004`, index
+    `(cefr, zipf_rank)`); `db/seedCatalog.ts` (`seedLexicalItems` transactional replace) + `npm run
+    db:seed:catalog` seeds it from `build/out/items.json` at **deploy** (the only surviving catalog `fs`
+    read). Two adapters behind the existing ports: `DrizzleWordSource` (SQL `WHERE cefr=? ORDER BY zipf_rank
+    LIMIT` — the frontier selector, async, zero ripple) + `DrizzleCatalog.hydrate(db)` (one `SELECT *` at
+    instance load → in-memory Map → **sync** `get`, so NET-2 instant-bounce + prompt render stay local).
+    Shared `catalogContract`/`wordSourceContract` over pglite; `db/lexicalItemMapping.ts` is the single
+    row↔LexicalItem map. Composers now take **injected** `catalog`/`wordSource`; the presentation composition
+    root hydrates both once (top-level `await`) over the ONE Neon handle. **Deleted** `catalog.ts` +
+    `jsonWordSource.ts` (the `fromFile`/`ITEMS_PATH` fs path); `testStores` seeds the catalog into pglite and
+    exposes `catalog`/`wordSource`/`items`. **Covers:** DM-2, SEED-5, STACK-3. **Verified:** both typecheck
+    gates, `npm run build` (client bundle free of `drizzle-orm`/`neon`/server ids), and `npm test` green
+    **except** the 5 smoke files that hardcode `lemma === "abandon"` (absent from the current 100-item
+    catalog — a pre-existing fixture-word mismatch, not this slice; the generic seeding/session/words/
+    placement/onboarding smokes pass over the DB-backed path). *Neon (`@neondatabase/serverless`, HTTP) + the
+    DeepSeek HTTPS judge were already serverless-correct; `db/pglite.ts`'s `import.meta.url` is test-only.*
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -180,9 +200,14 @@ code + `spec/` IDs for detail:
 - **Session→userId is a presentation-server concern, not an application port** (STACK-4). Use-cases take a
   plain `userId: string`; `currentUserId()` (the ONLY auth-aware module) resolves it from the BetterAuth
   session. Every store is `userId`-scoped + multi-tenant.
-- **One Drizzle-only persistence path.** No in-memory adapters; tests use pglite. A new persisted store
+- **One Drizzle-only persistence path.** No in-memory adapters, and no filesystem reads on the request
+  path (slice 21 moved the catalog into Postgres too — serverless-safe). Tests use pglite. A new store
   follows the pattern: narrow application port → `Drizzle<X>` adapter + a shared `<x>Contract` run over
-  pglite → thread through the composition root over the ONE shared Neon handle.
+  pglite → thread through the composition root over the ONE shared Neon handle. Per-user tables are
+  `user_id`-scoped; **global content** (`lexical_items`) is the one un-scoped table, seeded at deploy
+  (`db:seed:catalog`). A read-model consumed synchronously on a hot path (`Catalog.get`) may **hydrate
+  once** per instance (`SELECT *` at load) instead of a per-call round trip; a set-selection read
+  (`WordSource`) stays live SQL.
 - Every test names the `spec/` ID it exercises.
 
 **Deferred — do NOT build until pulled into scope (`PRAG-1`):** the **LexTALE** instrument + **per-user
@@ -204,74 +229,75 @@ and the placement-marks store (19) are wired — no longer deferred.)*
 
 ## Build pipeline architecture (`build/`, docs/BUILD.md)
 
-A **three-stage offline batch pipeline** converting the word lists in `data/` (`NAWL_1.2.csv` + the
-two `american_oxford_*_by_cefr_level.csv` files) into runtime lexical items. **Read `docs/BUILD.md`
-first** — it is the operational spec, and its `§` references are cited inline in the code.
+A **three-stage offline batch pipeline** converting the single word list
+`data/merged_oxford_a2c1_zipf.csv` (`word,pos,cefr,zipf,zipf_rank`; 4,397 rows, A2–C1) into runtime
+lexical items. **Read `docs/BUILD.md` first** — it is the operational spec, and its `§` references are
+cited inline in the code. *(v2 collapsed the earlier three-CSV NAWL + Oxford-3000/5000 stack into this
+one file; v3 split the manifest by CEFR and moved generation to manual frontier-LLM free chats — ignore
+any stale three-CSV/DeepSeek-API/in-session framing.)*
 
-- **Stage A — `build/stageA.ts` (deterministic, no LLM):** parse → normalize POS → split sense
-  parentheticals → scope-filter → quarantine → merge/dedup on `(lemma,pos)` → derive band. Emits
-  `_manifest.json` (carried fields only) + `_quarantine.json`, then prints a **gate summary for human
+- **Stage A — `build/stageA.ts` (deterministic, no LLM):** a single parse loop — `assemble(rows)`:
+  normalize POS → scope-filter (content POS only) → validate CEFR/zipf → `sense_id = {lemma}_{pos}_01`
+  → dedup on `sense_id` (lower CEFR wins) → group by CEFR, sort each by `zipf_rank` asc. Emits four
+  `_manifest_<cefr>.json` (carried only) + `_quarantine.json`, then prints a **gate summary for human
   review before any generation.**
-- **Stage B — `build/stageB.ts` (`feed`/`ingest` harness):** the deterministic shell around the
-  **in-session generator — Claude Code / Opus 4.8 itself, NOT an external API or API key.** `feed`
-  selects the next batch; *Claude Code* writes the generated fields; `ingest` merges, validates, and
-  checkpoints. Resumable via `build/out/_done.json` (a crashed run never regenerates or duplicates).
+- **Stage B — `build/stageB.ts` (`feed`/`ingest`) + `generate.ts` (NO API):** `feed` stages the next
+  batch **per CEFR level** (`_pending_batch_<cefr>.json`); `generate` turns each into a markdown prompt
+  (`_prompt_<cefr>.md`) the **user pastes into a frontier-LLM free chat**, hand-authoring the result into
+  `_generated_batch_<cefr>.json`; `ingest` merges every present level, validates, and commits each level
+  independently. Resumable via `_done.json`. No API key.
 - **Stage C — `build/stageC.ts`:** §7.1 auto-asserts using `wink-nlp` (the same en-US NLP the runtime
   grades with). Reused by `ingest` and runnable standalone.
 
 **The one rule that governs all build code (`docs/BUILD.md` §0, §8):** every item has **carried**
-fields (facts from the source CSVs — filled once by Stage A) and **generated** fields (produced by
-Stage B). **Stage B must never write, overwrite, or infer a carried field** (CEFR, POS, list_rank,
-membership). `stageA.ts` stamps a `_carried_hash`; `ingest` rejects any mutation. Mixing the two is
-how factual hallucination enters the data.
+fields (facts from the source CSV — filled once by Stage A: `word, lemma, part_of_speech, sense_id,
+cefr, zipf, zipf_rank`) and **generated** fields (produced by Stage B). **Stage B must never write,
+overwrite, or infer a carried field.** `stageA.ts` stamps a `_carried_hash`; `ingest` reloads carried
+from the manifest and rejects any stray/mutated key. Mixing the two is how factual hallucination
+enters the data.
 
 - **Constants are single-source** in `build/constants.ts` (`BATCH_SIZE`, the explicit POS map, scope
-  sets, the 4 kept NAWL function words, provenance stamps) — never re-hardcode a literal elsewhere.
-- **Halt, don't guess.** An unknown POS string or invalid CEFR **throws** rather than being silently
-  bucketed (`docs/BUILD.md` §3.1 / §2.2 `[VALIDATE]`). `build/out/` is git-ignored generated output.
+  sets, provenance stamps `GEN_MODEL`/`GEN_SPEC_VERSION`) — never re-hardcode a literal elsewhere.
+- **Halt, don't guess.** An unknown POS string, invalid CEFR, or non-numeric zipf **throws** rather
+  than being silently bucketed (`docs/BUILD.md` §3.1 / §2.2 `[VALIDATE]`). `build/out/` is git-ignored
+  generated output.
 
 ### Stage B generation loop — ACTIVE WORK (this is the task in progress)
 
-Stage A is done (5,904 in-scope items in `_manifest.json`). The ongoing work is generating the
-catalog **25 items at a time** through Stage B. **For current progress, read `build/out/_done.json`**
-(its length = items completed) — do not trust any count written here; it goes stale each batch.
+Stage A is done (**4,391** in-scope items across four `_manifest_<cefr>.json` — A2 705 / B1 1059 /
+B2 1289 / C1 1338; 3 quarantined, 3 CEFR-collision dedups). Generation runs **25 items per CEFR level
+per feed** (4 × 25 = 100), **manually via frontier-LLM free chats** (no API). **For current progress,
+read `build/out/_done.json`** (its length = items completed) — do not trust any count here.
 
-**Progress:** build was reset to zero on 2026-06-29 (the prior 325 items / batches `0000`–`0012` were
-deleted — the user was dissatisfied with generation quality, distractors especially). **After the reset,
-the first 125 items / batches `0000`–`0004` (`abandon` … `afford`) were regenerated on 2026-06-29 and
-all pass Stage C clean** (`combine`+`validate`: 125 items, 0 failing, 0 flagged; typecheck green). The
-next `feed` serves the manifest from `advocate`'s neighbors onward (`_done.json` length = 125 — always
-re-confirm) and the next `ingest` writes `batch_0005.json`. `_review.json` is `[]` (the 3 shared-stem
-flags raised during this run — `adapt_verb_01`/new, `adult_adj_01`/fully, `advantage_noun_01`/better→good
-— were reworded away in the committed batch files and cleared, not left for human review).
+**Progress (reset to batch 0, 2026-07-06):** the build is reset — `_done.json` is `[]` and no batches
+are generated yet. *(A stale, old-schema `build/out/items.json` (125 items, `abandon`…) was the catalog
+smoke-test fixture, but it is currently **empty (`[]`)**, so the `src/infrastructure/*.smoke.test.ts`
+"real catalog" tests fail (empty catalog → seeding returns nothing) until a catalog is regenerated. The
+non-smoke suite is fully green. Regenerate via the manual loop below, then `npm run combine` to rebuild
+`items.json`.)*
 
-> **One committed null:** `aesthetic_adj_01` (in `batch_0004.json`) has `model_sentence: null` + an
-> `_flags` reason — wink normalizes `aesthetic`→`esthetic`, so no sentence with the carried spelling can
-> pass the lemma-presence assert (the documented gotcha). Grep `batch_*.json` for `_flags` to find it.
+**How generation works now (v3 — manual, no API):** `generate` (`build/generate.ts`) reads each
+`_pending_batch_<cefr>.json` and writes a markdown prompt `_prompt_<cefr>.md` whose content is
+`buildPrompt` = system + "\n\n" + user. `buildPrompt` inlines the full text of
+**`docs/GENERATION_RULES.md`** (the single source of truth for field content/quality — user-authored) +
+the gold one-shot + the §7.1 hard constraints + the output contract. The **user pastes each markdown into
+a frontier-LLM free chat**, then saves the returned `{"items":[…]}` to `_generated_batch_<cefr>.json`.
+**Read `docs/GENERATION_RULES.md`** if editing the prompt — but the prompt text is intentionally
+preserved byte-for-byte; only the return shape changed (string, not chat-message array).
 
-**Generation rules are now doc-driven (2026-06-29):** the hardcoded `FIELD_RULES` array in `stageB.ts`
-is **gone**. The single source of truth for every field's content/quality is **`docs/GENERATION_RULES.md`**
-(user-authored) — `feed` references it by path in the payload (`rules_doc`) and **hard-fails if it's
-empty/missing**. **Read `docs/GENERATION_RULES.md` before generating each batch.** The §-cross-refs in
-that doc point at `docs/PRD.md`. The code-enforced Stage C mechanics below still apply on top of it.
-
-**Checkpoint cadence (established):** rely on `ingest`'s built-in Stage C per batch (it already
-fails a batch on any hard miss, so per-batch `npm run validate` is redundant). Run **`npm run combine`
-then `npm run validate` every 10 batches and once at manifest exhaustion** — `combine` makes the
-`items.json` snapshot, standalone `validate` adds the catalog-wide duplicate-`sense_id` assert.
+**Checkpoint cadence:** rely on `ingest`'s built-in Stage C per level. Run **`npm run combine` then
+`npm run validate` periodically and once at exhaustion** — `combine` makes the `items.json` snapshot,
+standalone `validate` adds the catalog-wide duplicate-`sense_id` assert.
 
 **Division of labor (agreed with the user — keep it):**
-- **The user runs `npm run feed`** by default. Do not run `feed` yourself unless asked. *(Exception:
-  the user can authorize a hands-off loop where Claude runs `feed` too — this authorization is
-  **per-session**; re-confirm before running `feed` autonomously in a new session.)*
-- **Claude generates,** writing the generated fields for every item in `build/out/_pending_batch.json`
-  to `build/out/_generated_batch.json` (array; each element = `sense_id` + the 7 generated keys +
-  optional `_flags`), **then runs `npm run ingest`** to validate + commit.
-- **`feed` and `ingest` are a pair.** `feed` is stateless (it just returns `manifest − _done`); only
-  `ingest` writes `batch_NNNN.json` and appends to `_done.json`. If `ingest` is skipped, the next
-  `feed` re-serves the *same* 25 items and the scratch `_generated_batch.json` is overwritten (work
-  lost). After generating, always `ingest` before the next `feed`.
-- `_pending_batch.json` reads can be stale in-session — re-Read it after the user says they fed.
+- **The user drives generation** — pasting `_prompt_<cefr>.md` into a frontier LLM and hand-authoring
+  `_generated_batch_<cefr>.json` is a manual human step. `npm run feed`/`generate`/`ingest` are cheap and
+  need no API key, but generation itself is the user's job. Do not fabricate generated content yourself
+  unless asked.
+- **`feed` → `generate` → *user authors* → `ingest` is the loop.** `feed` is stateless (`manifest −
+  _done`, per level); `generate` writes prompts (no state); only `ingest` writes `batch_NNNN.json` +
+  appends to `_done.json`. `ingest` commits each level independently — a level that fails Stage C is
+  recorded to `_review.json` and does not block the others.
 
 **Generate to pass Stage C (`build/stageC.ts`) on the first try — the non-obvious, code-enforced rules** (a `fail` blocks the whole batch; a `flag` still commits):
 - **`model_sentence`:** embed the **bare lemma surface form verbatim** somewhere (guarantees the
@@ -290,7 +316,7 @@ then `npm run validate` every 10 batches and once at manifest exhaustion** — `
   watch `new`, `fully`, and **comparatives** (`better`/`stronger` lemmatize to `good`/`strong`). Cheapest
   fix: write the two glosses from disjoint vocab (e.g. recognition "gain/obtain", productive "come to
   own"); distractors that worked were **antonyms + form-confusables** (`adverse`↔`averse`, `add`↔`subtract`).
-- **Carried fields:** never emit them in `_generated_batch.json` — `ingest` reloads carried fields
+- **Carried fields:** never emit them in `_generated_batch_<cefr>.json` — `ingest` reloads carried fields
   from the manifest and **rejects stray keys**. Return generated fields only.
 
 **wink en-US normalization gotcha (discovered while generating `a*`):** the `model_sentence`
@@ -305,6 +331,6 @@ in a scratch script (`nlp.readDoc(word).tokens().itemAt(0).out(its.normal)`) bef
 
 **Flag visibility:** `ingest` routes only Stage C `flags` (e.g. shared-stem) to `_review.json`. An
 item's own `_flags` (like the normalization nulls above) live **inside the committed `batch_*.json`**,
-not `_review.json` — grep the batch files for `_flags` to find them. (The prior flagged items —
-`aesthetic_adj_01`, `archaeology_noun_01`, `ash_noun_01` — were cleared by the 2026-06-29 reset;
-`_review.json` is now `[]`. The Americanization nulls will recur on the same lemmas when regenerated.)
+not `_review.json` — grep the batch files for `_flags` to find them. After the v2 batch-0 reset
+`_review.json` is `[]`; the Americanization nulls (`aesthetic`, `archaeology`, …) will recur on the
+same lemmas when regenerated.
