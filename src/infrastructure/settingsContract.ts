@@ -21,12 +21,8 @@ export function describeSettingsContract(
 
     it("CNT-8: a written setting round-trips", async () => {
       const store = await makeStore();
-      await store.write(USER_A, { dailyGoal: 12, levelBand: "C1", timezone: "Asia/Manila" });
-      expect(await store.read(USER_A)).toEqual({
-        dailyGoal: 12,
-        levelBand: "C1",
-        timezone: "Asia/Manila",
-      });
+      await store.write(USER_A, { dailyGoal: 12, timezone: "Asia/Manila" });
+      expect(await store.read(USER_A)).toEqual({ dailyGoal: 12, timezone: "Asia/Manila" });
     });
 
     it("CNT-8: a partial patch merges — unset fields keep their prior value", async () => {
@@ -36,7 +32,6 @@ export function describeSettingsContract(
       const s = await store.read(USER_A);
       expect(s.dailyGoal).toBe(8); // retained across the second (partial) write
       expect(s.timezone).toBe("Europe/Berlin");
-      expect(s.levelBand).toBe(DEFAULT_USER_SETTINGS.levelBand); // never set → default
     });
 
     it("multi-tenant: user B never sees user A's settings", async () => {

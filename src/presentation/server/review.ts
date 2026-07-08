@@ -8,21 +8,23 @@ import {
   type ReviewOutcomeView,
 } from "../../application/presentReviewOutcome.js";
 import type { RuleBounceReason } from "../../domain/ruleLayer.js";
+import { readPlacementProfile } from "../../application/readPlacementProfile.js";
 import { currentUserId } from "./currentUser.js";
-import { promptDeps, reviewDeps, sessionDeps } from "./composition.js";
-
-/** SEED-5: the dev user's default ~B2+NAWL frontier. */
-const FRONTIER_BAND = "B2";
+import { placementProfileDeps, promptDeps, reviewDeps, sessionDeps } from "./composition.js";
 
 /**
- * Begin a session for the current (dev) user: seed paced introductions and return the ordered queue of
+ * Begin a session for the current user: seed paced introductions and return the ordered queue of
  * `senseId`s to walk (spec/11 LOOP-1). Secrets/DB stay server-side (NET-7/STACK-4).
+ *
+ * The frontier band comes from the learner's PERSISTED placement (SEED-2 mechanism (i)) — whatever
+ * onboarding's coarse level, or a later LexTALE run, put there. It used to be a hardcoded "B2", which
+ * silently discarded the level every learner had just chosen. An un-placed user still reads
+ * `DEFAULT_FRONTIER_BAND` from the profile store's defaults, so the old behavior survives as the fallback.
  */
 export const startSessionFn = createServerFn({ method: "POST" }).handler(async () => {
-  const { queue } = await startSession(
-    { userId: await currentUserId(), frontierBand: FRONTIER_BAND },
-    sessionDeps(),
-  );
+  const userId = await currentUserId();
+  const { frontierBand } = await readPlacementProfile({ userId }, placementProfileDeps());
+  const { queue } = await startSession({ userId, frontierBand }, sessionDeps());
   return { queue };
 });
 

@@ -4,20 +4,21 @@
  * + sign-out come from the real session. No notification or streak settings — streaks don't exist (CNT-9).
  */
 import { useState } from "react";
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { Minus, Plus } from "lucide-react";
 
-import { AppShell } from "../../components/app-shell";
-import { signOut, useSession } from "../../lib/auth-client";
-import { readSettingsFn, updateSettingsFn } from "../../server/settings";
-import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "../../../domain/constants.js";
-import type { UserSettings } from "../../../domain/settings.js";
+import { AppShell } from "../../../components/app-shell";
+import { signOut, useSession } from "../../../lib/auth-client";
+import { readSettingsFn, updateSettingsFn } from "../../../server/settings";
+import { readPlacementProfileFn } from "../../../server/placement";
+import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "../../../../domain/constants.js";
+import type { UserSettings } from "../../../../domain/settings.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-export const Route = createFileRoute("/_authenticated/settings")({
+export const Route = createFileRoute("/_authenticated/_onboarded/settings")({
   component: SettingsPage,
 });
 
@@ -31,6 +32,12 @@ function SettingsPage() {
   const { data: settings } = useQuery({
     queryKey: ["settings"],
     queryFn: () => readSettingsFn(),
+  });
+
+  // The level band is placement state, not a preference (spec/09 SEED-2) — it lives in its own store.
+  const { data: placement } = useQuery({
+    queryKey: ["placement-profile"],
+    queryFn: () => readPlacementProfileFn(),
   });
 
   // Optimistic local override so the stepper feels instant; the persisted value backs it once settled.
@@ -110,10 +117,17 @@ function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-ink">Level</p>
-                <p className="mt-0.5 text-xs text-ink-faint">{settings?.levelBand ?? "—"}</p>
+                <p className="mt-0.5 text-xs text-ink-faint">
+                  {placement === undefined
+                    ? "—"
+                    : placement.lextaleScore === null
+                      ? `${placement.frontierBand} — from your self-report`
+                      : `${placement.frontierBand} — LexTALE ${Math.round(placement.lextaleScore)}%`}
+                </p>
               </div>
-              <Button variant="outline" size="sm">
-                Retune
+              {/* Re-runnable placement (spec/09 SEED-2 (i)) — the coarse self-report or LexTALE. */}
+              <Button asChild variant="outline" size="sm">
+                <Link to="/placement">Retune</Link>
               </Button>
             </div>
             <div className="flex items-center justify-between border-t border-line pt-4">

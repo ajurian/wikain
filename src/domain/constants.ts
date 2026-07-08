@@ -77,6 +77,13 @@ export const DAILY_GOAL_MAX = 20;
 
 // --- First-session seeding / placement (spec/09, `SEED`) ---
 
+/**
+ * SEED-5: the default starting productive frontier — ~B2, not the NGSL core, because PH receptive
+ * proficiency is high. The fallback band for a learner who has neither self-reported nor taken LexTALE
+ * (see `DEFAULT_PLACEMENT_PROFILE`). The single source: `placement.ts` and the session start both read it.
+ */
+export const DEFAULT_FRONTIER_BAND = "B2";
+
 /** SEED-6: first session seeds this many near-frontier words so a production win comes fast (SEED-1). */
 export const FIRST_SESSION_SEED_WORDS = 2;
 

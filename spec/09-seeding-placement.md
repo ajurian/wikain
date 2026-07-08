@@ -71,6 +71,29 @@ LexTALE English instrument** with its **validated nonwords**. It MUST NOT author
 Placement is low-stakes (FSRS re-estimates per-item difficulty within a few sessions), so a full
 LexTALE run MAY be optional (per-word "I know this" tapping is acceptable for a self-aware user).
 
+> [FLAG] Licensing for a distributed (multi-user, commercial) app. LexTALE is published for
+> **research** use (Lemhöfer & Broersma 2012); this file's *Out-of-scope* line ("use the published
+> one") never addressed redistribution, and shipping the 60 items inside a product bundle **is**
+> redistribution. The same reasoning as the Oxford 3000/5000 note below applies — the single-user /
+> non-commercial exemption does not cover us. Confirm terms with the authors, or fall back to the
+> per-word tapping mechanism (which SEED-4 already permits) before launch. Implemented as of slice 22
+> (`src/domain/lextale.ts`) on the assumption this resolves favorably — do not treat it as resolved.
+
+> [FLAG] The published CEFR table (Table 9) is not a partition: C1–C2 = 80–100, B2 = 60–80,
+> "B1 and below" = <59. It leaves 59–60 unassigned and claims 80 twice. `frontierBandFromLexTale`
+> resolves both boundaries downward-exclusive (`>= 80 → C1`, `>= 60 → B2`, else `B1`). Low-stakes by
+> SEED-4's own reasoning, but it is a choice, not a reading of the source.
+
+> [FLAG] **Retakes break the instrument's assumptions.** Slice 23's `/placement` lets a learner re-run
+> LexTALE. The published norms assume a *naive* participant; someone who has already seen the 20
+> validated nonwords scores higher on a second run, so a retake score is not comparable to a first-run
+> score and drifts the frontier band upward. This is tolerable **only** because SEED-4 itself declares
+> placement low-stakes (self-inflation mis-places the learner alone, and FSRS re-estimates per-item
+> difficulty within a few sessions), and because the coarse self-report — which SEED-4 explicitly
+> permits — is offered alongside as the honest tool for a small nudge. The UI says so plainly rather
+> than presenting an inflated number as a measurement. Revisit if a LexTALE score is ever *reported*
+> to the learner as a CEFR level (SEED-4's stated second purpose) rather than used only to pick a band.
+
 ### SEED-5 — List stack and default frontier
 **Trace:** PRD §8, §11 item 9.
 **Requirement:** The list stack MUST be NGSL (high-frequency floor) → NAWL + Oxford 5000 (B2–C1) as

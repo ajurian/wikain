@@ -15,6 +15,7 @@ import type { LexicalItem } from "../domain/lexicalItem.js";
 import { DrizzleCardRepository } from "./drizzleCardRepository.js";
 import { DrizzleVerdictMemo } from "./drizzleVerdictMemo.js";
 import { DrizzlePlacementMarks } from "./drizzlePlacementMarks.js";
+import { DrizzlePlacementProfile } from "./drizzlePlacementProfile.js";
 import { DrizzleSettings } from "./drizzleSettings.js";
 import { DrizzleCatalog } from "./drizzleCatalog.js";
 import { DrizzleWordSource } from "./drizzleWordSource.js";
@@ -46,6 +47,7 @@ export async function makeTestStores() {
     cards: new DrizzleCardRepository(db),
     memo: new DrizzleVerdictMemo(db),
     marks: new DrizzlePlacementMarks(db),
+    profile: new DrizzlePlacementProfile(db),
     settings: new DrizzleSettings(db),
     catalog: await DrizzleCatalog.hydrate(db),
     wordSource: new DrizzleWordSource(db),

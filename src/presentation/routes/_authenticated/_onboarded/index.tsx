@@ -2,16 +2,16 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { AppShell } from "../../components/app-shell";
-import { CounterStat } from "../../components/counter-stat";
-import { GoalRing } from "../../components/goal-ring";
-import { MasteryChip } from "../../components/mastery-chip";
+import { AppShell } from "../../../components/app-shell";
+import { CounterStat } from "../../../components/counter-stat";
+import { GoalRing } from "../../../components/goal-ring";
+import { MasteryChip } from "../../../components/mastery-chip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { usableCounterFn } from "../../server/counter";
-import { dashboardSummaryFn } from "../../server/dashboard";
+import { usableCounterFn } from "../../../server/counter";
+import { dashboardSummaryFn } from "../../../server/dashboard";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/_onboarded/")({
   component: Dashboard,
 });
 

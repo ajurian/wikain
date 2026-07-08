@@ -5,12 +5,13 @@ import { DAILY_GOAL_DEFAULT } from "./constants.js";
  * dashboard reads the goal, `/settings` edits it. Every field has a sensible default so a brand-new user
  * with no persisted row still resolves a coherent settings view (`DEFAULT_USER_SETTINGS`) — consumers
  * never handle a missing row.
+ *
+ * The learner's level band is NOT here: it is placement state, written by onboarding and read by the
+ * seeder, and lives in `PlacementProfile` (spec/09 SEED-2). One source of truth for the band.
  */
 export interface UserSettings {
   /** CNT-8: the daily USE goal, unit = free judged productions. Learner-adjustable (DAILY_GOAL_MIN..MAX). */
   dailyGoal: number;
-  /** The learner's coarse level band — display + the retune anchor. */
-  levelBand: string;
   /** IANA timezone; the "separate calendar days" logic (SM-5b/CNT-2) is anchored to this clock. */
   timezone: string;
 }
@@ -19,6 +20,5 @@ export interface UserSettings {
  * default the dashboard read-model uses (utcOffsetMinutes ?? 0) until a real tz is captured. */
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   dailyGoal: DAILY_GOAL_DEFAULT,
-  levelBand: "B2 · upper-intermediate",
   timezone: "UTC",
 };

@@ -55,9 +55,10 @@ fully **wired, guarded** TanStack Start UI (every surface — `/`, `/review`, `/
 `/settings`, `/signin`, `/signup` — runs on real use-cases behind a real session). The app is now
 **multi-tenant and secrets-required**: it fails fast on boot without `DATABASE_URL`, `DEEPSEEK_API_KEY`,
 and `BETTER_AUTH_SECRET` — there are **no in-memory adapters or offline fallbacks** anywhere (tests run
-against embedded pglite). **A few spec pieces remain deferred** — LexTALE (SEED-4), per-user FSRS
-optimization (SEED-8), and the counter's yesterday-delta (needs a persisted daily snapshot). Do not
-assume a runtime piece is present; scaffold it only when asked.
+against embedded pglite). Onboarding is the **mandatory** step after auth, and placement runs on the real
+published **LexTALE** instrument (slice 22). **A few spec pieces remain deferred** — per-user FSRS
+optimization (SEED-8), SEED-2's LexTALE→cold-start-difficulty output, and the counter's yesterday-delta
+(needs a persisted daily snapshot). Do not assume a runtime piece is present; scaffold it only when asked.
 *(Note: v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend — ignore any
 stale "Electron" framing elsewhere.)*
 
@@ -168,8 +169,7 @@ code + `spec/` IDs for detail:
     `mock/learner.ts` (MasteryState → `domain/card.js`). **Covers (wired):** STACK-3/4, CNT-8, app-route
     guards. **Verified:** both typecheck gates, `npm test` (282, pglite), `npm run build` (no
     secret/`drizzle-orm`/`neon`/server identifiers in the client bundle; the better-auth *client* is
-    allowed). *Deferred still: LexTALE (SEED-4), per-user FSRS optimization (SEED-8), the counter's
-    yesterday-delta (needs a persisted daily snapshot).*
+    allowed). *(Slice 20's `UserSettings.levelBand` was dead data; slice 22 removed it.)*
 
 21. **DB-backed catalog (serverless)** (`wire/betterauth-identity`). Moved the global lexical catalog off
     the filesystem so nothing on the serverless request path reads `node:fs` or depends on bundle file-tracing.
@@ -189,6 +189,68 @@ code + `spec/` IDs for detail:
     catalog — a pre-existing fixture-word mismatch, not this slice; the generic seeding/session/words/
     placement/onboarding smokes pass over the DB-backed path). *Neon (`@neondatabase/serverless`, HTTP) + the
     DeepSeek HTTPS judge were already serverless-correct; `db/pglite.ts`'s `import.meta.url` is test-only.*
+
+22. **Onboarding gate + LexTALE placement** (`wire/catalog-migration`). Onboarding produced **no persisted
+    state** — the coarse level was discarded, `startSessionFn` hardcoded `FRONTIER_BAND = "B2"`, and nothing
+    forced a new user through `/onboarding` (a signed-in user could also still load `/signin`). domain: the
+    **published LexTALE instrument** verbatim (`lextale.ts` — 60 items / 40 words / 20 nonwords, Lemhöfer &
+    Broersma 2012 Appendix A; `scoreLexTale` = the averaged-%-correct yes-bias correction, throws on a partial
+    run); `frontierBandFromLexTale` + `isCoarseLevel` in `placement.ts`; `placementProfile.ts`
+    (`PlacementProfile`/`DEFAULT_PLACEMENT_PROFILE`), `DEFAULT_FRONTIER_BAND`; **`levelBand` removed from
+    `UserSettings`** (it was dead data + a second source of truth for the band). application (TDD):
+    `ports/placementProfile.ts` (`PlacementProfileStore`), `readPlacementProfile`/`recordCoarseLevel`/
+    `recordLexTaleResult`/`completeOnboarding` (idempotent — keeps the FIRST instant). `recordLexTaleResult`'s
+    deps are `{ profile }` ONLY, so the type surface makes a SEED-3 violation impossible. infra: GLOBAL-shaped
+    per-user `placement_profile` table (`user_id` PK, `frontier_band`, `lextale_score`, `onboarded_at`;
+    migration `0005` **+ a hand-added backfill** stamping every user who already has a card, else the new guard
+    re-onboards them); `DrizzlePlacementProfile` behind `placementProfileContract`; `settings.level_band`
+    dropped. presentation-server: `placementProfileDeps()`; `SessionView` gains **`onboarded: boolean`**
+    (resolved in `getSessionFn`'s existing handler — one extra query, NO extra round-trip, one consistent
+    snapshot); `seedFirstSessionFn` now takes a **`CoarseLevel`** (not a client-supplied band string) and
+    persists the band; `placementSlateFn` **drops its argument** and reads the persisted band; new
+    `submitLexTaleFn` (posts ANSWERS — scoring is server-side; validator requires exactly 60), 
+    `completeOnboardingFn`, `readPlacementProfileFn`; **`startSessionFn` reads the persisted band** (the fix
+    that makes the learner's level stick). routes: **three layouts, one predicate each** — new `_public.tsx`
+    (signed-in → `/` or `/onboarding`) wrapping `signin`/`signup`; `_authenticated.tsx` re-returns the narrowed
+    session; new `_authenticated/_onboarded.tsx` (`!onboarded` → `/onboarding`) wrapping the 5 app routes;
+    `/onboarding` sits OUTSIDE it with the inverse guard — that nesting, not a `pathname` test, is what makes
+    the redirects loop-free. UI: `components/lextale-test.tsx` (3 practice + 60 items, both buttons `outline`
+    so the layout doesn't bias the yes/no), a `Recommended` badge on the LexTALE card, `frontierBand` hoisted
+    so a retune re-keys the slate, `finish()` → marks (best-effort) → `completeOnboardingFn` (must succeed) →
+    `router.invalidate()` → `/`. **Covers:** SEED-1/2/3/4/5, app-route + public-route guards. **Verified:** both
+    typecheck gates; `npm test` (5 pre-existing `"abandon"`-fixture smoke failures, unchanged); `npm run build`
+    (no server ids in the client bundle). *Two `> [FLAG]`s added to `spec/09`: LexTALE's research-use licensing
+    vs. a commercial product, and the non-partitioning CEFR cutoff table.*
+    *Still deferred: SEED-2's **second** LexTALE output (FSRS cold-start difficulty — `coldStartDifficulty`
+    still keys off the item's own CEFR), SEED-8 per-user FSRS optimization, and the counter's yesterday-delta.
+    (Slice 22 shipped the `/settings` "Retune" button `disabled`; slice 23 wired it.)*
+
+23. **Re-runnable placement — the `/placement` retune** (`wire/catalog-migration`). Slice 22 made placement a
+    **one-shot** decision: the band was set once during onboarding, `/onboarding` bounces anyone already
+    onboarded, and `/settings`' `Retune` shipped `disabled`. A learner whose words were consistently too hard
+    or easy had no correction path. domain: `coarseLevelForBand` (the inverse of `frontierBandForCoarseLevel`,
+    so the retune form pre-selects the current band; `null` for an unmappable band). application:
+    `recordCoarseLevel` now writes **`{ frontierBand, lextaleScore: null }`** — the scalar is only meaningful
+    as the SOURCE of the current band, so a self-report after an 87.5% run must not render "B1 — LexTALE 87.5%"
+    (a no-op in onboarding, where the coarse level is always recorded before LexTALE can run). presentation-server:
+    **extracted `server/placement.ts`** from `onboarding.ts` — the re-runnable placement surface
+    (`readPlacementProfileFn`, `submitLexTaleFn`, `placementSlateFn`, `recordPlacementMarksFn`) answers to a
+    different actor than the first-session-only trio (`seedFirstSessionFn`, `judgeFirstProductionFn`,
+    `completeOnboardingFn`) that stayed behind (SOLID-1/CMP-2); new **`setCoarseLevelFn`** (POST, `isCoarseLevel`
+    validator) is the **band-only** path — `seedFirstSessionFn` deliberately bundles `recordCoarseLevel` WITH
+    `seedIntroductions`, so reusing it for a retune would seed a fresh batch as a side effect of changing a
+    setting. presentation: `components/coarse-level-picker.tsx` (`COARSE_LEVEL_OPTIONS` + `CoarseLevelPicker`,
+    extracted from onboarding's `LevelStep` — two call sites, one reason to change, PRAG-3); new route
+    `_authenticated/_onboarded/placement.tsx` (`hub | lextale | result`, reusing `LexTaleTest` unchanged and
+    running it chromeless like `/review`); `settings.tsx`'s button becomes `<Button asChild><Link to="/placement">`.
+    Per-word marking is **not** re-offered — marks are additive-only in v1 (no un-mark), so a mistaken tap
+    outside onboarding would be permanent. The `Recommended` badge now appears **only** when
+    `lextaleScore === null`; a repeat visitor sees the retake caveat instead. **Covers:** SEED-2 (i), SEED-4.
+    **No migration** (`placement_profile` already had every column). **Verified:** both typecheck gates;
+    `npm test` (5 pre-existing `"abandon"`-fixture smoke failures, unchanged); `npm run build`; and a real
+    `npm run dev` + Neon drive-through. *A third `> [FLAG]` added to `spec/09`: a LexTALE **retake** violates the
+    instrument's naive-participant assumption and inflates the score — tolerable only because SEED-4 declares
+    placement low-stakes, and the UI says so instead of dressing the number up as a measurement.*
 
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
@@ -210,15 +272,21 @@ code + `spec/` IDs for detail:
   (`WordSource`) stays live SQL.
 - Every test names the `spec/` ID it exercises.
 
-**Deferred — do NOT build until pulled into scope (`PRAG-1`):** the **LexTALE** instrument + **per-user
-FSRS optimization** (SEED-4/8; the latter needs `@open-spaced-repetition/binding`); the counter's
-**yesterday-delta** (needs a persisted daily snapshot). *(BetterAuth (slice 20), the verdict memo (18),
-and the placement-marks store (19) are wired — no longer deferred.)*
+**Deferred — do NOT build until pulled into scope (`PRAG-1`):** **per-user FSRS optimization** (SEED-8;
+needs `@open-spaced-repetition/binding`); **SEED-2's second LexTALE output** — the scalar driving FSRS
+cold-start difficulty (`coldStartDifficulty` still keys off the item's own CEFR, and the spec gives no
+offset magnitude); the counter's **yesterday-delta** (needs a persisted daily snapshot); the `/settings`
+**timezone** "Change" button (still rendered dead); an **un-mark** path for `placement_marks` (its absence
+is why `/placement` does not re-offer per-word marking). *(BetterAuth (20), the verdict memo (18), the
+placement-marks store (19), the **LexTALE instrument** (SEED-4, slice 22), and the `/settings` **"Retune"**
+entry point (slice 23) are wired — no longer deferred.)*
 
-> **Status (2026-07-05):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–20 (wiring)
-> land on **`design/brand-ui-system`** and descendant wiring branches (currently `wire/betterauth-identity`
+> **Status (2026-07-08):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–22 (wiring)
+> land on **`design/brand-ui-system`** and descendant wiring branches (currently `wire/catalog-migration`
 > — `git log` to confirm). **Every surface is wired and guarded**: `/`, `/review`, `/words`,
-> `/onboarding`, `/settings` run on real use-cases behind a real **BetterAuth** session (slice 20); the
+> `/onboarding`, `/settings` run on real use-cases behind a real **BetterAuth** session (slice 20), and
+> since slice 22 the guard is a **three-layout chain** (`_public` → `_authenticated` → `_onboarded`) that
+> makes onboarding mandatory and bounces signed-in users off `/signin`/`/signup`; the
 > verdict memo (18) and placement-marks store (19) persist to Neon. The app is **multi-tenant and
 > secrets-required** — `DATABASE_URL` + `DEEPSEEK_API_KEY` + `BETTER_AUTH_SECRET` are mandatory, there are
 > **no in-memory fallbacks**, and tests run against embedded pglite (`FakeJudge` is the one test-only

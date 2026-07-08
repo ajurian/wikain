@@ -20,7 +20,7 @@ export class DrizzleSettings implements SettingsStore {
     const rows = await this.db.select().from(settings).where(eq(settings.userId, userId));
     const row = rows[0];
     if (row === undefined) return { ...DEFAULT_USER_SETTINGS };
-    return { dailyGoal: row.dailyGoal, levelBand: row.levelBand, timezone: row.timezone };
+    return { dailyGoal: row.dailyGoal, timezone: row.timezone };
   }
 
   async write(userId: string, patch: Partial<UserSettings>): Promise<void> {

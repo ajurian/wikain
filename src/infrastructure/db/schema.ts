@@ -125,12 +125,35 @@ export const placementMarks = pgTable(
  * Per-user preferences (spec/10 CNT-8). One row per user (PK `user_id`); absent row = defaults
  * (`DEFAULT_USER_SETTINGS`), resolved in the adapter. `daily_goal` is the learner-adjustable USE goal;
  * `timezone` anchors the "separate calendar days" logic (SM-5b/CNT-2). FK-less by app-table convention.
+ *
+ * The learner's level band is NOT here — it is placement state, owned by `placement_profile` below. It
+ * once lived here as a display-only `level_band` that nothing ever wrote (dropped in migration `0005`).
  */
 export const settings = pgTable("settings", {
   userId: uuid("user_id").primaryKey(),
   dailyGoal: integer("daily_goal").notNull(),
-  levelBand: text("level_band").notNull(),
   timezone: text("timezone").notNull(),
+});
+
+/**
+ * Per-user placement profile (spec/09 SEED-1/2/4). One row per user (PK `user_id`); absent row = defaults
+ * (`DEFAULT_PLACEMENT_PROFILE`), resolved in the adapter — so a brand-new user reads the SEED-5 default
+ * band without a row existing.
+ *
+ * `frontier_band` is mechanism (i) of SEED-2: WHERE the frontier sits. It is what `startSession` seeds at,
+ * so it must persist — before this table the onboarding level choice was discarded and every later session
+ * silently reverted to a hardcoded "B2".
+ *
+ * `lextale_score` is the SEED-4 scalar (nullable: the instrument is optional). `onboarded_at` is nullable
+ * because "not yet onboarded" IS the absent value, and it is the single fact the `_onboarded` route guard
+ * reads. Deliberately NOT columns on `settings`: different actor (SOLID-1), and `onboarded_at` must stay
+ * off the client-writable settings merge-patch.
+ */
+export const placementProfile = pgTable("placement_profile", {
+  userId: uuid("user_id").primaryKey(),
+  frontierBand: text("frontier_band").notNull(),
+  lextaleScore: doublePrecision("lextale_score"),
+  onboardedAt: timestamp("onboarded_at", { withTimezone: true, mode: "date" }),
 });
 
 /**

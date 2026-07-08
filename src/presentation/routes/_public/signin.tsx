@@ -1,27 +1,26 @@
 /*
- * /signup — wired to BetterAuth (STACK-4). Email+password sign-up; on success the router is
- * invalidated (so `__root.beforeLoad` re-reads the new session) and we hand off to onboarding (SEED-1:
- * the first win comes right away). Public route (no guard).
+ * /signin — wired to BetterAuth (STACK-4). Email+password sign-in; on success the router is
+ * invalidated (so `__root.beforeLoad` re-reads the now-authenticated session) and we land on the
+ * dashboard. Public route (no guard).
  */
 import { useState } from "react";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "motion/react";
 
-import { signUp } from "../lib/auth-client";
-import { Wordmark } from "../components/wordmark";
+import { signIn } from "../../lib/auth-client";
+import { Wordmark } from "../../components/wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export const Route = createFileRoute("/signup")({
-  component: SignUp,
+export const Route = createFileRoute("/_public/signin")({
+  component: SignIn,
 });
 
-function SignUp() {
+function SignIn() {
   const navigate = useNavigate();
   const router = useRouter();
   const reduced = useReducedMotion();
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,14 +30,14 @@ function SignUp() {
     e.preventDefault();
     setError(null);
     setPending(true);
-    const res = await signUp.email({ name, email, password });
+    const res = await signIn.email({ email, password });
     if (res.error) {
-      setError(res.error.message ?? "Could not create your account.");
+      setError(res.error.message ?? "Sign in failed. Check your email and password.");
       setPending(false);
       return;
     }
-    await router.invalidate(); // re-run beforeLoad so the guard sees the new session
-    navigate({ to: "/onboarding" });
+    await router.invalidate(); // re-run beforeLoad so the guard sees the session
+    navigate({ to: "/" });
   }
 
   return (
@@ -51,22 +50,9 @@ function SignUp() {
       >
         <div className="space-y-2">
           <Wordmark className="text-3xl" />
-          <p className="text-sm leading-relaxed text-ink-soft">
-            Your first written sentence is two minutes away.
-          </p>
+          <p className="text-sm text-ink-soft">Welcome back. Your words kept their schedule.</p>
         </div>
         <form className="space-y-4" onSubmit={onSubmit}>
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              autoComplete="name"
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -80,11 +66,13 @@ function SignUp() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-baseline justify-between">
+              <Label htmlFor="password">Password</Label>
+            </div>
             <Input
               id="password"
               type="password"
-              autoComplete="new-password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -92,13 +80,13 @@ function SignUp() {
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button type="submit" size="lg" className="w-full" disabled={pending}>
-            {pending ? "Creating account…" : "Create account"}
+            {pending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
         <p className="text-center text-sm text-ink-faint">
-          Already have an account?{" "}
-          <Link to="/signin" className="font-medium text-ink underline-offset-4 hover:underline">
-            Sign in
+          New here?{" "}
+          <Link to="/signup" className="font-medium text-ink underline-offset-4 hover:underline">
+            Create an account
           </Link>
         </p>
       </motion.div>

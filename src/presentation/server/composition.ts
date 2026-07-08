@@ -1,6 +1,7 @@
 import { DrizzleCardRepository } from "../../infrastructure/drizzleCardRepository.js";
 import { DrizzleVerdictMemo } from "../../infrastructure/drizzleVerdictMemo.js";
 import { DrizzlePlacementMarks } from "../../infrastructure/drizzlePlacementMarks.js";
+import { DrizzlePlacementProfile } from "../../infrastructure/drizzlePlacementProfile.js";
 import { DrizzleSettings } from "../../infrastructure/drizzleSettings.js";
 import { DrizzleCatalog } from "../../infrastructure/drizzleCatalog.js";
 import { DrizzleWordSource } from "../../infrastructure/drizzleWordSource.js";
@@ -23,6 +24,7 @@ import type { JudgePort } from "../../application/ports/judge.js";
 import type { CardRepository } from "../../application/ports/cardRepository.js";
 import type { MemoVersions, VerdictMemoPort } from "../../application/ports/verdictMemo.js";
 import type { PlacementMarksStore } from "../../application/ports/placementMarks.js";
+import type { PlacementProfileStore } from "../../application/ports/placementProfile.js";
 import type { SettingsStore } from "../../application/ports/settings.js";
 import type { StartSessionDeps } from "../../application/startSession.js";
 import type { SeedIntroductionsDeps } from "../../application/seedIntroductions.js";
@@ -36,6 +38,10 @@ import type { ReadPlacementSlateDeps } from "../../application/readPlacementSlat
 import type { RecordPlacementMarksDeps } from "../../application/recordPlacementMarks.js";
 import type { ReadSettingsDeps } from "../../application/readSettings.js";
 import type { UpdateSettingsDeps } from "../../application/updateSettings.js";
+import type { ReadPlacementProfileDeps } from "../../application/readPlacementProfile.js";
+import type { RecordCoarseLevelDeps } from "../../application/recordCoarseLevel.js";
+import type { RecordLexTaleResultDeps } from "../../application/recordLexTaleResult.js";
+import type { CompleteOnboardingDeps } from "../../application/completeOnboarding.js";
 
 /**
  * Server-only composition root (ARCH-3): the single place the concrete adapters are wired to the
@@ -69,6 +75,7 @@ const db = neonDbFromEnv();
 const cards: CardRepository = new DrizzleCardRepository(db);
 const memo: VerdictMemoPort = new DrizzleVerdictMemo(db);
 const marks: PlacementMarksStore = new DrizzlePlacementMarks(db);
+const profile: PlacementProfileStore = new DrizzlePlacementProfile(db);
 const settings: SettingsStore = new DrizzleSettings(db);
 
 /**
@@ -152,4 +159,16 @@ export function wordsDeps(): ReadWordsListDeps & ReadWordDetailDeps {
  * dashboard so a goal change is immediately reflected in the goal ring. */
 export function settingsDeps(): ReadSettingsDeps & UpdateSettingsDeps {
   return { settings };
+}
+
+/**
+ * Deps for the placement-profile use-cases (spec/09 SEED-1/2/4). The ONE profile store, shared by the
+ * onboarding writes, the `_onboarded` route guard's read (via `getSessionFn`), the session start's frontier
+ * band, and `/settings` — so the band the learner places at is the band every later session seeds at.
+ */
+export function placementProfileDeps(): ReadPlacementProfileDeps &
+  RecordCoarseLevelDeps &
+  RecordLexTaleResultDeps &
+  CompleteOnboardingDeps {
+  return { profile };
 }
