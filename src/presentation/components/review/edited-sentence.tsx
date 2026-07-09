@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { resolveEdits, type ResolvedEdit } from "../../domain/review/editResolution.js";
-import type { Replacement } from "../types/verdict";
+import { resolveEdits, type ResolvedEdit } from "../../../domain/review/editResolution.js";
+import type { Replacement } from "../../types/verdict";
 import { cn } from "@/lib/utils";
 
 /**

@@ -1,9 +1,9 @@
 import { motion, useReducedMotion } from "motion/react";
 import { CircleCheck, CircleX } from "lucide-react";
 import { EditedSentence } from "./edited-sentence";
-import { MasteryChip } from "./mastery-chip";
-import type { MasteryState } from "../../domain/mastery/card.js";
-import type { Replacement } from "../types/verdict";
+import { MasteryChip } from "../mastery-chip";
+import type { MasteryState } from "../../../domain/mastery/card.js";
+import type { Replacement } from "../../types/verdict";
 
 /**
  * Judged verdict (LOOP-4). Pass and fail use the SAME reveal animation — color

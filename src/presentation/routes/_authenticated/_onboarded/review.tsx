@@ -39,21 +39,21 @@ import type { ReviewPrompt } from "../../../../application/review/resolveReviewP
 import type { ReviewOutcomeView } from "../../../../application/review/presentReviewOutcome.js";
 import type { MasteryState } from "../../../../domain/mastery/card.js";
 
-import { BounceCallout } from "../../../components/bounce-callout";
-import { BlankAnswer, BlankInput } from "../../../components/blank-input";
-import { CheckingIndicator } from "../../../components/checking-indicator";
+import { BounceCallout } from "../../../components/review/bounce-callout";
+import { BlankAnswer, BlankInput } from "../../../components/review/blank-input";
+import { CheckingIndicator } from "../../../components/review/checking-indicator";
 import {
   EntryDefinition,
   EntryHeader,
   HeadwordBlank,
-} from "../../../components/entry-header";
+} from "../../../components/review/entry-header";
 import {
   SessionSummary,
   type StepOutcome,
-} from "../../../components/session-summary";
-import { VerdictPanel } from "../../../components/verdict-panel";
+} from "../../../components/review/session-summary";
+import { VerdictPanel } from "../../../components/review/verdict-panel";
 import { MasteryChip } from "../../../components/mastery-chip";
-import { WordOptionList } from "../../../components/word-option-list";
+import { WordOptionList } from "../../../components/review/word-option-list";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";

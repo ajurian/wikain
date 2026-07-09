@@ -6,7 +6,7 @@
  * only what a reader expects to see. `other` is a real catalog value (modal/auxiliary verbs, exclamations)
  * with no honest abbreviation, so the entry simply omits the line rather than inventing one.
  */
-import type { ControlledPos } from "../../domain/lexicalItem.js";
+import type { ControlledPos } from "../../../domain/lexicalItem.js";
 import { cn } from "@/lib/utils";
 
 const ABBREVIATION: Record<ControlledPos, string> = {

@@ -48,8 +48,8 @@ import {
 } from "../../server/placement";
 import { ruleCheckFn } from "../../server/review";
 import { signOut } from "../../lib/auth-client";
-import { BounceCallout } from "../../components/bounce-callout";
-import { CheckingIndicator } from "../../components/checking-indicator";
+import { BounceCallout } from "../../components/review/bounce-callout";
+import { CheckingIndicator } from "../../components/review/checking-indicator";
 import { CoarseLevelPicker } from "../../components/coarse-level-picker";
 import { LexTaleTest } from "../../components/lextale-test";
 import { Wordmark } from "../../components/wordmark";
