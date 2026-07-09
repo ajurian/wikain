@@ -8,7 +8,7 @@
  * makes it the input itself. `heading` is the visually-hidden name of the card — the visible headword is
  * often a blank, which is not something a screen reader can announce.
  */
-import type { ControlledPos } from "../../../domain/lexicalItem.js";
+import type { ControlledPos } from "~/domain/lexicalItem.js";
 import { PosLabel } from "./pos-label";
 import { cn } from "@/lib/utils";
 

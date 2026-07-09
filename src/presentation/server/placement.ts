@@ -2,14 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import {
   readPlacementSlate,
   type PlacementSlateWord,
-} from "../../application/placement/readPlacementSlate.js";
-import { recordPlacementMarks } from "../../application/placement/recordPlacementMarks.js";
-import { readPlacementProfile } from "../../application/placement/readPlacementProfile.js";
-import { recordCoarseLevel } from "../../application/placement/recordCoarseLevel.js";
-import { recordLexTaleResult, type LexTaleResult } from "../../application/placement/recordLexTaleResult.js";
-import { isCoarseLevel, type CoarseLevel } from "../../domain/placement/placement.js";
-import { LEXTALE_ITEMS } from "../../domain/placement/lextale.js";
-import type { PlacementProfile } from "../../domain/placement/placementProfile.js";
+} from "~/application/placement/readPlacementSlate.js";
+import { recordPlacementMarks } from "~/application/placement/recordPlacementMarks.js";
+import { readPlacementProfile } from "~/application/placement/readPlacementProfile.js";
+import { recordCoarseLevel } from "~/application/placement/recordCoarseLevel.js";
+import { recordLexTaleResult, type LexTaleResult } from "~/application/placement/recordLexTaleResult.js";
+import { isCoarseLevel, type CoarseLevel } from "~/domain/placement/placement.js";
+import { LEXTALE_ITEMS } from "~/domain/placement/lextale.js";
+import type { PlacementProfile } from "~/domain/placement/placementProfile.js";
 import { currentUserId } from "./currentUser.js";
 import { placementSlateDeps, recordMarksDeps, placementProfileDeps } from "./composition.js";
 

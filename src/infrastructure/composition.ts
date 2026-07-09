@@ -5,26 +5,26 @@
  * in tests). There is no in-memory adapter and no offline fallback (removed with STACK-4): the app
  * requires a real database, tests run against embedded pglite.
  */
-import type { SubmitCuedReviewDeps } from "../application/review/submitCuedReview.js";
-import type { SubmitFreeProductionDeps } from "../application/review/submitFreeProduction.js";
-import type { RunReviewPassDeps } from "../application/review/runReviewPass.js";
-import type { ReadUsableCounterDeps } from "../application/progress/readUsableCounter.js";
-import type { ReadDashboardSummaryDeps } from "../application/progress/readDashboardSummary.js";
-import type { ReadWordsListDeps } from "../application/progress/readWordsList.js";
-import type { ReadWordDetailDeps } from "../application/progress/readWordDetail.js";
-import type { SeedIntroductionsDeps } from "../application/session/seedIntroductions.js";
-import type { StartSessionDeps } from "../application/session/startSession.js";
-import type { ResolveReviewPromptDeps } from "../application/review/resolveReviewPrompt.js";
-import type { ReadPlacementSlateDeps } from "../application/placement/readPlacementSlate.js";
-import type { RecordPlacementMarksDeps } from "../application/placement/recordPlacementMarks.js";
-import type { JudgePort } from "../application/ports/judge.js";
-import type { CardRepository } from "../application/ports/cardRepository.js";
-import type { Scheduler } from "../application/ports/scheduler.js";
-import type { PlacementMarksStore } from "../application/ports/placementMarks.js";
-import type { SettingsStore } from "../application/ports/settings.js";
-import type { Catalog } from "../application/ports/catalog.js";
-import type { WordSource } from "../application/ports/wordSource.js";
-import type { MemoVersions, VerdictMemoPort } from "../application/ports/verdictMemo.js";
+import type { SubmitCuedReviewDeps } from "~/application/review/submitCuedReview.js";
+import type { SubmitFreeProductionDeps } from "~/application/review/submitFreeProduction.js";
+import type { RunReviewPassDeps } from "~/application/review/runReviewPass.js";
+import type { ReadUsableCounterDeps } from "~/application/progress/readUsableCounter.js";
+import type { ReadDashboardSummaryDeps } from "~/application/progress/readDashboardSummary.js";
+import type { ReadWordsListDeps } from "~/application/progress/readWordsList.js";
+import type { ReadWordDetailDeps } from "~/application/progress/readWordDetail.js";
+import type { SeedIntroductionsDeps } from "~/application/session/seedIntroductions.js";
+import type { StartSessionDeps } from "~/application/session/startSession.js";
+import type { ResolveReviewPromptDeps } from "~/application/review/resolveReviewPrompt.js";
+import type { ReadPlacementSlateDeps } from "~/application/placement/readPlacementSlate.js";
+import type { RecordPlacementMarksDeps } from "~/application/placement/recordPlacementMarks.js";
+import type { JudgePort } from "~/application/ports/judge.js";
+import type { CardRepository } from "~/application/ports/cardRepository.js";
+import type { Scheduler } from "~/application/ports/scheduler.js";
+import type { PlacementMarksStore } from "~/application/ports/placementMarks.js";
+import type { SettingsStore } from "~/application/ports/settings.js";
+import type { Catalog } from "~/application/ports/catalog.js";
+import type { WordSource } from "~/application/ports/wordSource.js";
+import type { MemoVersions, VerdictMemoPort } from "~/application/ports/verdictMemo.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { WinkLemmatizer } from "./nlp/winkLemmatizer.js";
 import { TAGALOG_LEXICON } from "./nlp/tagalogLexicon.js";

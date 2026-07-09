@@ -1,6 +1,6 @@
-import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "../domain/constants.js";
-import type { UserSettings } from "../domain/settings.js";
-import { isValidTimeZone } from "../domain/timezone.js";
+import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "~/domain/constants.js";
+import type { UserSettings } from "~/domain/settings.js";
+import { isValidTimeZone } from "~/domain/timezone.js";
 import type { SettingsStore } from "./ports/settings.js";
 
 export interface UpdateSettingsInput {

@@ -1,4 +1,4 @@
-import { frontierBandForCoarseLevel, type CoarseLevel } from "../../domain/placement/placement.js";
+import { frontierBandForCoarseLevel, type CoarseLevel } from "~/domain/placement/placement.js";
 import type { PlacementProfileStore } from "../ports/placementProfile.js";
 
 export interface RecordCoarseLevelInput {

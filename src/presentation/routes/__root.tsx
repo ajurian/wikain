@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
-import { getSessionFn } from "../server/session";
+import { getSessionFn } from "@/server/session";
 
 export const Route = createRootRoute({
   head: () => ({

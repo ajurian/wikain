@@ -1,16 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { readDashboardSummary, type ReadDashboardSummaryDeps } from "./readDashboardSummary.js";
-import type { Card, FsrsCardState, MasteryState } from "../../domain/mastery/card.js";
-import type { FsrsReviewLog, ReviewLog, ReviewTier } from "../../domain/review/review.js";
-import type { Rating } from "../../domain/review/rating.js";
+import type { Card, FsrsCardState, MasteryState } from "~/domain/mastery/card.js";
+import type { FsrsReviewLog, ReviewLog, ReviewTier } from "~/domain/review/review.js";
+import type { Rating } from "~/domain/review/rating.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { SettingsStore } from "../ports/settings.js";
-import { DEFAULT_USER_SETTINGS } from "../../domain/settings.js";
+import { DEFAULT_USER_SETTINGS } from "~/domain/settings.js";
 import {
   DAILY_GOAL_DEFAULT,
   FIRST_SESSION_SEED_WORDS,
   NEW_PER_DAY,
-} from "../../domain/constants.js";
+} from "~/domain/constants.js";
 
 const NOW = new Date("2026-06-30T12:00:00Z");
 const USER = "u1";

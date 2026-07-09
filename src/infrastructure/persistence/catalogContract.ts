@@ -5,8 +5,8 @@
  * `*.test.ts` itself — `drizzleCatalog.test.ts` runs it over pglite.
  */
 import { describe, expect, it } from "vitest";
-import type { Catalog } from "../../application/ports/catalog.js";
-import type { LexicalItem } from "../../domain/lexicalItem.js";
+import type { Catalog } from "~/application/ports/catalog.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
 import { makeLexicalItem } from "../testLexicalItems.js";
 
 export function describeCatalogContract(

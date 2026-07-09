@@ -66,8 +66,9 @@ stale "Electron" framing elsewhere.)*
 ### Build pipeline commands
 
 TypeScript runs directly via `tsx` (no compile step). The runtime phase added **vitest** (`npm test`)
-as the test runner; there is still **no linter** — do not invent one. The build gates are
-`npm run typecheck` (covers `build/**` + `src/**`) and `npm test`.
+as the test runner, and slice 28 added **ESLint** (`npm run lint`, flat config in `eslint.config.js`)
+— it is a **rule gate, not a formatter**: there is still no Prettier and no style rules. The build
+gates are `npm run typecheck` (covers `build/**` + `src/**`), `npm test`, and `npm run lint`.
 
 ```bash
 npm install
@@ -334,8 +335,36 @@ code + `spec/` IDs for detail:
     drive-through confirming the three-layout guard chain still 307s `/`, `/review`, `/words`, `/settings`,
     `/onboarding`, `/placement` → `/signin` while `/signin`+`/signup` render 200.
 
+28. **`~/*` cross-layer alias + ESLint as a rule gate** (`wire/onboarding-placement`). Slice 27's subject
+    folders pushed files deeper, so cross-layer specifiers started encoding the *importer's* depth
+    (`../../../../domain/constants.js` — 8 of them, plus 38 three-deep). paths: new **`DIR-7`** — cross-layer
+    imports use **`~/*`** (→ `src/*`), within-layer imports **stay relative** (a relative neighbour import is a
+    true statement about cohesion and *should* break if the target moves away). Inside presentation, non-sibling
+    imports use the existing shadcn **`@/*`**. Wired in `tsconfig.json` + `src/presentation/tsconfig.json`
+    `paths` and mirrored by `vite.config.ts` `resolve.alias`; `STACK-1` amended. **`infrastructure/db/` needed no
+    runtime alias support** — its cross-layer imports are all `import type`, erased before drizzle-kit/tsx ever
+    resolve them (checked before committing to the approach). Deep chains: 8×4-deep and 30×3-deep → **zero**;
+    the one remaining 2-deep is `domain/lexicalItem.test.ts` → `build/types.js`. Verified `~/…/schema.js` and
+    `./schema.js` resolve to **one** module instance (a dedup failure would have double-loaded the Drizzle
+    schema). lint: **ESLint 9 flat config** (`eslint.config.js`, `npm run lint` / `lint:fix`) — typescript-eslint
+    + `eslint-plugin-import` + `react-hooks`. Not a formatter (no Prettier, no style rules); it turns
+    `.claude/rules/` prose into **failing gates**: `import/no-restricted-paths` zones enforce **ARCH-1** on
+    *resolved* paths (so `~/*` can't smuggle a violation past it), `no-restricted-imports` bans frameworks/drivers
+    in `domain/` (**ARCH-3**), `index.ts` barrels (**DIR-6**), and relative layer escapes (**DIR-7**);
+    `import/no-cycle` covers **CMP-4**. Tests are exempt from `no-restricted-paths` — **ARCH-1 governs source
+    dependencies**, and a use-case test composing pglite/`FakeJudge` is the documented strategy. The 11 initial
+    errors were all fixed, not silenced: 2 real React findings (`counter-stat`'s `setState`-in-effect → derived
+    `display`; `review.tsx`'s `useMemo(…,[])` shuffle that lied about its deps → an honest lazy `useState`
+    initializer), a dead import, an over-wide `any` in `stageA.ts` (properly generic now), and one **justified**
+    single-line disable for `DrizzleDb`'s open generics. **Verified:** all four gates green (`typecheck`,
+    `typecheck:web`, `lint`, `npm test` 348) + `npm run build` with a clean client bundle; and the three
+    boundary rules were **proven to bite** by deliberately violating ARCH-1/ARCH-2/DIR-7 and watching each fail.
+    *(Not covered by tests: the two React behavior changes — no component test harness exists.)*
+
 **Key design conventions (follow in later slices):**
-- **The tree is grouped by subject below the layer boundary** (`.claude/rules/09-structure.md`, `DIR-1..6`).
+- **Cross-layer imports use `~/*`; within-layer stay relative** (`DIR-7`). `npm run lint` enforces it, along
+  with the ARCH-1 dependency rule — run it before committing; it is a gate, not a style pass.
+- **The tree is grouped by subject below the layer boundary** (`.claude/rules/09-structure.md`, `DIR-1..7`).
   A new module goes in the subject folder it changes with — not the layer root, and not a kind-folder. Create
   a folder on the third file; keep cross-subject modules (and `application/ports/`) at the layer root.
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
@@ -379,7 +408,8 @@ path for `placement_marks` (its absence is why `/placement` does not re-offer pe
 > secrets-required** — `DATABASE_URL` + `DEEPSEEK_API_KEY` + `BETTER_AUTH_SECRET` are mandatory, there are
 > **no in-memory fallbacks**, and tests run against embedded pglite (`FakeJudge` is the one test-only
 > double). Backend gate = `npm run typecheck` (NodeNext) + `npm test`; presentation gate = `npm run
-> typecheck:web`; `npm run build` must keep server identifiers out of the client bundle. Test count moves
+> typecheck:web`; **`npm run lint`** enforces ARCH-1/ARCH-3/DIR-6/DIR-7 as errors (slice 28);
+> `npm run build` must keep server identifiers out of the client bundle. Test count moves
 > each slice — do not trust any number written here; run `npm test`. Re-confirm state with `git log`,
 > `npm test`, and `npm run dev` (needs the 3 env vars) at session start.
 

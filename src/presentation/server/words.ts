@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { readWordsList, type ReadWordsListResult } from "../../application/progress/readWordsList.js";
-import { readWordDetail, type WordDetail } from "../../application/progress/readWordDetail.js";
+import { readWordsList, type ReadWordsListResult } from "~/application/progress/readWordsList.js";
+import { readWordDetail, type WordDetail } from "~/application/progress/readWordDetail.js";
 import { currentUserId } from "./currentUser.js";
 import { wordsDeps } from "./composition.js";
 

@@ -33,26 +33,26 @@ import { ArrowRight, CircleCheck, CloudOff, Loader2 } from "lucide-react";
 import {
   frontierBandForCoarseLevel,
   type CoarseLevel,
-} from "../../../domain/placement/placement.js";
-import type { RuleBounceReason } from "../../../domain/review/ruleLayer.js";
-import type { SeededWordView } from "../../../application/session/presentSeededWords.js";
+} from "~/domain/placement/placement.js";
+import type { RuleBounceReason } from "~/domain/review/ruleLayer.js";
+import type { SeededWordView } from "~/application/session/presentSeededWords.js";
 import {
   seedFirstSessionFn,
   judgeFirstProductionFn,
   completeOnboardingFn,
-} from "../../server/onboarding";
+} from "@/server/onboarding";
 import {
   placementSlateFn,
   recordPlacementMarksFn,
   submitLexTaleFn,
-} from "../../server/placement";
-import { ruleCheckFn } from "../../server/review";
-import { signOut } from "../../lib/auth-client";
-import { BounceCallout } from "../../components/review/bounce-callout";
-import { CheckingIndicator } from "../../components/review/checking-indicator";
-import { CoarseLevelPicker } from "../../components/coarse-level-picker";
-import { LexTaleTest } from "../../components/lextale-test";
-import { Wordmark } from "../../components/wordmark";
+} from "@/server/placement";
+import { ruleCheckFn } from "@/server/review";
+import { signOut } from "@/lib/auth-client";
+import { BounceCallout } from "@/components/review/bounce-callout";
+import { CheckingIndicator } from "@/components/review/checking-indicator";
+import { CoarseLevelPicker } from "@/components/coarse-level-picker";
+import { LexTaleTest } from "@/components/lextale-test";
+import { Wordmark } from "@/components/wordmark";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";

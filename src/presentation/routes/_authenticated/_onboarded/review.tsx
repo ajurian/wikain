@@ -15,7 +15,7 @@
  * The New→Seen "intro" card is intentionally dropped (seeded words start at Seen; their first review is
  * the recognition MCQ) — that surfacing is a deferred seeding concern.
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { usePrefetchQuery, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -34,26 +34,26 @@ import {
   resolvePromptFn,
   ruleCheckFn,
   submitReviewFn,
-} from "../../../server/review";
-import type { ReviewPrompt } from "../../../../application/review/resolveReviewPrompt.js";
-import type { ReviewOutcomeView } from "../../../../application/review/presentReviewOutcome.js";
-import type { MasteryState } from "../../../../domain/mastery/card.js";
+} from "@/server/review";
+import type { ReviewPrompt } from "~/application/review/resolveReviewPrompt.js";
+import type { ReviewOutcomeView } from "~/application/review/presentReviewOutcome.js";
+import type { MasteryState } from "~/domain/mastery/card.js";
 
-import { BounceCallout } from "../../../components/review/bounce-callout";
-import { BlankAnswer, BlankInput } from "../../../components/review/blank-input";
-import { CheckingIndicator } from "../../../components/review/checking-indicator";
+import { BounceCallout } from "@/components/review/bounce-callout";
+import { BlankAnswer, BlankInput } from "@/components/review/blank-input";
+import { CheckingIndicator } from "@/components/review/checking-indicator";
 import {
   EntryDefinition,
   EntryHeader,
   HeadwordBlank,
-} from "../../../components/review/entry-header";
+} from "@/components/review/entry-header";
 import {
   SessionSummary,
   type StepOutcome,
-} from "../../../components/review/session-summary";
-import { VerdictPanel } from "../../../components/review/verdict-panel";
-import { MasteryChip } from "../../../components/mastery-chip";
-import { WordOptionList } from "../../../components/review/word-option-list";
+} from "@/components/review/session-summary";
+import { VerdictPanel } from "@/components/review/verdict-panel";
+import { MasteryChip } from "@/components/mastery-chip";
+import { WordOptionList } from "@/components/review/word-option-list";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,17 +63,25 @@ export const Route = createFileRoute("/_authenticated/_onboarded/review")({
   component: ReviewSession,
 });
 
-/** A stable random shuffle computed once per mount (real MCQ shuffle-on-render, TIER-2). */
+function shuffle<T>(items: readonly T[]): T[] {
+  const a = [...items];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return a;
+}
+
+/**
+ * A stable random shuffle computed once per mount (real MCQ shuffle-on-render, TIER-2).
+ * `StepCard` is keyed by queue index, so every question remounts and re-shuffles.
+ *
+ * A lazy `useState` initializer, not `useMemo(…, [])`: the memo would have to claim it depends on
+ * nothing while actually reading `items`. State says what is true — seed once from the first items.
+ */
 function useShuffled<T>(items: readonly T[]): T[] {
-  return useMemo(() => {
-    const a = [...items];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j]!, a[i]!];
-    }
-    return a;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- shuffle once per mount, not per render
-  }, []);
+  const [shuffled] = useState(() => shuffle(items));
+  return shuffled;
 }
 
 /* ------------------------------------------------------------------ shell */

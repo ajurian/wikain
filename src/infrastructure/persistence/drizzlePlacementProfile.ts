@@ -8,11 +8,11 @@
  * NOT NULL `frontier_band` and a later patch never nulls an unset field.
  */
 import { eq } from "drizzle-orm";
-import type { PlacementProfileStore } from "../../application/ports/placementProfile.js";
+import type { PlacementProfileStore } from "~/application/ports/placementProfile.js";
 import {
   DEFAULT_PLACEMENT_PROFILE,
   type PlacementProfile,
-} from "../../domain/placement/placementProfile.js";
+} from "~/domain/placement/placementProfile.js";
 import type { DrizzleDb } from "./drizzleCardRepository.js";
 import { placementProfile } from "../db/schema.js";
 

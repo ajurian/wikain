@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { recordPlacementMarks } from "./recordPlacementMarks.js";
-import { DrizzlePlacementMarks } from "../../infrastructure/persistence/drizzlePlacementMarks.js";
-import { makePgliteDb } from "../../infrastructure/db/pglite.js";
-import { USER_A, USER_B } from "../../infrastructure/testIds.js";
+import { DrizzlePlacementMarks } from "~/infrastructure/persistence/drizzlePlacementMarks.js";
+import { makePgliteDb } from "~/infrastructure/db/pglite.js";
+import { USER_A, USER_B } from "~/infrastructure/testIds.js";
 
 describe("recordPlacementMarks", () => {
   it("SEED-2: forwards the learner's marks to the store, scoped by user", async () => {

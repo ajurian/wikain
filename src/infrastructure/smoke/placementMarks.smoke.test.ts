@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { composeSeeding, composePlacementSlate, composeRecordPlacementMarks } from "../composition.js";
 import { makeTestStores } from "../testStores.js";
-import { seedIntroductions } from "../../application/session/seedIntroductions.js";
-import { readPlacementSlate } from "../../application/placement/readPlacementSlate.js";
-import { recordPlacementMarks } from "../../application/placement/recordPlacementMarks.js";
+import { seedIntroductions } from "~/application/session/seedIntroductions.js";
+import { readPlacementSlate } from "~/application/placement/readPlacementSlate.js";
+import { recordPlacementMarks } from "~/application/placement/recordPlacementMarks.js";
 import { USER_A } from "../testIds.js";
 
 /**

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { seedIntroductions, type SeedIntroductionsDeps } from "./seedIntroductions.js";
-import type { Card, FsrsCardState } from "../../domain/mastery/card.js";
-import type { Cefr, LexicalItem } from "../../domain/lexicalItem.js";
-import type { ReviewLog } from "../../domain/review/review.js";
+import type { Card, FsrsCardState } from "~/domain/mastery/card.js";
+import type { Cefr, LexicalItem } from "~/domain/lexicalItem.js";
+import type { ReviewLog } from "~/domain/review/review.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { WordSource } from "../ports/wordSource.js";
 import type { CardRepository } from "../ports/cardRepository.js";
@@ -10,7 +10,7 @@ import type { ColdStart, Scheduler } from "../ports/scheduler.js";
 import {
   FIRST_SESSION_SEED_WORDS,
   NEW_PER_DAY,
-} from "../../domain/constants.js";
+} from "~/domain/constants.js";
 
 const NOW = new Date("2026-07-02T00:00:00Z");
 

@@ -3,9 +3,9 @@ import { composeReviewPass, DEV_JUDGE_VERSIONS } from "../composition.js";
 import { TsFsrsScheduler } from "../tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "../judge/fakeJudge.js";
 import { makeTestStores, smokeFixtureItem } from "../testStores.js";
-import { runReviewPass, type RunReviewPassDeps } from "../../application/review/runReviewPass.js";
+import { runReviewPass, type RunReviewPassDeps } from "~/application/review/runReviewPass.js";
 import type { DrizzleCardRepository } from "../persistence/drizzleCardRepository.js";
-import type { MasteryState } from "../../domain/mastery/card.js";
+import type { MasteryState } from "~/domain/mastery/card.js";
 import { USER_A } from "../testIds.js";
 
 /**

@@ -1,6 +1,6 @@
-import type { ControlledPos, LexicalItem } from "../../domain/lexicalItem.js";
-import type { MasteryState } from "../../domain/mastery/card.js";
-import { resolveReviewTier } from "../../domain/review/reviewRouting.js";
+import type { ControlledPos, LexicalItem } from "~/domain/lexicalItem.js";
+import type { MasteryState } from "~/domain/mastery/card.js";
+import { resolveReviewTier } from "~/domain/review/reviewRouting.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 

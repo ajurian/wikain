@@ -14,21 +14,22 @@ export function CounterStat({
   previous?: number;
 }) {
   const reduced = useReducedMotion();
-  const [display, setDisplay] = useState(reduced ? value : 0);
+  const [animated, setAnimated] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    if (reduced) {
-      setDisplay(value);
-      return;
-    }
+    if (reduced) return;
     const controls = animate(0, value, {
       duration: 0.6,
       ease: [0.25, 0.1, 0.25, 1],
-      onUpdate: (v) => setDisplay(Math.round(v)),
+      onUpdate: (v) => setAnimated(Math.round(v)),
     });
     return () => controls.stop();
   }, [value, reduced]);
+
+  // Derived, not synchronised: under reduced motion the final value IS the render output, so no
+  // effect has to push it into state (react-hooks/set-state-in-effect).
+  const display = reduced ? value : animated;
 
   const faded = previous !== undefined && previous > value;
 

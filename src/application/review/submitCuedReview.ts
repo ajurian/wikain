@@ -1,5 +1,5 @@
-import { isLemmaMatch } from "../../domain/review/grading.js";
-import { promoteOnCuedPass } from "../../domain/mastery/mastery.js";
+import { isLemmaMatch } from "~/domain/review/grading.js";
+import { promoteOnCuedPass } from "~/domain/mastery/mastery.js";
 import {
   submitDeterministicReview,
   type DeterministicReviewDeps,

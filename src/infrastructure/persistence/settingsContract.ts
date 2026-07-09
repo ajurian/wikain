@@ -5,8 +5,8 @@
  * so a second adapter would be held to the same behavior. Not a `*.test.ts` itself.
  */
 import { describe, expect, it } from "vitest";
-import type { SettingsStore } from "../../application/ports/settings.js";
-import { DEFAULT_USER_SETTINGS } from "../../domain/settings.js";
+import type { SettingsStore } from "~/application/ports/settings.js";
+import { DEFAULT_USER_SETTINGS } from "~/domain/settings.js";
 import { USER_A, USER_B } from "../testIds.js";
 
 export function describeSettingsContract(

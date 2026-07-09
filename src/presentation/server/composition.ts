@@ -1,12 +1,12 @@
-import { DrizzleCardRepository } from "../../infrastructure/persistence/drizzleCardRepository.js";
-import { DrizzleVerdictMemo } from "../../infrastructure/persistence/drizzleVerdictMemo.js";
-import { DrizzlePlacementMarks } from "../../infrastructure/persistence/drizzlePlacementMarks.js";
-import { DrizzlePlacementProfile } from "../../infrastructure/persistence/drizzlePlacementProfile.js";
-import { DrizzleSettings } from "../../infrastructure/persistence/drizzleSettings.js";
-import { DrizzleCatalog } from "../../infrastructure/persistence/drizzleCatalog.js";
-import { DrizzleWordSource } from "../../infrastructure/persistence/drizzleWordSource.js";
-import { neonDbFromEnv } from "../../infrastructure/db/neon.js";
-import { makeAuth, type Auth } from "../../infrastructure/auth/auth.js";
+import { DrizzleCardRepository } from "~/infrastructure/persistence/drizzleCardRepository.js";
+import { DrizzleVerdictMemo } from "~/infrastructure/persistence/drizzleVerdictMemo.js";
+import { DrizzlePlacementMarks } from "~/infrastructure/persistence/drizzlePlacementMarks.js";
+import { DrizzlePlacementProfile } from "~/infrastructure/persistence/drizzlePlacementProfile.js";
+import { DrizzleSettings } from "~/infrastructure/persistence/drizzleSettings.js";
+import { DrizzleCatalog } from "~/infrastructure/persistence/drizzleCatalog.js";
+import { DrizzleWordSource } from "~/infrastructure/persistence/drizzleWordSource.js";
+import { neonDbFromEnv } from "~/infrastructure/db/neon.js";
+import { makeAuth, type Auth } from "~/infrastructure/auth/auth.js";
 import {
   composeReviewPass,
   composeResolvePrompt,
@@ -19,29 +19,29 @@ import {
   composeRecordPlacementMarks,
   liveJudge,
   liveJudgeVersions,
-} from "../../infrastructure/composition.js";
-import type { JudgePort } from "../../application/ports/judge.js";
-import type { CardRepository } from "../../application/ports/cardRepository.js";
-import type { MemoVersions, VerdictMemoPort } from "../../application/ports/verdictMemo.js";
-import type { PlacementMarksStore } from "../../application/ports/placementMarks.js";
-import type { PlacementProfileStore } from "../../application/ports/placementProfile.js";
-import type { SettingsStore } from "../../application/ports/settings.js";
-import type { StartSessionDeps } from "../../application/session/startSession.js";
-import type { SeedIntroductionsDeps } from "../../application/session/seedIntroductions.js";
-import type { RunReviewPassDeps } from "../../application/review/runReviewPass.js";
-import type { ResolveReviewPromptDeps } from "../../application/review/resolveReviewPrompt.js";
-import type { ReadUsableCounterDeps } from "../../application/progress/readUsableCounter.js";
-import type { ReadDashboardSummaryDeps } from "../../application/progress/readDashboardSummary.js";
-import type { ReadWordsListDeps } from "../../application/progress/readWordsList.js";
-import type { ReadWordDetailDeps } from "../../application/progress/readWordDetail.js";
-import type { ReadPlacementSlateDeps } from "../../application/placement/readPlacementSlate.js";
-import type { RecordPlacementMarksDeps } from "../../application/placement/recordPlacementMarks.js";
-import type { ReadSettingsDeps } from "../../application/readSettings.js";
-import type { UpdateSettingsDeps } from "../../application/updateSettings.js";
-import type { ReadPlacementProfileDeps } from "../../application/placement/readPlacementProfile.js";
-import type { RecordCoarseLevelDeps } from "../../application/placement/recordCoarseLevel.js";
-import type { RecordLexTaleResultDeps } from "../../application/placement/recordLexTaleResult.js";
-import type { CompleteOnboardingDeps } from "../../application/placement/completeOnboarding.js";
+} from "~/infrastructure/composition.js";
+import type { JudgePort } from "~/application/ports/judge.js";
+import type { CardRepository } from "~/application/ports/cardRepository.js";
+import type { MemoVersions, VerdictMemoPort } from "~/application/ports/verdictMemo.js";
+import type { PlacementMarksStore } from "~/application/ports/placementMarks.js";
+import type { PlacementProfileStore } from "~/application/ports/placementProfile.js";
+import type { SettingsStore } from "~/application/ports/settings.js";
+import type { StartSessionDeps } from "~/application/session/startSession.js";
+import type { SeedIntroductionsDeps } from "~/application/session/seedIntroductions.js";
+import type { RunReviewPassDeps } from "~/application/review/runReviewPass.js";
+import type { ResolveReviewPromptDeps } from "~/application/review/resolveReviewPrompt.js";
+import type { ReadUsableCounterDeps } from "~/application/progress/readUsableCounter.js";
+import type { ReadDashboardSummaryDeps } from "~/application/progress/readDashboardSummary.js";
+import type { ReadWordsListDeps } from "~/application/progress/readWordsList.js";
+import type { ReadWordDetailDeps } from "~/application/progress/readWordDetail.js";
+import type { ReadPlacementSlateDeps } from "~/application/placement/readPlacementSlate.js";
+import type { RecordPlacementMarksDeps } from "~/application/placement/recordPlacementMarks.js";
+import type { ReadSettingsDeps } from "~/application/readSettings.js";
+import type { UpdateSettingsDeps } from "~/application/updateSettings.js";
+import type { ReadPlacementProfileDeps } from "~/application/placement/readPlacementProfile.js";
+import type { RecordCoarseLevelDeps } from "~/application/placement/recordCoarseLevel.js";
+import type { RecordLexTaleResultDeps } from "~/application/placement/recordLexTaleResult.js";
+import type { CompleteOnboardingDeps } from "~/application/placement/completeOnboarding.js";
 
 /**
  * Server-only composition root (ARCH-3): the single place the concrete adapters are wired to the

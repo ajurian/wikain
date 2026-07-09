@@ -3,12 +3,12 @@ import {
   submitFreeProduction,
   type SubmitFreeProductionDeps,
 } from "./submitFreeProduction.js";
-import type { Card, FsrsCardState, MasteryState } from "../../domain/mastery/card.js";
-import type { LexicalItem } from "../../domain/lexicalItem.js";
-import type { NlpToken } from "../../domain/review/ruleLayer.js";
-import type { JudgeVerdict } from "../../domain/review/verdict.js";
-import type { FsrsReviewLog, ReviewLog } from "../../domain/review/review.js";
-import type { Rating } from "../../domain/review/rating.js";
+import type { Card, FsrsCardState, MasteryState } from "~/domain/mastery/card.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
+import type { NlpToken } from "~/domain/review/ruleLayer.js";
+import type { JudgeVerdict } from "~/domain/review/verdict.js";
+import type { FsrsReviewLog, ReviewLog } from "~/domain/review/review.js";
+import type { Rating } from "~/domain/review/rating.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { Lemmatizer } from "../ports/lemmatizer.js";
@@ -16,7 +16,7 @@ import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
 import { JudgeUnavailableError, type JudgePort, type JudgeRequest } from "../ports/judge.js";
 import type { Scheduler } from "../ports/scheduler.js";
 import type { MemoVersions } from "../ports/verdictMemo.js";
-import { MAX_RULE_BOUNCE_RETRIES } from "../../domain/constants.js";
+import { MAX_RULE_BOUNCE_RETRIES } from "~/domain/constants.js";
 
 const TEST_VERSIONS: MemoVersions = { modelVersion: "test", rubricVersion: "test" };
 

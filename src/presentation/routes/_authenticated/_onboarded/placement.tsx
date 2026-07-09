@@ -21,15 +21,15 @@ import { ArrowRight, CircleCheck, Loader2 } from "lucide-react";
 import {
   coarseLevelForBand,
   type CoarseLevel,
-} from "../../../../domain/placement/placement.js";
+} from "~/domain/placement/placement.js";
 import {
   readPlacementProfileFn,
   setCoarseLevelFn,
   submitLexTaleFn,
-} from "../../../server/placement";
-import { AppShell } from "../../../components/app-shell";
-import { CoarseLevelPicker } from "../../../components/coarse-level-picker";
-import { LexTaleTest } from "../../../components/lextale-test";
+} from "@/server/placement";
+import { AppShell } from "@/components/app-shell";
+import { CoarseLevelPicker } from "@/components/coarse-level-picker";
+import { LexTaleTest } from "@/components/lextale-test";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readPlacementSlate, type ReadPlacementSlateDeps } from "./readPlacementSlate.js";
-import type { Card } from "../../domain/mastery/card.js";
-import type { Cefr, LexicalItem } from "../../domain/lexicalItem.js";
+import type { Card } from "~/domain/mastery/card.js";
+import type { Cefr, LexicalItem } from "~/domain/lexicalItem.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { WordSource } from "../ports/wordSource.js";
 import type { CardRepository } from "../ports/cardRepository.js";

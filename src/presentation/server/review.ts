@@ -1,14 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
-import { startSession } from "../../application/session/startSession.js";
-import { runReviewPass } from "../../application/review/runReviewPass.js";
-import { resolveReviewPrompt } from "../../application/review/resolveReviewPrompt.js";
-import { checkFreeProductionRuleLayer } from "../../application/review/checkFreeProductionRuleLayer.js";
+import { startSession } from "~/application/session/startSession.js";
+import { runReviewPass } from "~/application/review/runReviewPass.js";
+import { resolveReviewPrompt } from "~/application/review/resolveReviewPrompt.js";
+import { checkFreeProductionRuleLayer } from "~/application/review/checkFreeProductionRuleLayer.js";
 import {
   presentReviewOutcome,
   type ReviewOutcomeView,
-} from "../../application/review/presentReviewOutcome.js";
-import type { RuleBounceReason } from "../../domain/review/ruleLayer.js";
-import { readPlacementProfile } from "../../application/placement/readPlacementProfile.js";
+} from "~/application/review/presentReviewOutcome.js";
+import type { RuleBounceReason } from "~/domain/review/ruleLayer.js";
+import { readPlacementProfile } from "~/application/placement/readPlacementProfile.js";
 import { currentUserId } from "./currentUser.js";
 import { placementProfileDeps, promptDeps, reviewDeps, sessionDeps } from "./composition.js";
 

@@ -9,7 +9,7 @@
  * the bias is lenient (JDG-3), Tagalog-L1 surface errors are corrected-and-passed (JDG-7), and v1 is a
  * single clean-English mode (JDG-12). Collocation/register are advisory only (JDG-5).
  */
-import type { JudgeRequest } from "../../application/ports/judge.js";
+import type { JudgeRequest } from "~/application/ports/judge.js";
 
 /** JDG-9 / spec/05: bump on any rubric or model change so memoized verdicts invalidate. */
 export const RUBRIC_VERSION = "2026-07-01";

@@ -4,8 +4,8 @@
  * Drizzle columns, so `DrizzleCatalog` (read) and `seedLexicalItems` (write) never diverge (PRAG-3).
  * All Drizzle/SQL types stay confined to infrastructure (ARCH-1).
  */
-import type { Cefr, LexicalItem } from "../../domain/lexicalItem.js";
-import { lexicalItems } from "./schema.js";
+import type { Cefr, LexicalItem } from "~/domain/lexicalItem.js";
+import type { lexicalItems } from "./schema.js";
 
 type Row = typeof lexicalItems.$inferSelect;
 type Insert = typeof lexicalItems.$inferInsert;

@@ -7,7 +7,7 @@
  * (user, sense) row; `record` upserts idempotently (`onConflictDoNothing`, SEED-2).
  */
 import { eq } from "drizzle-orm";
-import type { PlacementMarksStore } from "../../application/ports/placementMarks.js";
+import type { PlacementMarksStore } from "~/application/ports/placementMarks.js";
 import type { DrizzleDb } from "./drizzleCardRepository.js";
 import { placementMarks } from "../db/schema.js";
 

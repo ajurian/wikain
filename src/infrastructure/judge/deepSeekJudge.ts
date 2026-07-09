@@ -16,8 +16,8 @@ import {
   type JudgePort,
   type JudgeRequest,
   type JudgeUnavailableReason,
-} from "../../application/ports/judge.js";
-import type { JudgeVerdict, Replacement } from "../../domain/review/verdict.js";
+} from "~/application/ports/judge.js";
+import type { JudgeVerdict, Replacement } from "~/domain/review/verdict.js";
 import type { DeepSeekConfig } from "./deepSeekConfig.js";
 import { SYSTEM_PROMPT, calibrationMessages, userTurn } from "./deepSeekRubric.js";
 

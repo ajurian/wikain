@@ -5,7 +5,7 @@
  * itself; imported by each adapter's test file.
  */
 import { describe, expect, it } from "vitest";
-import type { PlacementMarksStore } from "../../application/ports/placementMarks.js";
+import type { PlacementMarksStore } from "~/application/ports/placementMarks.js";
 import { USER_A, USER_B } from "../testIds.js";
 
 /**

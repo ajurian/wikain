@@ -3,12 +3,12 @@ import {
   checkFreeProductionRuleLayer,
   type CheckFreeProductionRuleLayerDeps,
 } from "./checkFreeProductionRuleLayer.js";
-import type { LexicalItem } from "../../domain/lexicalItem.js";
-import type { NlpToken } from "../../domain/review/ruleLayer.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
+import type { NlpToken } from "~/domain/review/ruleLayer.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { Lemmatizer } from "../ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
-import { MAX_RULE_BOUNCE_RETRIES } from "../../domain/constants.js";
+import { MAX_RULE_BOUNCE_RETRIES } from "~/domain/constants.js";
 
 const SENSE = "negotiate_verb_01";
 

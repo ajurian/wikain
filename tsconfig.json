@@ -13,7 +13,14 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    // `~/*` -> `src/*` (DIR-7). Cross-layer imports use it so a file's depth in its subject
+    // folder stops leaking into the specifier. Within-layer imports stay relative (STACK-1).
+    // Resolved by tsc here, and by the Vite alias for vitest / dev / build. Nothing under
+    // `db/` needs it at runtime: those cross-layer imports are all `import type`, erased
+    // before drizzle-kit or tsx ever resolve them.
+    "paths": { "~/*": ["./src/*"] }
   },
   "include": ["build/**/*.ts", "src/**/*.ts"],
   "// exclude": "The presentation layer (src/presentation) is a Vite/Bundler + DOM/JSX app with its own tsconfig; keep it out of the NodeNext backend typecheck gate. See src/presentation/tsconfig.json + `npm run typecheck:web`.",

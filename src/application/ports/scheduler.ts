@@ -1,6 +1,6 @@
-import type { FsrsCardState } from "../../domain/mastery/card.js";
-import type { FsrsReviewLog } from "../../domain/review/review.js";
-import type { Rating } from "../../domain/review/rating.js";
+import type { FsrsCardState } from "~/domain/mastery/card.js";
+import type { FsrsReviewLog } from "~/domain/review/review.js";
+import type { Rating } from "~/domain/review/rating.js";
 
 /**
  * FSRS scheduling port (spec/02-fsrs-rating.md RAT-6). Implemented by the ts-fsrs adapter in

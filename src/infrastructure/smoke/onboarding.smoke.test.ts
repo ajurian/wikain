@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { seedIntroductions } from "../../application/session/seedIntroductions.js";
-import { judgeFirstProduction } from "../../application/placement/judgeFirstProduction.js";
-import { presentSeededWords } from "../../application/session/presentSeededWords.js";
-import { recordLexTaleResult } from "../../application/placement/recordLexTaleResult.js";
-import { readPlacementProfile } from "../../application/placement/readPlacementProfile.js";
-import type { JudgePort } from "../../application/ports/judge.js";
+import { seedIntroductions } from "~/application/session/seedIntroductions.js";
+import { judgeFirstProduction } from "~/application/placement/judgeFirstProduction.js";
+import { presentSeededWords } from "~/application/session/presentSeededWords.js";
+import { recordLexTaleResult } from "~/application/placement/recordLexTaleResult.js";
+import { readPlacementProfile } from "~/application/placement/readPlacementProfile.js";
+import type { JudgePort } from "~/application/ports/judge.js";
 import { composeSeeding, composeFreeProduction, DEV_JUDGE_VERSIONS } from "../composition.js";
 import { makeTestStores } from "../testStores.js";
-import { FIRST_SESSION_SEED_WORDS } from "../../domain/constants.js";
-import { LEXTALE_ITEMS } from "../../domain/placement/lextale.js";
+import { FIRST_SESSION_SEED_WORDS } from "~/domain/constants.js";
+import { LEXTALE_ITEMS } from "~/domain/placement/lextale.js";
 import { USER_A } from "../testIds.js";
 
 /** A judge that always passes the gate (offline; no DeepSeek key or network). */

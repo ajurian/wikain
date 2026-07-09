@@ -1,4 +1,4 @@
-import { isRecognitionCorrect } from "../../domain/review/grading.js";
+import { isRecognitionCorrect } from "~/domain/review/grading.js";
 import {
   submitDeterministicReview,
   type DeterministicReviewDeps,

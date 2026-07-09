@@ -2,8 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpenText, House, Settings } from "lucide-react";
 import { Wordmark } from "./wordmark";
-import { usableCounterFn } from "../server/counter";
-import { useSession } from "../lib/auth-client";
+import { usableCounterFn } from "@/server/counter";
+import { useSession } from "@/lib/auth-client";
 
 const NAV = [
   { to: "/", label: "Home", icon: House },

@@ -8,9 +8,9 @@
  */
 import winkNLP, { type ItemToken, type ItsFunction, type WinkMethods } from "wink-nlp";
 import model from "wink-eng-lite-web-model";
-import type { Lemmatizer } from "../../application/ports/lemmatizer.js";
-import type { SentenceAnalyzer } from "../../application/ports/sentenceAnalyzer.js";
-import type { NlpToken } from "../../domain/review/ruleLayer.js";
+import type { Lemmatizer } from "~/application/ports/lemmatizer.js";
+import type { SentenceAnalyzer } from "~/application/ports/sentenceAnalyzer.js";
+import type { NlpToken } from "~/domain/review/ruleLayer.js";
 
 const nlp: WinkMethods = winkNLP(model);
 const its = nlp.its;

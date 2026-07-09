@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { recordCoarseLevel } from "../../application/placement/recordCoarseLevel.js";
-import { recordLexTaleResult } from "../../application/placement/recordLexTaleResult.js";
-import { readPlacementProfile } from "../../application/placement/readPlacementProfile.js";
-import { seedIntroductions } from "../../application/session/seedIntroductions.js";
+import { recordCoarseLevel } from "~/application/placement/recordCoarseLevel.js";
+import { recordLexTaleResult } from "~/application/placement/recordLexTaleResult.js";
+import { readPlacementProfile } from "~/application/placement/readPlacementProfile.js";
+import { seedIntroductions } from "~/application/session/seedIntroductions.js";
 import { composeSeeding } from "../composition.js";
 import { makeTestStores } from "../testStores.js";
-import { LEXTALE_ITEMS } from "../../domain/placement/lextale.js";
+import { LEXTALE_ITEMS } from "~/domain/placement/lextale.js";
 import { USER_A } from "../testIds.js";
 
 /** A perfect LexTALE run ⇒ score 100 ⇒ the C1 frontier. */

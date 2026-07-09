@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { presentReviewOutcome } from "./presentReviewOutcome.js";
 import type { RunReviewPassResult } from "./runReviewPass.js";
-import type { JudgeVerdict } from "../../domain/review/verdict.js";
+import type { JudgeVerdict } from "~/domain/review/verdict.js";
 
 function verdict(overrides: Partial<JudgeVerdict> = {}): JudgeVerdict {
   return {

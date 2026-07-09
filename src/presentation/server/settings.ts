@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { readSettings } from "../../application/readSettings.js";
-import { updateSettings } from "../../application/updateSettings.js";
-import type { UserSettings } from "../../domain/settings.js";
+import { readSettings } from "~/application/readSettings.js";
+import { updateSettings } from "~/application/updateSettings.js";
+import type { UserSettings } from "~/domain/settings.js";
 import { currentUserId } from "./currentUser.js";
 import { settingsDeps } from "./composition.js";
 

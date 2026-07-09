@@ -1,16 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
-import { seedIntroductions } from "../../application/session/seedIntroductions.js";
+import { seedIntroductions } from "~/application/session/seedIntroductions.js";
 import {
   presentSeededWords,
   type SeededWordView,
-} from "../../application/session/presentSeededWords.js";
+} from "~/application/session/presentSeededWords.js";
 import {
   judgeFirstProduction,
   type FirstProductionResult,
-} from "../../application/placement/judgeFirstProduction.js";
-import { recordCoarseLevel } from "../../application/placement/recordCoarseLevel.js";
-import { completeOnboarding } from "../../application/placement/completeOnboarding.js";
-import { isCoarseLevel, type CoarseLevel } from "../../domain/placement/placement.js";
+} from "~/application/placement/judgeFirstProduction.js";
+import { recordCoarseLevel } from "~/application/placement/recordCoarseLevel.js";
+import { completeOnboarding } from "~/application/placement/completeOnboarding.js";
+import { isCoarseLevel, type CoarseLevel } from "~/domain/placement/placement.js";
 import { currentUserId } from "./currentUser.js";
 import { seedingDeps, reviewDeps, placementProfileDeps } from "./composition.js";
 

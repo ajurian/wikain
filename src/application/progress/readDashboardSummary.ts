@@ -1,6 +1,6 @@
-import { tallyMastery, type LadderEntry } from "../../domain/mastery/masteryLadder.js";
-import { judgedUsesOnDay } from "../../domain/mastery/judgedPassLedger.js";
-import { newIntroductionsAllowed } from "../../domain/scheduling/introductionPacing.js";
+import { tallyMastery, type LadderEntry } from "~/domain/mastery/masteryLadder.js";
+import { judgedUsesOnDay } from "~/domain/mastery/judgedPassLedger.js";
+import { newIntroductionsAllowed } from "~/domain/scheduling/introductionPacing.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { SettingsStore } from "../ports/settings.js";
 

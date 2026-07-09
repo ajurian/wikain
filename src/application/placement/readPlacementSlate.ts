@@ -1,4 +1,4 @@
-import type { Cefr, ControlledPos } from "../../domain/lexicalItem.js";
+import type { Cefr, ControlledPos } from "~/domain/lexicalItem.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { WordSource } from "../ports/wordSource.js";
 import type { CardRepository } from "../ports/cardRepository.js";

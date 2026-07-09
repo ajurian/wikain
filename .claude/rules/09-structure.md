@@ -52,3 +52,17 @@ because `TDD-4`'s "next to its implementation" has no other answer for a test of
 a package.
 **Why:** barrels create import cycles (`CMP-4`), and a single barrel re-exporting a server module is
 how a Neon or DeepSeek identifier reaches the client bundle — the exact leak `npm run build` gates on.
+
+### DIR-7 — Cross-layer imports use `~/*`; within-layer stay relative
+**Rule:** An import that crosses a layer boundary MUST use the `~/*` alias (`~/domain/mastery/card.js`).
+An import within the same layer MUST stay relative (`./pos-label`, `../ports/judge.js`). Inside
+**presentation**, non-sibling imports use the shadcn `@/*` alias instead — `@` is presentation-local,
+`~` is the whole of `src/`. Both keep the NodeNext `.js` suffix (`STACK-1`).
+**Why:** `DIR-2`'s subject folders push files deeper, and a relative cross-layer specifier then encodes
+the importer's depth (`../../../../domain/constants.js`) — it breaks whenever the file moves, which is
+the churn this rule tree exists to prevent. A relative *within-layer* import, by contrast, is a true
+statement about cohesion: it says the target is a neighbour, and it should break loudly if it stops
+being one.
+**Wiring:** `tsconfig.json` + `src/presentation/tsconfig.json` `paths`, mirrored by `vite.config.ts`
+`resolve.alias` for vitest/dev/build. Nothing under `infrastructure/db/` needs the alias at runtime —
+its cross-layer imports are all `import type`, erased before drizzle-kit or tsx resolve them.

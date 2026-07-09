@@ -12,7 +12,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { LexicalItem } from "../../domain/lexicalItem.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
 import type { DrizzleDb } from "../persistence/drizzleCardRepository.js";
 import { lexicalItems } from "./schema.js";
 import { toLexicalRow } from "./lexicalItemMapping.js";

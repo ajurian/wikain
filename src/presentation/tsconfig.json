@@ -14,7 +14,9 @@
     "noEmit": true,
     "types": ["node", "vite/client"],
     "baseUrl": ".",
-    "paths": { "@/*": ["./*"] }
+    // `@/*` is the shadcn alias (presentation-local, pinned by components.json).
+    // `~/*` reaches the other layers from here — baseUrl is src/presentation, so `../*` is src/*.
+    "paths": { "@/*": ["./*"], "~/*": ["../*"] }
   },
   "include": ["**/*.ts", "**/*.tsx"]
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { updateSettings } from "./updateSettings.js";
 import { readSettings } from "./readSettings.js";
-import { DEFAULT_USER_SETTINGS, type UserSettings } from "../domain/settings.js";
+import { DEFAULT_USER_SETTINGS, type UserSettings } from "~/domain/settings.js";
 import type { SettingsStore } from "./ports/settings.js";
 
 const USER = "u1";

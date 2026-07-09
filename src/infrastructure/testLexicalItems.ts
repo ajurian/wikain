@@ -3,7 +3,7 @@
  * so a test states only what it cares about (sense_id / cefr / zipf_rank / lemma). Not production code;
  * imported only by `*Contract.ts` / `*.test.ts`.
  */
-import type { LexicalItem } from "../domain/lexicalItem.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
 
 export function makeLexicalItem(patch: Partial<LexicalItem> = {}): LexicalItem {
   const senseId = patch.sense_id ?? "word_noun_01";

@@ -1,4 +1,4 @@
-import type { UserSettings } from "../../domain/settings.js";
+import type { UserSettings } from "~/domain/settings.js";
 
 /**
  * The per-user settings store (spec/10 CNT-8, ARCH-3). Narrow by intent (SOLID-4): the dashboard +

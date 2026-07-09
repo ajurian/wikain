@@ -8,8 +8,8 @@
 
 ### STACK-1 — npm + ESM + NodeNext
 **Rule:** Use **npm** only (`package-lock.json` is canonical). Code is ESM (`"type": "module"`);
-relative imports carry explicit `.js` extensions; Node built-ins use the `node:` prefix; TypeScript
-`strict` stays on.
+imports carry explicit `.js` extensions — relative ones within a layer, `~/*`-aliased ones across
+layers (`DIR-7`); Node built-ins use the `node:` prefix; TypeScript `strict` stays on.
 **Why:** matches `build/`; mixed package managers or module styles break NodeNext resolution.
 
 ### STACK-2 — Vite + TanStack in presentation

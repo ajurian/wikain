@@ -7,8 +7,8 @@ import { useState } from "react";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "motion/react";
 
-import { signIn } from "../../lib/auth-client";
-import { Wordmark } from "../../components/wordmark";
+import { signIn } from "@/lib/auth-client";
+import { Wordmark } from "@/components/wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

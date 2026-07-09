@@ -5,8 +5,8 @@
  * `*.test.ts` itself; imported by each adapter's test file.
  */
 import { describe, expect, it } from "vitest";
-import type { MemoVersions, VerdictMemoPort } from "../../application/ports/verdictMemo.js";
-import type { JudgeVerdict } from "../../domain/review/verdict.js";
+import type { MemoVersions, VerdictMemoPort } from "~/application/ports/verdictMemo.js";
+import type { JudgeVerdict } from "~/domain/review/verdict.js";
 import { USER_A, USER_B } from "../testIds.js";
 
 const V1: MemoVersions = { modelVersion: "m1", rubricVersion: "r1" };

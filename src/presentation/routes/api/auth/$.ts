@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { auth } from "../../../server/composition.js";
+import { auth } from "@/server/composition.js";
 
 /**
  * The BetterAuth catch-all HTTP handler (STACK-4): every `/api/auth/*` request (sign-in, sign-up,

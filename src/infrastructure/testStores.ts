@@ -11,7 +11,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { LexicalItem } from "../domain/lexicalItem.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
 import { DrizzleCardRepository } from "./persistence/drizzleCardRepository.js";
 import { DrizzleVerdictMemo } from "./persistence/drizzleVerdictMemo.js";
 import { DrizzlePlacementMarks } from "./persistence/drizzlePlacementMarks.js";

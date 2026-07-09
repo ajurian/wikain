@@ -5,8 +5,8 @@
  * `*.test.ts` itself — `drizzleWordSource.test.ts` runs it over pglite.
  */
 import { describe, expect, it } from "vitest";
-import type { WordSource } from "../../application/ports/wordSource.js";
-import type { LexicalItem } from "../../domain/lexicalItem.js";
+import type { WordSource } from "~/application/ports/wordSource.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
 import { makeLexicalItem } from "../testLexicalItems.js";
 
 /** `makeStore` seeds exactly `items` into a fresh backing store and returns a WordSource over it. */

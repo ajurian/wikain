@@ -1,4 +1,4 @@
-import type { JudgeVerdict } from "../../domain/review/verdict.js";
+import type { JudgeVerdict } from "~/domain/review/verdict.js";
 
 /**
  * The judge version pair a memo row is stamped with (spec/05 MEMO-6). Swapping the model or the

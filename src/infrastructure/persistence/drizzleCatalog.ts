@@ -7,8 +7,8 @@
  * read on the serverless request path). The whole catalog is small and shared across users; caching it per
  * instance is correct, not wasteful. All Drizzle/SQL stays confined here + `db/schema.ts` (ARCH-1).
  */
-import type { Catalog } from "../../application/ports/catalog.js";
-import type { LexicalItem } from "../../domain/lexicalItem.js";
+import type { Catalog } from "~/application/ports/catalog.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
 import type { DrizzleDb } from "./drizzleCardRepository.js";
 import { lexicalItems } from "../db/schema.js";
 import { fromLexicalRow } from "../db/lexicalItemMapping.js";

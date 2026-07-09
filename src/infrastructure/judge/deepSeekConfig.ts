@@ -3,7 +3,7 @@
  * composition root so the API key stays server-side (NET-7: the key MUST NOT reach the client) and the
  * adapter receives config as plain data — no `process.env` read inside the adapter, keeping it testable.
  */
-import { CLOUD_RETRY_COUNT } from "../../domain/constants.js";
+import { CLOUD_RETRY_COUNT } from "~/domain/constants.js";
 
 export interface DeepSeekConfig {
   /** NET-7: secret, server-side only — never sent to the client. */

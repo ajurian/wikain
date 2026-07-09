@@ -1,4 +1,4 @@
-import { resolveReviewTier } from "../../domain/review/reviewRouting.js";
+import { resolveReviewTier } from "~/domain/review/reviewRouting.js";
 import {
   submitCuedReview,
   type SubmitCuedReviewInput,
@@ -31,7 +31,7 @@ export interface RunReviewPassInput {
  */
 export type RunReviewPassDeps = SubmitFreeProductionDeps;
 
-import type { MasteryState } from "../../domain/mastery/card.js";
+import type { MasteryState } from "~/domain/mastery/card.js";
 
 /**
  * Which branch ran, plus that branch's own result — so the caller (UI) can render accordingly.

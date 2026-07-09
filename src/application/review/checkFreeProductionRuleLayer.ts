@@ -1,5 +1,5 @@
-import { checkRuleLayer, type RuleBounceReason } from "../../domain/review/ruleLayer.js";
-import { MAX_RULE_BOUNCE_RETRIES } from "../../domain/constants.js";
+import { checkRuleLayer, type RuleBounceReason } from "~/domain/review/ruleLayer.js";
+import { MAX_RULE_BOUNCE_RETRIES } from "~/domain/constants.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { Lemmatizer } from "../ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";

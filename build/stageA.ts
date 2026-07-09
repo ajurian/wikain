@@ -180,7 +180,7 @@ function printSummary(d: {
 }): void {
   const { manifests, quarantine, collisions } = d;
   const manifest = [...manifests.values()].flat();
-  const by = <T extends string>(arr: unknown[], key: (x: any) => T) => {
+  const by = <T extends string, X>(arr: readonly X[], key: (x: X) => T) => {
     const m = new Map<T, number>();
     for (const x of arr) m.set(key(x), (m.get(key(x)) ?? 0) + 1);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);

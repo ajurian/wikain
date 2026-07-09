@@ -1,4 +1,4 @@
-import type { UserSettings } from "../domain/settings.js";
+import type { UserSettings } from "~/domain/settings.js";
 import type { SettingsStore } from "./ports/settings.js";
 
 export interface ReadSettingsInput {

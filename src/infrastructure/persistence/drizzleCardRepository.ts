@@ -8,9 +8,9 @@
  */
 import { and, asc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import type { CardRepository } from "../../application/ports/cardRepository.js";
-import type { Card } from "../../domain/mastery/card.js";
-import type { ReviewLog } from "../../domain/review/review.js";
+import type { CardRepository } from "~/application/ports/cardRepository.js";
+import type { Card } from "~/domain/mastery/card.js";
+import type { ReviewLog } from "~/domain/review/review.js";
 import { cards, reviewLogs } from "../db/schema.js";
 
 /**
@@ -18,6 +18,7 @@ import { cards, reviewLogs } from "../db/schema.js";
  * generics are left open (`any`) so a handle constructed with our `schema` is accepted — the adapter
  * only uses the dialect-agnostic query builder, never the relational-query API those generics type.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown` would reject every concrete handle
 export type DrizzleDb = PgDatabase<PgQueryResultHKT, any, any>;
 
 type CardRow = typeof cards.$inferSelect;

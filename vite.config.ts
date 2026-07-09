@@ -5,7 +5,9 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-const presentationDir = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "src/presentation");
+const rootDir = fileURLToPath(new URL(".", import.meta.url));
+const srcDir = path.resolve(rootDir, "src");
+const presentationDir = path.resolve(srcDir, "presentation");
 
 /**
  * TanStack Start (STACK-2) full-stack app. The presentation layer is relocated under
@@ -16,7 +18,10 @@ const presentationDir = path.resolve(fileURLToPath(new URL(".", import.meta.url)
 export default defineConfig({
   server: { port: 3000 },
   // `@/*` → src/presentation/* (shadcn-ui alias, STACK-5).
-  resolve: { alias: { "@": presentationDir } },
+  // `~/*` → src/* — the cross-layer alias (DIR-7); must mirror tsconfig `paths`.
+  // Order matters: longest/most specific prefix first is not required here since the two
+  // prefixes are disjoint, but keep `@` first to match the shadcn convention.
+  resolve: { alias: { "@": presentationDir, "~": srcDir } },
   plugins: [
     tailwindcss(),
     // The react plugin MUST come after the start plugin.

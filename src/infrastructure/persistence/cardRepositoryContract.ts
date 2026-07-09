@@ -5,9 +5,9 @@
  * fails the build. Not a `*.test.ts` itself; imported by each adapter's test file.
  */
 import { describe, expect, it } from "vitest";
-import type { CardRepository } from "../../application/ports/cardRepository.js";
-import type { Card, FsrsCardState } from "../../domain/mastery/card.js";
-import type { ReviewLog, FsrsReviewLog } from "../../domain/review/review.js";
+import type { CardRepository } from "~/application/ports/cardRepository.js";
+import type { Card, FsrsCardState } from "~/domain/mastery/card.js";
+import type { ReviewLog, FsrsReviewLog } from "~/domain/review/review.js";
 import { USER_A, USER_B, USER_C } from "../testIds.js";
 
 function fsrsCardState(overrides: Partial<FsrsCardState> = {}): FsrsCardState {

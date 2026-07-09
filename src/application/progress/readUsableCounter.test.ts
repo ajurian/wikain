@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { readUsableCounter, type ReadUsableCounterDeps } from "./readUsableCounter.js";
-import type { Card, FsrsCardState } from "../../domain/mastery/card.js";
-import type { FsrsReviewLog, ReviewLog, ReviewTier } from "../../domain/review/review.js";
-import type { Rating } from "../../domain/review/rating.js";
+import type { Card, FsrsCardState } from "~/domain/mastery/card.js";
+import type { FsrsReviewLog, ReviewLog, ReviewTier } from "~/domain/review/review.js";
+import type { Rating } from "~/domain/review/rating.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { Scheduler } from "../ports/scheduler.js";
-import { COUNTER_R_FLOOR } from "../../domain/constants.js";
+import { COUNTER_R_FLOOR } from "~/domain/constants.js";
 
 const NOW = new Date("2026-06-30T00:00:00Z");
 const USER = "u1";

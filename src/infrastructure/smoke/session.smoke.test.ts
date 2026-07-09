@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { composeSession, composeReviewPass, DEV_JUDGE_VERSIONS } from "../composition.js";
 import { makeTestStores } from "../testStores.js";
 import { FakeJudge } from "../judge/fakeJudge.js";
-import { startSession } from "../../application/session/startSession.js";
-import { runReviewPass, type RunReviewPassDeps } from "../../application/review/runReviewPass.js";
-import { FIRST_SESSION_SEED_WORDS } from "../../domain/constants.js";
+import { startSession } from "~/application/session/startSession.js";
+import { runReviewPass, type RunReviewPassDeps } from "~/application/review/runReviewPass.js";
+import { FIRST_SESSION_SEED_WORDS } from "~/domain/constants.js";
 import { USER_A } from "../testIds.js";
 
 /**

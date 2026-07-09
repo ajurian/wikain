@@ -1,5 +1,5 @@
-import type { Card } from "../../domain/mastery/card.js";
-import type { Cefr, ControlledPos } from "../../domain/lexicalItem.js";
+import type { Card } from "~/domain/mastery/card.js";
+import type { Cefr, ControlledPos } from "~/domain/lexicalItem.js";
 import type { Catalog } from "../ports/catalog.js";
 
 /** The onboarding view of a freshly-seeded word — the catalog fields the seeds + first-win screens show. */

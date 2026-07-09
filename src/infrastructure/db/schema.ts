@@ -26,11 +26,11 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { MasteryState } from "../../domain/mastery/card.js";
-import type { ReviewTier } from "../../domain/review/review.js";
-import type { Rating } from "../../domain/review/rating.js";
-import type { JudgeVerdict } from "../../domain/review/verdict.js";
-import type { ControlledPos } from "../../domain/lexicalItem.js";
+import type { MasteryState } from "~/domain/mastery/card.js";
+import type { ReviewTier } from "~/domain/review/review.js";
+import type { Rating } from "~/domain/review/rating.js";
+import type { JudgeVerdict } from "~/domain/review/verdict.js";
+import type { ControlledPos } from "~/domain/lexicalItem.js";
 
 // BetterAuth core tables (user/session/account/verification). Re-exported so drizzle-kit + the pglite
 // migrator + the drizzleAdapter all see one schema. `user.id` is `uuid` — the app-table `user_id`

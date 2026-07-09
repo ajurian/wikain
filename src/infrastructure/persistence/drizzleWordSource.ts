@@ -6,7 +6,7 @@
  * rows, not the whole band. All Drizzle/SQL stays confined here + `db/schema.ts` (ARCH-1).
  */
 import { and, asc, eq, notInArray } from "drizzle-orm";
-import type { WordSource } from "../../application/ports/wordSource.js";
+import type { WordSource } from "~/application/ports/wordSource.js";
 import type { DrizzleDb } from "./drizzleCardRepository.js";
 import { lexicalItems } from "../db/schema.js";
 

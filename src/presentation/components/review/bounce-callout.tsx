@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from "motion/react";
 import { Info } from "lucide-react";
-import type { BounceKind } from "../../types/verdict";
+import type { BounceKind } from "@/types/verdict";
 
 /**
  * Rule-layer bounce callout (RL-2/3/4). Deliberately NEUTRAL — a bounce is not

@@ -9,12 +9,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { Minus, Plus } from "lucide-react";
 
-import { AppShell } from "../../../components/app-shell";
-import { signOut, useSession } from "../../../lib/auth-client";
-import { readSettingsFn, updateSettingsFn } from "../../../server/settings";
-import { readPlacementProfileFn } from "../../../server/placement";
-import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "../../../../domain/constants.js";
-import type { UserSettings } from "../../../../domain/settings.js";
+import { AppShell } from "@/components/app-shell";
+import { signOut, useSession } from "@/lib/auth-client";
+import { readSettingsFn, updateSettingsFn } from "@/server/settings";
+import { readPlacementProfileFn } from "@/server/placement";
+import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "~/domain/constants.js";
+import type { UserSettings } from "~/domain/settings.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";

@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { readWordsList, type ReadWordsListDeps } from "./readWordsList.js";
-import type { Card, FsrsCardState, MasteryState } from "../../domain/mastery/card.js";
-import type { FsrsReviewLog, ReviewLog, ReviewTier } from "../../domain/review/review.js";
-import type { Rating } from "../../domain/review/rating.js";
-import type { LexicalItem } from "../../domain/lexicalItem.js";
+import type { Card, FsrsCardState, MasteryState } from "~/domain/mastery/card.js";
+import type { FsrsReviewLog, ReviewLog, ReviewTier } from "~/domain/review/review.js";
+import type { Rating } from "~/domain/review/rating.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { Scheduler } from "../ports/scheduler.js";
 import type { Catalog } from "../ports/catalog.js";
-import { COUNTER_R_FLOOR } from "../../domain/constants.js";
+import { COUNTER_R_FLOOR } from "~/domain/constants.js";
 
 const NOW = new Date("2026-06-30T00:00:00Z");
 const USER = "u1";

@@ -8,8 +8,8 @@
  * complete NOT NULL row and a later patch never nulls an unset field.
  */
 import { eq } from "drizzle-orm";
-import type { SettingsStore } from "../../application/ports/settings.js";
-import { DEFAULT_USER_SETTINGS, type UserSettings } from "../../domain/settings.js";
+import type { SettingsStore } from "~/application/ports/settings.js";
+import { DEFAULT_USER_SETTINGS, type UserSettings } from "~/domain/settings.js";
 import type { DrizzleDb } from "./drizzleCardRepository.js";
 import { settings } from "../db/schema.js";
 

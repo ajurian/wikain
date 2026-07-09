@@ -12,7 +12,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import { LEXTALE_ITEMS, LEXTALE_PRACTICE_ITEMS } from "../../domain/placement/lextale.js";
+import { LEXTALE_ITEMS, LEXTALE_PRACTICE_ITEMS } from "~/domain/placement/lextale.js";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 

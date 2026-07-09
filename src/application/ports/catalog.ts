@@ -1,4 +1,4 @@
-import type { LexicalItem } from "../../domain/lexicalItem.js";
+import type { LexicalItem } from "~/domain/lexicalItem.js";
 
 /**
  * Read-only access to the built catalog (spec/12-data-model.md DM-2). Declared by the application;
