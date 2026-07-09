@@ -158,5 +158,23 @@ export function describeCardRepositoryContract(
       const logs = await repo.logsForWord(USER_A, "abandon_verb_01");
       expect(logs[0]!.scaffolded).toBeUndefined();
     });
+
+    it("RAT-5: round-trips the richer signals (retryCount / typoFixed / latencyMs)", async () => {
+      const repo = await makeRepo();
+      await repo.appendReviewLog(reviewLog({ retryCount: 2, typoFixed: false, latencyMs: 4200 }));
+      const logs = await repo.logsForWord(USER_A, "abandon_verb_01");
+      expect(logs[0]!.retryCount).toBe(2);
+      expect(logs[0]!.typoFixed).toBe(false);
+      expect(logs[0]!.latencyMs).toBe(4200);
+    });
+
+    it("RAT-5: absent richer signals round-trip as undefined (not persisted, not fabricated)", async () => {
+      const repo = await makeRepo();
+      await repo.appendReviewLog(reviewLog()); // no retryCount/typoFixed/latencyMs set
+      const logs = await repo.logsForWord(USER_A, "abandon_verb_01");
+      expect(logs[0]!.retryCount).toBeUndefined();
+      expect(logs[0]!.typoFixed).toBeUndefined();
+      expect(logs[0]!.latencyMs).toBeUndefined();
+    });
   });
 }

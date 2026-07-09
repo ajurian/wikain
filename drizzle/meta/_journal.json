@@ -43,6 +43,13 @@
       "when": 1783500803475,
       "tag": "0005_lovely_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783596166745,
+      "tag": "0006_fine_fabian_cortez",
+      "breakpoints": true
     }
   ]
 }

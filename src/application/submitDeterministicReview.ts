@@ -77,13 +77,16 @@ export async function submitDeterministicReview(
 
   const updated: Card = { ...card, mastery, fsrs: nextFsrs };
   await deps.cards.save(updated);
-  // RAT-8 / DM-6: one ReviewLog per rated review.
+  // RAT-8 / DM-6: one ReviewLog per rated review. RAT-5: the typed tiers (cloze, cued) are where typo
+  // tolerance would apply; v1 ships none (spec/02 Deferred), so it is recorded as `false` from day one.
+  // Recognition is MCQ — no typing, so the signal is not applicable and is omitted.
   await deps.cards.appendReviewLog({
     userId: input.userId,
     senseId: input.senseId,
     tier: strategy.tier,
     rating,
     reviewedAt: now,
+    ...(strategy.tier === "recognition" ? {} : { typoFixed: false }),
     fsrs: fsrsLog,
   });
 

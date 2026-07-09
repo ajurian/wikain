@@ -71,6 +71,11 @@ export const reviewLogs = pgTable("review_logs", {
   rating: text("rating").$type<Rating>().notNull(),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: "date" }).notNull(),
   scaffolded: boolean("scaffolded"),
+  // RAT-5 richer signals, instrumented from day one for the v2 4-button mapping (v1 does not rate on
+  // them). All nullable — absent on tiers/paths that don't measure a given signal.
+  retryCount: integer("retry_count"),
+  typoFixed: boolean("typo_fixed"),
+  latencyMs: integer("latency_ms"),
   // FsrsReviewLog (src/domain/review.ts), expanded. `fsrs_rating` is the numeric FSRS grade, distinct
   // from the domain `rating` string above.
   fsrsRating: integer("fsrs_rating").notNull(),

@@ -286,6 +286,25 @@ code + `spec/` IDs for detail:
     `verdict-panel`. **Covers:** SM-5b, CNT-2. **No migration** (`settings.timezone` already existed).
     **Verified:** both typecheck gates; `npm test` (346 green); `npm run build` (no server ids in the client bundle).
 
+26. **RAT-5 review-log instrumentation** (`wire/onboarding-placement`). Persists the three richer per-review
+    signals RAT-5 mandates "from day one" — even though v1 does not yet **rate** on them (their use is the v2
+    4-button mapping; build persistence only, PRAG-1). Retrofitting later would lose historical signal, which
+    is the whole point of the requirement. domain: `ReviewLog` (`review.ts`) gains three **optional** fields
+    beside `scaffolded` — `retryCount?: number` (rule-layer bounces before this graded attempt, RL-6),
+    `typoFixed?: boolean` (typo-tolerance correction — always absent/false in v1 since cloze tolerance is
+    Deferred, spec/02), `latencyMs?: number` (graded-attempt latency; absent when unmeasured). All optional so
+    an absent signal round-trips as `undefined`, never a fabricated 0/false. infra: three **nullable** columns
+    on `review_logs` (`retry_count`/`typo_fixed`/`latency_ms`, migration `0006`, no backfill); the
+    row↔ReviewLog map omits a field on a NULL read (mirrors `scaffolded`); `cardRepositoryContract` gains two
+    round-trip asserts (present → values; absent → `undefined`). application: `submitFreeProduction` populates
+    `retryCount = priorBounces ?? 0` and times the judge round-trip into `latencyMs` (**undefined on a memo
+    hit** — no call was made, so there is no round-trip to time); `submitDeterministicReview` records
+    `typoFixed: false` on the **typed** tiers (cloze/cued) where tolerance would apply and **omits** it for
+    recognition (MCQ — not applicable). Every populated value is honest — measured or derived, never invented.
+    **Covers:** RAT-5. **Verified:** both typecheck gates; `npm test` (348 green — 2 new contract asserts);
+    `npm run build` (no server ids in the client bundle). `npm run db:migrate` applies `0006` against Neon
+    before the column is written.
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -315,7 +334,7 @@ path for `placement_marks` (its absence is why `/placement` does not re-offer pe
 (SEED-4, slice 22), the `/settings` **"Retune"** entry point (slice 23), and the **user-local timezone**
 (SM-5b/CNT-2, slice 25) are wired — no longer deferred.)*
 
-> **Status (2026-07-09):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–25 (wiring)
+> **Status (2026-07-09):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–26 (wiring)
 > land on **`design/brand-ui-system`** and descendant wiring branches (currently `wire/onboarding-placement`
 > — `git log` to confirm). **Every surface is wired and guarded**: `/`, `/review`, `/words`,
 > `/onboarding`, `/settings` run on real use-cases behind a real **BetterAuth** session (slice 20), and

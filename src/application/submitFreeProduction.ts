@@ -131,9 +131,13 @@ export async function submitFreeProduction(
   // NET-6) yields no verdict. It must NOT be rated `Again` (that would inject a phantom lapse). The
   // card is left untouched (stays due) and the failure reason is surfaced for the UI's neutral message.
   let verdict: JudgeVerdict;
+  // RAT-5: latency of the judge round-trip, in ms. Undefined on a memo hit — no call was made, so
+  // there is no round-trip to time (fabricating 0 would understate real latencies in the aggregate).
+  let latencyMs: number | undefined;
   if (cached !== undefined) {
     verdict = cached;
   } else {
+    const startedAt = Date.now();
     try {
       verdict = await deps.judge.judge({
         sentence: input.response,
@@ -147,6 +151,7 @@ export async function submitFreeProduction(
       }
       throw error;
     }
+    latencyMs = Date.now() - startedAt;
     // MEMO-6: write-on-judge only (never on an unavailable transport failure — that path returned above).
     await deps.memo.record(input.userId, key, verdict, deps.judgeVersions);
   }
@@ -156,7 +161,10 @@ export async function submitFreeProduction(
   const rating = deriveRating(passed);
   const { card: nextFsrs, log: fsrsLog } = deps.scheduler.next(card.fsrs, rating, now);
 
-  // RAT-8 / DM-6: the single ReviewLog for this rated review; RAT-5: scaffold flag instrumented.
+  // RAT-8 / DM-6: the single ReviewLog for this rated review. RAT-5 richer signals instrumented from
+  // day one (v1 does not rate on them): `scaffolded` (SM-9), `retryCount` = rule-layer bounces before
+  // this graded attempt (RL-6), `latencyMs` = judge round-trip. Typo-fix does not apply to free
+  // production (it is a typed-answer tolerance, spec/02 Deferred) — omitted, not fabricated.
   const reviewLog: ReviewLog = {
     userId: input.userId,
     senseId: input.senseId,
@@ -164,6 +172,8 @@ export async function submitFreeProduction(
     rating,
     reviewedAt: now,
     scaffolded: input.scaffolded ?? false,
+    retryCount: input.priorBounces ?? 0,
+    ...(latencyMs === undefined ? {} : { latencyMs }),
     fsrs: fsrsLog,
   };
 

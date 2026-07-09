@@ -41,6 +41,23 @@ export interface ReviewLog {
    * deterministic tiers (cued), which carry no scaffolding.
    */
   scaffolded?: boolean;
+  /**
+   * RAT-5: how many rule-layer bounces preceded this graded attempt (0 = gradeable on the first try).
+   * Persisted from day one for the v2 4-button mapping; v1 does not rate on it. Absent on deterministic
+   * tiers, which have no rule layer.
+   */
+  retryCount?: number;
+  /**
+   * RAT-5: whether a typo-tolerance correction was applied before grading. Always absent/false in v1 —
+   * cloze typo tolerance is Deferred (spec/02) — but the signal is captured from day one so no history
+   * is lost the day tolerance ships.
+   */
+  typoFixed?: boolean;
+  /**
+   * RAT-5: latency of the graded attempt in milliseconds (submit → gradeable outcome), when the caller
+   * measured it. Absent when not measured. For v2 hesitation signals; v1 does not read it.
+   */
+  latencyMs?: number;
   /** The raw FSRS scheduling log (RAT-8). */
   fsrs: FsrsReviewLog;
 }
