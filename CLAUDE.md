@@ -252,6 +252,23 @@ code + `spec/` IDs for detail:
     instrument's naive-participant assumption and inflates the score — tolerable only because SEED-4 declares
     placement low-stakes, and the UI says so instead of dressing the number up as a measurement.*
 
+24. **`/review` as a dictionary entry + green the smoke suite** (`wire/onboarding-placement`). Re-typesets all
+    four review tiers (recognition MCQ, cloze, cued, free) as one **dictionary-entry** artifact so the same word
+    read four ways looks like the same object. application: `resolveReviewPrompt` now carries **`pos:
+    ControlledPos` on every arm** (the entry masthead; not a leak — MCQ distractors are POS-homogeneous by
+    construction, `docs/GENERATION_RULES.md §1`) and **`intendedSense: string | null`** on the free arm (a real
+    Stage-B field, DM-2/DM-4), dropping the unused `cefr` and cued's `selfReferencePrompt`. presentation: four new
+    components — `entry-header.tsx` (`EntryHeader`/`HeadwordBlank`/`EntryDefinition`), `pos-label.tsx`,
+    `blank-input.tsx` (grow-with-text underlined input + `BlankAnswer`), `word-option-list.tsx` (Radix radio MCQ,
+    arrow/1–4 keys); `review.tsx` composes them per tier. tests: the **5 real-catalog smoke tests no longer
+    hardcode `lemma === "abandon"`** — new `smokeFixtureItem()` in `testStores.ts` picks the first fully-populated
+    **verb** and derives its sentences (pass/alt are constructed to embed the bare lemma without being a verbatim
+    copy of `model_sentence`, which RL-3 bounces as degenerate; absent case uses a fixed lemma-free sentence). A
+    catalog regeneration can no longer re-break them. **Covers:** DM-2, DM-4, TIER-1/2/5 render. **Verified:** both
+    typecheck gates; **`npm test` fully green (340)**; `npm run build` (no server ids in the client bundle).
+    *(Corrects the stale note below: `build/out/items.json` holds 100 items, not `[]`; the old 5 `"abandon"`
+    failures were fixture-word drift, now removed at the root.)*
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -281,8 +298,8 @@ is why `/placement` does not re-offer per-word marking). *(BetterAuth (20), the 
 placement-marks store (19), the **LexTALE instrument** (SEED-4, slice 22), and the `/settings` **"Retune"**
 entry point (slice 23) are wired — no longer deferred.)*
 
-> **Status (2026-07-08):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–22 (wiring)
-> land on **`design/brand-ui-system`** and descendant wiring branches (currently `wire/catalog-migration`
+> **Status (2026-07-09):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–24 (wiring)
+> land on **`design/brand-ui-system`** and descendant wiring branches (currently `wire/onboarding-placement`
 > — `git log` to confirm). **Every surface is wired and guarded**: `/`, `/review`, `/words`,
 > `/onboarding`, `/settings` run on real use-cases behind a real **BetterAuth** session (slice 20), and
 > since slice 22 the guard is a **three-layout chain** (`_public` → `_authenticated` → `_onboarded`) that
@@ -337,12 +354,12 @@ B2 1289 / C1 1338; 3 quarantined, 3 CEFR-collision dedups). Generation runs **25
 per feed** (4 × 25 = 100), **manually via frontier-LLM free chats** (no API). **For current progress,
 read `build/out/_done.json`** (its length = items completed) — do not trust any count here.
 
-**Progress (reset to batch 0, 2026-07-06):** the build is reset — `_done.json` is `[]` and no batches
-are generated yet. *(A stale, old-schema `build/out/items.json` (125 items, `abandon`…) was the catalog
-smoke-test fixture, but it is currently **empty (`[]`)**, so the `src/infrastructure/*.smoke.test.ts`
-"real catalog" tests fail (empty catalog → seeding returns nothing) until a catalog is regenerated. The
-non-smoke suite is fully green. Regenerate via the manual loop below, then `npm run combine` to rebuild
-`items.json`.)*
+**Progress (as of slice 24, 2026-07-09):** `build/out/items.json` holds **100 items** (the first four
+batches; `_done.json` is the source of truth for the exact count — read it, do not trust this number). The
+word set was regenerated and **no longer contains `abandon`**. The `src/infrastructure/*.smoke.test.ts`
+"real catalog" tests are now **catalog-content-agnostic** (slice 24: `smokeFixtureItem()` picks any
+fully-populated verb), so the **entire suite is green** — they no longer depend on a specific lemma being
+present. Continue generation via the manual loop below, then `npm run combine` to refresh `items.json`.
 
 **How generation works now (v3 — manual, no API):** `generate` (`build/generate.ts`) reads each
 `_pending_batch_<cefr>.json` and writes a markdown prompt `_prompt_<cefr>.md` whose content is

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { makeTestStores, loadCatalogItems } from "./testStores.js";
+import { makeTestStores, smokeFixtureItem } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import { readUsableCounter } from "../application/readUsableCounter.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
@@ -17,10 +17,10 @@ import { USER_A } from "./testIds.js";
  * Persistence is pglite-backed Drizzle.
  */
 describe("SM-5 promotion + counter (smoke: real catalog + wink + ts-fsrs, fake judge)", () => {
-  const items = loadCatalogItems();
-  const item = items.find((i) => i.lemma === "abandon")!; // model_sentence present
+  const fx = smokeFixtureItem();
+  const item = fx.item;
   const USER = USER_A;
-  const PASS = "The crew chose to abandon the leaking camp before dawn.";
+  const PASS = fx.passSentence;
 
   /** A seasoned Review-state card (stability well over FLUENT_MIN_STABILITY_DAYS) at Productive. */
   function seasonedCard(): Card {

@@ -8,30 +8,55 @@
  * "checking…" indicator never precedes a bounce (NET-2): the instant rule-check decides bounces with
  * no judge round-trip, then a rule-pass shows the indicator while the judge runs.
  *
- * The designed leaf components are reused unchanged — the server view-models are structurally the
- * shapes they already accept. The New→Seen "intro" card is intentionally dropped (seeded words start
- * at Seen; their first review is the recognition MCQ) — that surfacing is a deferred seeding concern.
+ * All four tiers are typeset as one dictionary entry — `EntryHeader` (headword slot + italic pos + the
+ * hairline rule) over `EntryDefinition` — so the same word read four ways looks like the same artifact.
+ * Answering is never submitting: every tier selects or types, then confirms with `CheckButton`.
+ *
+ * The New→Seen "intro" card is intentionally dropped (seeded words start at Seen; their first review is
+ * the recognition MCQ) — that surfacing is a deferred seeding concern.
  */
 import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { usePrefetchQuery, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowRight, CircleCheck, CircleX, CloudOff, Lightbulb, Loader2, X } from "lucide-react";
+import {
+  ArrowRight,
+  CircleCheck,
+  CircleX,
+  CloudOff,
+  Lightbulb,
+  Loader2,
+  X,
+} from "lucide-react";
 
-import { startSessionFn, resolvePromptFn, ruleCheckFn, submitReviewFn } from "../../../server/review";
+import {
+  startSessionFn,
+  resolvePromptFn,
+  ruleCheckFn,
+  submitReviewFn,
+} from "../../../server/review";
 import type { ReviewPrompt } from "../../../../application/resolveReviewPrompt.js";
 import type { ReviewOutcomeView } from "../../../../application/presentReviewOutcome.js";
 import type { MasteryState } from "../../../../domain/card.js";
 
 import { BounceCallout } from "../../../components/bounce-callout";
+import { BlankAnswer, BlankInput } from "../../../components/blank-input";
 import { CheckingIndicator } from "../../../components/checking-indicator";
-import { SessionSummary, type StepOutcome } from "../../../components/session-summary";
+import {
+  EntryDefinition,
+  EntryHeader,
+  HeadwordBlank,
+} from "../../../components/entry-header";
+import {
+  SessionSummary,
+  type StepOutcome,
+} from "../../../components/session-summary";
 import { VerdictPanel } from "../../../components/verdict-panel";
 import { MasteryChip } from "../../../components/mastery-chip";
+import { WordOptionList } from "../../../components/word-option-list";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/_onboarded/review")({
@@ -73,14 +98,30 @@ function ReviewSession() {
     setIndex((i) => i + 1);
   };
 
+  /** Prefetch the next prompt to improve performance */
+  usePrefetchQuery({
+    queryKey: ["review-prompt", queue[index + 1]],
+    queryFn: () => resolvePromptFn({ data: queue[index + 1] }),
+    staleTime: Infinity,
+  });
+
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-4 pb-8">
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-4 pb-8 relative">
       {/* thin session chrome: close + progress only (focus mode) */}
       <div className="mb-8 flex items-center gap-4">
-        <Link to="/" aria-label="End session" className="rounded-md p-1 text-ink-faint hover:text-ink">
+        <Link
+          to="/"
+          aria-label="End session"
+          className="rounded-md p-1 text-ink-faint hover:text-ink"
+        >
           <X className="size-5" strokeWidth={1.75} />
         </Link>
-        <Progress value={Math.min(index, total)} max={Math.max(total, 1)} className="h-1.5" />
+        <Progress
+          aria-label="Session progress"
+          value={Math.min(index, total)}
+          max={Math.max(total, 1)}
+          className="h-1.5"
+        />
         <span className="text-xs font-medium text-ink-faint tabular-nums">
           {total === 0 ? "0/0" : `${Math.min(index + 1, total)}/${total}`}
         </span>
@@ -117,7 +158,13 @@ function CenteredSpinner({ label }: { label: string }) {
 }
 
 /** Fetches the prompt for one queued word and routes to the matching tier card. */
-function StepCard({ senseId, onDone }: { senseId: string; onDone: (o: StepOutcome) => void }) {
+function StepCard({
+  senseId,
+  onDone,
+}: {
+  senseId: string;
+  onDone: (o: StepOutcome) => void;
+}) {
   const reduced = useReducedMotion();
   const prompt = useQuery({
     queryKey: ["review-prompt", senseId],
@@ -137,7 +184,9 @@ function StepCard({ senseId, onDone }: { senseId: string; onDone: (o: StepOutcom
       {prompt.isPending ? (
         <CenteredSpinner label="Loading…" />
       ) : prompt.isError || prompt.data === undefined ? (
-        <p className="text-center text-sm text-terracotta">Couldn’t load this one.</p>
+        <p className="text-center text-sm text-terracotta">
+          Couldn’t load this one.
+        </p>
       ) : (
         <PromptCard prompt={prompt.data} onDone={onDone} />
       )}
@@ -145,7 +194,13 @@ function StepCard({ senseId, onDone }: { senseId: string; onDone: (o: StepOutcom
   );
 }
 
-function PromptCard({ prompt, onDone }: { prompt: ReviewPrompt; onDone: (o: StepOutcome) => void }) {
+function PromptCard({
+  prompt,
+  onDone,
+}: {
+  prompt: ReviewPrompt;
+  onDone: (o: StepOutcome) => void;
+}) {
   switch (prompt.tier) {
     case "recognition":
       return <RecognitionCard prompt={prompt} onDone={onDone} />;
@@ -160,10 +215,22 @@ function PromptCard({ prompt, onDone }: { prompt: ReviewPrompt; onDone: (o: Step
 /* -------------------------------------------------------- shared fragments */
 
 function TierTag({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">{children}</p>;
+  return (
+    <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+      {children}
+    </p>
+  );
 }
 
-function PromotionLine({ lemma, from, to }: { lemma: string; from: MasteryState; to: MasteryState }) {
+function PromotionLine({
+  lemma,
+  from,
+  to,
+}: {
+  lemma: string;
+  from: MasteryState;
+  to: MasteryState;
+}) {
   return (
     <p className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
       <span className="font-serif italic">{lemma}</span> moved up
@@ -174,9 +241,17 @@ function PromotionLine({ lemma, from, to }: { lemma: string; from: MasteryState;
   );
 }
 
-function GradeBanner({ passed, children }: { passed: boolean; children: React.ReactNode }) {
+/** `role="status"` so the verdict is announced, not only tinted (the icons never carry it alone). */
+function GradeBanner({
+  passed,
+  children,
+}: {
+  passed: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div
+      role="status"
       className={cn(
         "flex items-center gap-2.5 rounded-lg px-3.5 py-3",
         passed ? "bg-moss-wash" : "bg-terracotta-wash",
@@ -185,17 +260,51 @@ function GradeBanner({ passed, children }: { passed: boolean; children: React.Re
       {passed ? (
         <CircleCheck className="size-5 shrink-0 text-moss" strokeWidth={1.75} />
       ) : (
-        <CircleX className="size-5 shrink-0 text-terracotta" strokeWidth={1.75} />
+        <CircleX
+          className="size-5 shrink-0 text-terracotta"
+          strokeWidth={1.75}
+        />
       )}
-      <p className={cn("text-sm font-medium", passed ? "text-moss" : "text-terracotta")}>{children}</p>
+      <p
+        className={cn(
+          "text-sm font-medium",
+          passed ? "text-moss" : "text-terracotta",
+        )}
+      >
+        {children}
+      </p>
     </div>
   );
 }
 
-function NextButton({ onClick, label = "Next" }: { onClick: () => void; label?: string }) {
+function NextButton({
+  onClick,
+  label = "Next",
+}: {
+  onClick: () => void;
+  label?: string;
+}) {
   return (
-    <Button size="lg" className="w-full" onClick={onClick} autoFocus>
+    <Button size="lg" className="h-12 w-full" onClick={onClick} autoFocus>
       {label} <ArrowRight data-slot="icon" />
+    </Button>
+  );
+}
+
+/** The confirm step every tier shares — selecting or typing an answer never submits it. */
+function CheckButton({
+  busy,
+  disabled,
+  ...props
+}: { busy: boolean } & React.ComponentProps<typeof Button>) {
+  return (
+    <Button
+      size="lg"
+      className="h-12 w-full"
+      disabled={disabled || busy}
+      {...props}
+    >
+      {busy ? "Checking…" : "Check"}
     </Button>
   );
 }
@@ -220,18 +329,22 @@ function RecognitionCard({
 }) {
   const options = useShuffled(prompt.options);
   const [chosen, setChosen] = useState<string | null>(null);
-  const [result, setResult] = useState<Extract<ReviewOutcomeView, { kind: "deterministic" }> | null>(null);
+  const [result, setResult] = useState<Extract<
+    ReviewOutcomeView,
+    { kind: "deterministic" }
+  > | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const graded = result !== null;
   const target = result?.lemma ?? null;
+  const definitionId = `gloss-${prompt.senseId}`;
 
-  const pick = async (opt: string) => {
-    if (graded || busy) return;
-    setChosen(opt);
+  const grade = async () => {
+    if (chosen === null || result !== null || busy) return;
     setBusy(true);
     try {
-      const view = await submitReviewFn({ data: { senseId: prompt.senseId, response: opt, scaffolded: false } });
+      const view = await submitReviewFn({
+        data: { senseId: prompt.senseId, response: chosen, scaffolded: false },
+      });
       if (view.kind === "deterministic") setResult(view);
     } finally {
       setBusy(false);
@@ -241,45 +354,52 @@ function RecognitionCard({
   return (
     <div className="space-y-6">
       <TierTag>recognition · {prompt.mastery.toLowerCase()}</TierTag>
-      <p className="font-serif text-xl leading-relaxed text-ink">
-        Which word means: “{prompt.meaning}”?
-      </p>
-      <div className="space-y-2.5">
-        {options.map((opt) => {
-          const isTarget = target !== null && opt.toLowerCase() === target.toLowerCase();
-          const isChosen = opt === chosen;
-          return (
-            <button
-              key={opt}
-              type="button"
-              disabled={graded || busy}
-              onClick={() => pick(opt)}
-              className={cn(
-                "w-full rounded-lg border border-line bg-paper-raised px-4 py-3 text-left font-serif text-lg text-ink transition-colors duration-150",
-                !graded && "hover:border-ink-faint",
-                graded && isTarget && "border-moss bg-moss-wash",
-                graded && isChosen && !isTarget && "border-terracotta bg-terracotta-wash",
-                graded && !isChosen && !isTarget && "opacity-50",
-              )}
-            >
-              {opt}
-            </button>
-          );
-        })}
-      </div>
+      <EntryHeader
+        pos={prompt.pos}
+        heading="Choose the word this definition describes"
+      >
+        {result !== null ? (
+          result.lemma
+        ) : chosen !== null ? (
+          /* Provisional: a pick set in pencil. A wrong guess must not be typeset as the entry itself. */
+          <span className="border-b-2 border-amber text-ink-soft">
+            {chosen}
+          </span>
+        ) : (
+          <HeadwordBlank />
+        )}
+      </EntryHeader>
+      <EntryDefinition id={definitionId}>{prompt.meaning}</EntryDefinition>
+      <WordOptionList
+        options={options}
+        value={chosen}
+        onChange={setChosen}
+        graded={result !== null}
+        disabled={result !== null || busy}
+        correct={target}
+        labelledBy={definitionId}
+      />
       {result ? (
         <div className="space-y-4">
           <GradeBanner passed={result.passed}>
-            {result.passed ? "Correct." : `The word was “${result.lemma}” — it’ll come around again soon.`}
+            {result.passed
+              ? "Correct."
+              : `The word was “${result.lemma}” — it’ll come around again soon.`}
           </GradeBanner>
           {/* MCQ pass alone never promotes (SM-3) — no ladder movement here. */}
           <NextButton
             onClick={() =>
-              onDone({ lemma: result.lemma, tier: "recognition", outcome: result.passed ? "pass" : "fail" })
+              onDone({
+                lemma: result.lemma,
+                tier: "recognition",
+                outcome: result.passed ? "pass" : "fail",
+              })
             }
           />
         </div>
-      ) : null}
+      ) : (
+        <CheckButton busy={busy} disabled={chosen === null} onClick={grade} />
+      )}
     </div>
   );
 }
@@ -294,7 +414,10 @@ function TypedCard({
   onDone: (o: StepOutcome) => void;
 }) {
   const [value, setValue] = useState("");
-  const [result, setResult] = useState<Extract<ReviewOutcomeView, { kind: "deterministic" }> | null>(null);
+  const [result, setResult] = useState<Extract<
+    ReviewOutcomeView,
+    { kind: "deterministic" }
+  > | null>(null);
   const [busy, setBusy] = useState(false);
 
   const grade = async () => {
@@ -310,6 +433,51 @@ function TypedCard({
   };
 
   const move = result ? moveOf(result) : undefined;
+  const bodyId = `body-${prompt.senseId}`;
+
+  /* `clozed_sentence` carries exactly one `_` (docs/BUILD.md §7.1) — the blank is where the input goes. */
+  const clozeParts =
+    prompt.tier === "cloze" ? prompt.clozedSentence.split("_") : null;
+
+  /* The cued input is described by the gloss beside it; the cloze input SITS INSIDE its sentence, so an
+   * `aria-describedby` back at that sentence would point a node at its own ancestor. */
+  const answerBlank = (variant: "headword" | "inline", label: string) =>
+    result !== null ? (
+      <BlankAnswer variant={variant} passed={result.passed}>
+        {value}
+      </BlankAnswer>
+    ) : (
+      <BlankInput
+        variant={variant}
+        autoFocus
+        aria-label={label}
+        {...(variant === "headword" ? { "aria-describedby": bodyId } : {})}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        disabled={busy}
+      />
+    );
+
+  /*
+   * Where the answer resolves differs by tier, because it follows where the learner wrote it. Cloze types
+   * into the sentence, so the headword is free to reveal the entry the moment it is graded; cued types into
+   * the headword itself, so that slot must keep showing what they wrote — the banner does the revealing.
+   */
+  const headword =
+    prompt.tier === "cloze" ? (
+      result !== null ? (
+        result.lemma
+      ) : value === "" ? (
+        <HeadwordBlank />
+      ) : (
+        /* Mirrors the sentence input; aria-hidden so it is not read as a second field. */
+        <span aria-hidden className="border-b-2 border-amber text-ink-soft">
+          {value}
+        </span>
+      )
+    ) : (
+      answerBlank("headword", "The word this definition describes")
+    );
 
   return (
     <div className="space-y-6">
@@ -318,42 +486,54 @@ function TypedCard({
           ? `cloze · ${prompt.mastery.toLowerCase()}`
           : `produce the word · ${prompt.mastery.toLowerCase()}`}
       </TierTag>
-      {prompt.tier === "cloze" ? (
-        <p className="font-serif text-xl leading-relaxed text-ink">
-          {prompt.clozedSentence.split("_")[0]}
-          <span className="mx-1 inline-block w-20 border-b-2 border-ink-faint align-baseline" />
-          {prompt.clozedSentence.split("_")[1]}
-        </p>
-      ) : (
-        <p className="font-serif text-xl leading-relaxed text-ink">{prompt.meaning}</p>
-      )}
-      {result === null ? (
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!busy) grade();
-          }}
+      <form
+        className="space-y-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!busy && result === null && value.trim().length > 0) grade();
+        }}
+      >
+        <EntryHeader
+          pos={prompt.pos}
+          heading={
+            prompt.tier === "cloze"
+              ? "Fill in the missing word"
+              : "Write the word this definition describes"
+          }
         >
-          <Input
-            autoFocus
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            disabled={busy}
-            placeholder={prompt.tier === "cloze" ? "the missing word" : "type the word"}
-            className="h-12 font-serif text-xl"
+          {headword}
+        </EntryHeader>
+
+        {/* `leading-relaxed` is restated: tailwind-merge drops it when `text-xl` overrides `text-lg`. */}
+        {prompt.tier === "cloze" ? (
+          <EntryDefinition id={bodyId} className="text-xl leading-relaxed">
+            {clozeParts?.[0]}
+            {answerBlank("inline", "The missing word")}
+            {clozeParts?.[1]}
+          </EntryDefinition>
+        ) : (
+          <EntryDefinition id={bodyId}>{prompt.meaning}</EntryDefinition>
+        )}
+
+        {result === null ? (
+          <CheckButton
+            type="submit"
+            busy={busy}
+            disabled={value.trim().length === 0}
           />
-          <Button type="submit" size="lg" className="w-full" disabled={value.trim().length === 0 || busy}>
-            {busy ? "Checking…" : "Check"}
-          </Button>
-        </form>
-      ) : (
+        ) : null}
+      </form>
+      {result ? (
         <div className="space-y-4">
           <GradeBanner passed={result.passed}>
-            {result.passed ? "Correct." : `It was “${result.lemma}” — we’ll show it again soon.`}
+            {result.passed
+              ? "Correct."
+              : `It was “${result.lemma}” — we’ll show it again soon.`}
             {/* deterministic fails reschedule only; never demote (SM-6) */}
           </GradeBanner>
-          {move ? <PromotionLine lemma={result.lemma} from={move.from} to={move.to} /> : null}
+          {move ? (
+            <PromotionLine lemma={result.lemma} from={move.from} to={move.to} />
+          ) : null}
           <NextButton
             onClick={() =>
               onDone({
@@ -365,7 +545,7 @@ function TypedCard({
             }
           />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -395,7 +575,9 @@ function FreeProductionCard({
 
   const [text, setText] = useState("");
   const [state, setState] = useState<FreeState>({ phase: "writing" });
-  const [bounce, setBounce] = useState<Extract<ReviewOutcomeView, { kind: "bounce" }>["reason"] | null>(null);
+  const [bounce, setBounce] = useState<
+    Extract<ReviewOutcomeView, { kind: "bounce" }>["reason"] | null
+  >(null);
   const [bounceCount, setBounceCount] = useState(0);
   const [anySentence, setAnySentence] = useState(false); // TIER-7 learner-activated fallback
   const [fallbackOffered, setFallbackOffered] = useState(false);
@@ -411,10 +593,13 @@ function FreeProductionCard({
     }
 
     // Phase 1 — the instant, judge-free rule check (NET-2: no "checking…" before a bounce).
-    const check = await ruleCheckFn({ data: { senseId, response: text, priorBounces: bounceCount } });
+    const check = await ruleCheckFn({
+      data: { senseId, response: text, priorBounces: bounceCount },
+    });
     if (!check.ok) {
       setBounceCount(check.bounces);
-      if (check.reason === "degenerate" && !anySentence) setFallbackOffered(true); // TIER-7 offer
+      if (check.reason === "degenerate" && !anySentence)
+        setFallbackOffered(true); // TIER-7 offer
       if (check.revealModelSentence) {
         setState({ phase: "capped", modelSentence: check.modelSentence }); // RL-6
       } else {
@@ -425,9 +610,12 @@ function FreeProductionCard({
 
     // Phase 2 — the judge round-trip (show "checking…" while it runs).
     setState({ phase: "checking" });
-    const view = await submitReviewFn({ data: { senseId, response: text, scaffolded: starter } });
+    const view = await submitReviewFn({
+      data: { senseId, response: text, scaffolded: starter },
+    });
     if (view.kind === "unavailable") setState({ phase: "unavailable" });
-    else if (view.kind === "judged") setState({ phase: "verdict", result: view });
+    else if (view.kind === "judged")
+      setState({ phase: "verdict", result: view });
     else setState({ phase: "writing" }); // bounce handled in phase 1 — defensive
   };
 
@@ -449,13 +637,14 @@ function FreeProductionCard({
         {maintenance ? " · maintenance" : ""}
         {starter ? " · scaffolded" : ""}
       </TierTag>
-      <div>
-        <h1 className="font-serif text-4xl font-semibold text-ink">{lemma}</h1>
-        <p className="mt-1 text-xs tracking-wide text-ink-faint uppercase">
-          {prompt.pos}
-          {prompt.cefr ? ` · ${prompt.cefr}` : ""}
-        </p>
-      </div>
+      {/* The heading names the task, not the word — the visible headword already announces the lemma. */}
+      <EntryHeader pos={prompt.pos} heading="Write a sentence using this word">
+        {lemma}
+      </EntryHeader>
+      {/* DM-2: the intended sense is rendered verbatim — the runtime never rewrites a catalog field. */}
+      {prompt.intendedSense ? (
+        <EntryDefinition>{prompt.intendedSense}</EntryDefinition>
+      ) : null}
     </>
   );
 
@@ -464,7 +653,9 @@ function FreeProductionCard({
     return (
       <div className="space-y-6">
         {header}
-        <p className="text-sm leading-relaxed text-ink-soft">Here’s the example to lean on:</p>
+        <p className="text-sm leading-relaxed text-ink-soft">
+          Here’s the example to lean on:
+        </p>
         {state.modelSentence ? (
           <blockquote className="border-l-2 border-amber pl-4 font-serif text-xl leading-relaxed text-ink">
             {state.modelSentence}
@@ -473,7 +664,7 @@ function FreeProductionCard({
         <div className="space-y-3">
           <Button
             size="lg"
-            className="w-full"
+            className="h-12 w-full"
             onClick={() => {
               setBounceCount(0);
               setBounce(null);
@@ -485,7 +676,7 @@ function FreeProductionCard({
           <Button
             size="lg"
             variant="outline"
-            className="w-full"
+            className="h-12 w-full"
             onClick={() => onDone({ lemma, tier, outcome: "skip" })}
           >
             Skip for now
@@ -507,7 +698,9 @@ function FreeProductionCard({
           passed={r.passed}
           rawSentence={text}
           replacements={r.replacements}
-          {...(r.correctedSentence ? { correctedSentence: r.correctedSentence } : {})}
+          {...(r.correctedSentence
+            ? { correctedSentence: r.correctedSentence }
+            : {})}
           {...(r.detectedSense ? { detectedSense: r.detectedSense } : {})}
           intendedSense={r.intendedSense}
           {...(r.enrichment ? { enrichment: r.enrichment } : {})}
@@ -538,10 +731,14 @@ function FreeProductionCard({
       {header}
       <p className="text-sm leading-relaxed text-ink-soft">
         {anySentence ? (
-          <>Write any sentence using <span className="font-serif italic">{lemma}</span>.</>
+          <>
+            Write any sentence using{" "}
+            <span className="font-serif italic">{lemma}</span>.
+          </>
         ) : (
           <>
-            Write a sentence using <span className="font-serif italic">{lemma}</span> — ideally
+            Write a sentence using{" "}
+            <span className="font-serif italic">{lemma}</span> — ideally
             something true about you. {prompt.selfReferencePrompt}
           </>
         )}
@@ -559,9 +756,12 @@ function FreeProductionCard({
 
         {starter ? (
           <p className="flex items-start gap-2 rounded-lg bg-amber-wash px-3.5 py-2.5 text-sm text-ink-soft">
-            <Lightbulb className="mt-0.5 size-4 shrink-0 text-amber-deep" strokeWidth={1.5} />
-            Try starting with: “Last month, I…” (using a starter is recorded — it just doesn’t count
-            as unscaffolded)
+            <Lightbulb
+              className="mt-0.5 size-4 shrink-0 text-amber-deep"
+              strokeWidth={1.5}
+            />
+            Try starting with: “Last month, I…” (using a starter is recorded —
+            it just doesn’t count as unscaffolded)
           </p>
         ) : null}
 
@@ -575,13 +775,18 @@ function FreeProductionCard({
             className="w-full rounded-lg border border-dashed border-line px-3.5 py-2.5 text-left text-sm text-ink-soft hover:border-ink-faint"
           >
             Stuck on something true about you?{" "}
-            <span className="font-medium text-ink">Just write any sentence.</span>
+            <span className="font-medium text-ink">
+              Just write any sentence.
+            </span>
           </button>
         ) : null}
 
         {state.phase === "offline" ? (
           <p className="flex items-center gap-2 rounded-lg bg-paper-sunken px-3.5 py-3 text-sm text-ink-soft">
-            <CloudOff className="size-4 shrink-0 text-ink-faint" strokeWidth={1.5} />
+            <CloudOff
+              className="size-4 shrink-0 text-ink-faint"
+              strokeWidth={1.5}
+            />
             You’re offline — reconnect to check this sentence.
           </p>
         ) : null}
@@ -595,11 +800,21 @@ function FreeProductionCard({
           <CheckingIndicator />
         ) : (
           <div className="flex items-center gap-3">
-            <Button size="lg" className="flex-1" onClick={submit} disabled={text.trim().length === 0}>
+            <Button
+              size="lg"
+              className="h-12 flex-1"
+              onClick={submit}
+              disabled={text.trim().length === 0}
+            >
               Check my sentence
             </Button>
             {!starter ? (
-              <Button variant="ghost" size="lg" onClick={() => setStarter(true)}>
+              <Button
+                variant="ghost"
+                size="lg"
+                className="h-12"
+                onClick={() => setStarter(true)}
+              >
                 Show a starter
               </Button>
             ) : null}

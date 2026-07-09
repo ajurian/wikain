@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { makeTestStores, loadCatalogItems } from "./testStores.js";
+import { makeTestStores, smokeFixtureItem } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
 import type { MasteryState } from "../domain/card.js";
@@ -15,8 +15,8 @@ import { USER_A } from "./testIds.js";
  * (LOOP-3/LOOP-4). Persistence is pglite-backed Drizzle; no network/auth/DeepSeek needed.
  */
 describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", () => {
-  const items = loadCatalogItems();
-  const item = items.find((i) => i.lemma === "abandon")!; // model_sentence present
+  const fx = smokeFixtureItem();
+  const item = fx.item;
   const now = new Date("2026-06-30T00:00:00Z");
 
   async function wire(
@@ -34,7 +34,7 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
     const { deps, cards } = await wire(judge, "Recognized");
 
     const res = await runReviewPass(
-      { userId: USER_A, senseId: item.sense_id, response: "abandon", now },
+      { userId: USER_A, senseId: item.sense_id, response: item.word, now },
       deps,
     );
 
@@ -57,7 +57,7 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
       {
         userId: USER_A,
         senseId: item.sense_id,
-        response: "The crew decided to abandon the sinking ship before dawn.",
+        response: fx.passSentence,
         now,
       },
       deps,

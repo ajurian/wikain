@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { makeTestStores, loadCatalogItems } from "./testStores.js";
+import { makeTestStores, smokeFixtureItem } from "./testStores.js";
 import { submitFreeProduction, type SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
 import { USER_A } from "./testIds.js";
@@ -13,8 +13,8 @@ import { USER_A } from "./testIds.js";
  * Persistence is pglite-backed Drizzle; no network/auth/DeepSeek needed.
  */
 describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judge)", () => {
-  const items = loadCatalogItems();
-  const item = items.find((i) => i.lemma === "abandon")!; // model_sentence present
+  const fx = smokeFixtureItem();
+  const item = fx.item;
   const now = new Date("2026-06-30T00:00:00Z");
 
   async function wire(
@@ -39,7 +39,7 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
       {
         userId: USER_A,
         senseId: item.sense_id,
-        response: "The crew decided to abandon the sinking ship before dawn.",
+        response: fx.passSentence,
         now,
       },
       deps,
@@ -70,7 +70,7 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
       {
         userId: USER_A,
         senseId: item.sense_id,
-        response: "The crew decided to leave the sinking ship before dawn.",
+        response: fx.absentSentence,
         now,
       },
       deps,

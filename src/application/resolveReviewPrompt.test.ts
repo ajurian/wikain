@@ -115,12 +115,11 @@ describe("resolveReviewPrompt (the read-model the UI renders before a response)"
     }
   });
 
-  it("SM-1: a Recognized word resolves the cued prompt (productive meaning + self-reference)", async () => {
+  it("SM-1: a Recognized word resolves the cued prompt (the productive gloss)", async () => {
     const prompt = await resolveReviewPrompt({ userId: "u1", senseId }, makeDeps("Recognized"));
     expect(prompt.tier).toBe("cued");
     if (prompt.tier === "cued") {
       expect(prompt.meaning).toBe("to leave something behind for good");
-      expect(prompt.selfReferencePrompt).toBe("When did you last abandon a goal?");
     }
   });
 
@@ -130,9 +129,30 @@ describe("resolveReviewPrompt (the read-model the UI renders before a response)"
     if (prompt.tier === "free") {
       expect(prompt.lemma).toBe("abandon"); // free production reveals the word to use
       expect(prompt.pos).toBe("verb");
-      expect(prompt.cefr).toBe("B2");
       expect(prompt.mastery).toBe("Productive");
     }
+  });
+
+  it("DM-2: every arm carries the part of speech (the dictionary-entry masthead renders it)", async () => {
+    const seen = await resolveReviewPrompt({ userId: "u1", senseId }, makeDeps("Seen"));
+    const cloze = await resolveReviewPrompt(
+      { userId: "u1", senseId },
+      makeDeps("Seen", [recognitionPass()]),
+    );
+    const cued = await resolveReviewPrompt({ userId: "u1", senseId }, makeDeps("Recognized"));
+    const free = await resolveReviewPrompt({ userId: "u1", senseId }, makeDeps("Productive"));
+    expect([seen.pos, cloze.pos, cued.pos, free.pos]).toEqual(["verb", "verb", "verb", "verb"]);
+  });
+
+  it("DM-2: free production carries the intended sense verbatim", async () => {
+    const deps = makeDeps("Productive", [], makeItem({ intended_sense: "to give up on entirely" }));
+    const prompt = await resolveReviewPrompt({ userId: "u1", senseId }, deps);
+    if (prompt.tier === "free") expect(prompt.intendedSense).toBe("to give up on entirely");
+  });
+
+  it("DM-4: a missing intended sense is tolerated (the free tier renders without it)", async () => {
+    const prompt = await resolveReviewPrompt({ userId: "u1", senseId }, makeDeps("Productive"));
+    if (prompt.tier === "free") expect(prompt.intendedSense).toBeNull();
   });
 
   it("carries the pre-review mastery on every arm (for the tier sub-label)", async () => {

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { makeTestStores, loadCatalogItems } from "./testStores.js";
+import { makeTestStores, smokeFixtureItem } from "./testStores.js";
 import { submitFreeProduction, type SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
 import { USER_A } from "./testIds.js";
@@ -15,12 +15,12 @@ import { USER_A } from "./testIds.js";
  * memo table shared across submissions); no network/DeepSeek needed.
  */
 describe("verdict memo (smoke: real catalog + wink + ts-fsrs, counting judge)", () => {
-  const items = loadCatalogItems();
-  const item = items.find((i) => i.lemma === "abandon")!;
+  const fx = smokeFixtureItem();
+  const item = fx.item;
   const now = new Date("2026-06-30T00:00:00Z");
   // Both sentences contain the lemma so the rule layer passes and the judge/memo is reached.
-  const s1 = "The crew decided to abandon the sinking ship before dawn.";
-  const s2 = "They chose to abandon the old plan completely.";
+  const s1 = fx.passSentence;
+  const s2 = fx.altSentence;
 
   async function wire(
     judge: FakeJudge,

@@ -1,4 +1,4 @@
-import type { LexicalItem } from "../domain/lexicalItem.js";
+import type { ControlledPos, LexicalItem } from "../domain/lexicalItem.js";
 import type { MasteryState } from "../domain/card.js";
 import { resolveReviewTier } from "../domain/reviewRouting.js";
 import type { Catalog } from "./ports/catalog.js";
@@ -22,26 +22,38 @@ export interface ResolveReviewPromptDeps {
  * carried on every arm for the tier sub-label (e.g. "· productive", or "maintenance" at Fluent).
  *
  * Note the asymmetry between `cued` and `free`: cued **withholds** the target word (the learner must
- * produce it from the gloss), whereas free production **reveals** it (`lemma`/`pos`/`cefr`) — the
- * learner is asked to use that specific word in a sentence, and the rule layer requires its presence.
+ * produce it from the gloss), whereas free production **reveals** it (`lemma`) — the learner is asked to
+ * use that specific word in a sentence, and the rule layer requires its presence.
+ *
+ * `pos` rides on every arm because the UI typesets each tier as a dictionary entry. It is not a leak even
+ * where the word is withheld: MCQ distractors are POS-homogeneous by construction
+ * (`docs/GENERATION_RULES.md` §1), so the part of speech eliminates no option.
  */
 export type ReviewPrompt =
-  | { tier: "recognition"; senseId: string; mastery: MasteryState; meaning: string; options: string[] }
-  | { tier: "cloze"; senseId: string; mastery: MasteryState; clozedSentence: string }
   | {
-      tier: "cued";
+      tier: "recognition";
       senseId: string;
       mastery: MasteryState;
+      pos: ControlledPos;
       meaning: string;
-      selfReferencePrompt: string | null;
+      options: string[];
     }
+  | {
+      tier: "cloze";
+      senseId: string;
+      mastery: MasteryState;
+      pos: ControlledPos;
+      clozedSentence: string;
+    }
+  | { tier: "cued"; senseId: string; mastery: MasteryState; pos: ControlledPos; meaning: string }
   | {
       tier: "free";
       senseId: string;
       mastery: MasteryState;
+      pos: ControlledPos;
       lemma: string;
-      pos: string;
-      cefr: string | null;
+      /** DM-4: nullable in the schema, so the card renders without it rather than halting. */
+      intendedSense: string | null;
       selfReferencePrompt: string | null;
     };
 
@@ -70,12 +82,14 @@ export async function resolveReviewPrompt(
   const tier = resolveReviewTier(card.mastery, logs);
 
   const mastery = card.mastery;
+  const pos = item.part_of_speech;
   switch (tier) {
     case "recognition":
       return {
         tier,
         senseId,
         mastery,
+        pos,
         meaning: required(item.recognition_meaning, "recognition_meaning", item),
         options: assembleOptions(item),
       };
@@ -84,6 +98,7 @@ export async function resolveReviewPrompt(
         tier,
         senseId,
         mastery,
+        pos,
         clozedSentence: required(item.clozed_sentence, "clozed_sentence", item),
       };
     case "cued":
@@ -92,8 +107,8 @@ export async function resolveReviewPrompt(
         tier,
         senseId,
         mastery,
+        pos,
         meaning: required(item.productive_meaning, "productive_meaning", item),
-        selfReferencePrompt: item.self_reference_prompt,
       };
     case "free":
       // Reveals the target word — the learner is asked to use *this* word in a sentence.
@@ -101,9 +116,9 @@ export async function resolveReviewPrompt(
         tier,
         senseId,
         mastery,
+        pos,
         lemma: item.lemma,
-        pos: item.part_of_speech,
-        cefr: item.cefr,
+        intendedSense: item.intended_sense,
         selfReferencePrompt: item.self_reference_prompt,
       };
   }

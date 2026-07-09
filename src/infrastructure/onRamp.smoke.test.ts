@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge } from "./fakeJudge.js";
-import { makeTestStores, loadCatalogItems } from "./testStores.js";
+import { makeTestStores, smokeFixtureItem } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import { USER_A } from "./testIds.js";
 
@@ -14,8 +14,7 @@ import { USER_A } from "./testIds.js";
  * `runReviewPass` no longer dead-ends on `Seen`. Persistence is pglite-backed Drizzle.
  */
 describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", () => {
-  const items = loadCatalogItems();
-  const item = items.find((i) => i.lemma === "abandon")!;
+  const item = smokeFixtureItem().item;
 
   it("SM-3: a Seen word climbs recognition → cloze → cued to Productive, never calling the judge", async () => {
     const judge = new FakeJudge();
