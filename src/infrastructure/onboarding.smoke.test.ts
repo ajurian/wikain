@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { seedIntroductions } from "../application/seedIntroductions.js";
-import { judgeFirstProduction } from "../application/judgeFirstProduction.js";
-import { presentSeededWords } from "../application/presentSeededWords.js";
-import { recordLexTaleResult } from "../application/recordLexTaleResult.js";
-import { readPlacementProfile } from "../application/readPlacementProfile.js";
+import { seedIntroductions } from "../application/session/seedIntroductions.js";
+import { judgeFirstProduction } from "../application/placement/judgeFirstProduction.js";
+import { presentSeededWords } from "../application/session/presentSeededWords.js";
+import { recordLexTaleResult } from "../application/placement/recordLexTaleResult.js";
+import { readPlacementProfile } from "../application/placement/readPlacementProfile.js";
 import type { JudgePort } from "../application/ports/judge.js";
 import { composeSeeding, composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { makeTestStores } from "./testStores.js";

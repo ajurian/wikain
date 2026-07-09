@@ -3,7 +3,7 @@ import { composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
 import { makeTestStores, smokeFixtureItem } from "./testStores.js";
-import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
+import { runReviewPass, type RunReviewPassDeps } from "../application/review/runReviewPass.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
 import type { MasteryState } from "../domain/mastery/card.js";
 import { USER_A } from "./testIds.js";

@@ -35,7 +35,7 @@ import {
   type CoarseLevel,
 } from "../../../domain/placement/placement.js";
 import type { RuleBounceReason } from "../../../domain/review/ruleLayer.js";
-import type { SeededWordView } from "../../../application/presentSeededWords.js";
+import type { SeededWordView } from "../../../application/session/presentSeededWords.js";
 import {
   seedFirstSessionFn,
   judgeFirstProductionFn,

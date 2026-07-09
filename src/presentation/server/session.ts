@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { readPlacementProfile } from "../../application/readPlacementProfile.js";
+import { readPlacementProfile } from "../../application/placement/readPlacementProfile.js";
 import { auth, placementProfileDeps } from "./composition.js";
 
 /** The minimal, serializable session shape the router guards + app-shell chrome need (STACK-4). */

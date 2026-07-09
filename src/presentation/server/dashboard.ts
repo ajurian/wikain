@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import {
   readDashboardSummary,
   type ReadDashboardSummaryResult,
-} from "../../application/readDashboardSummary.js";
+} from "../../application/progress/readDashboardSummary.js";
 import { readSettings } from "../../application/readSettings.js";
 import { utcOffsetMinutesFor } from "../../domain/timezone.js";
 import { currentUserId } from "./currentUser.js";

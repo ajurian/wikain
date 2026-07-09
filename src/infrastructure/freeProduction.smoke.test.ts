@@ -3,7 +3,7 @@ import { composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
 import { makeTestStores, smokeFixtureItem } from "./testStores.js";
-import { submitFreeProduction, type SubmitFreeProductionDeps } from "../application/submitFreeProduction.js";
+import { submitFreeProduction, type SubmitFreeProductionDeps } from "../application/review/submitFreeProduction.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
 import { USER_A } from "./testIds.js";
 

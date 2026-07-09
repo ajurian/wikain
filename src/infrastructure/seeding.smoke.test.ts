@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { composeSeeding, composeReviewPass, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { makeTestStores } from "./testStores.js";
 import { FakeJudge, passingVerdict } from "./fakeJudge.js";
-import { seedIntroductions } from "../application/seedIntroductions.js";
-import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
+import { seedIntroductions } from "../application/session/seedIntroductions.js";
+import { runReviewPass, type RunReviewPassDeps } from "../application/review/runReviewPass.js";
 import { FIRST_SESSION_SEED_WORDS } from "../domain/constants.js";
 import { USER_A } from "./testIds.js";
 

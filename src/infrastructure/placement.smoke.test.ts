@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { recordCoarseLevel } from "../application/recordCoarseLevel.js";
-import { recordLexTaleResult } from "../application/recordLexTaleResult.js";
-import { readPlacementProfile } from "../application/readPlacementProfile.js";
-import { seedIntroductions } from "../application/seedIntroductions.js";
+import { recordCoarseLevel } from "../application/placement/recordCoarseLevel.js";
+import { recordLexTaleResult } from "../application/placement/recordLexTaleResult.js";
+import { readPlacementProfile } from "../application/placement/readPlacementProfile.js";
+import { seedIntroductions } from "../application/session/seedIntroductions.js";
 import { composeSeeding } from "./composition.js";
 import { makeTestStores } from "./testStores.js";
 import { LEXTALE_ITEMS } from "../domain/placement/lextale.js";

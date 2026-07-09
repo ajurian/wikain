@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { composeCuedReview } from "./composition.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { makeTestStores } from "./testStores.js";
-import { submitCuedReview } from "../application/submitCuedReview.js";
+import { submitCuedReview } from "../application/review/submitCuedReview.js";
 import { USER_A } from "./testIds.js";
 
 /**

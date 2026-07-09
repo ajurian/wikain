@@ -35,8 +35,8 @@ import {
   ruleCheckFn,
   submitReviewFn,
 } from "../../../server/review";
-import type { ReviewPrompt } from "../../../../application/resolveReviewPrompt.js";
-import type { ReviewOutcomeView } from "../../../../application/presentReviewOutcome.js";
+import type { ReviewPrompt } from "../../../../application/review/resolveReviewPrompt.js";
+import type { ReviewOutcomeView } from "../../../../application/review/presentReviewOutcome.js";
 import type { MasteryState } from "../../../../domain/mastery/card.js";
 
 import { BounceCallout } from "../../../components/bounce-callout";

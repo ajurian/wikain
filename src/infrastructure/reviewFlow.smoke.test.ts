@@ -7,10 +7,10 @@ import {
 } from "./composition.js";
 import { makeTestStores } from "./testStores.js";
 import { FakeJudge } from "./fakeJudge.js";
-import { startSession } from "../application/startSession.js";
-import { resolveReviewPrompt } from "../application/resolveReviewPrompt.js";
-import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
-import type { ResolveReviewPromptDeps } from "../application/resolveReviewPrompt.js";
+import { startSession } from "../application/session/startSession.js";
+import { resolveReviewPrompt } from "../application/review/resolveReviewPrompt.js";
+import { runReviewPass, type RunReviewPassDeps } from "../application/review/runReviewPass.js";
+import type { ResolveReviewPromptDeps } from "../application/review/resolveReviewPrompt.js";
 import { USER_A } from "./testIds.js";
 
 /**

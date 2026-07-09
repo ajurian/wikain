@@ -26,22 +26,22 @@ import type { MemoVersions, VerdictMemoPort } from "../../application/ports/verd
 import type { PlacementMarksStore } from "../../application/ports/placementMarks.js";
 import type { PlacementProfileStore } from "../../application/ports/placementProfile.js";
 import type { SettingsStore } from "../../application/ports/settings.js";
-import type { StartSessionDeps } from "../../application/startSession.js";
-import type { SeedIntroductionsDeps } from "../../application/seedIntroductions.js";
-import type { RunReviewPassDeps } from "../../application/runReviewPass.js";
-import type { ResolveReviewPromptDeps } from "../../application/resolveReviewPrompt.js";
-import type { ReadUsableCounterDeps } from "../../application/readUsableCounter.js";
-import type { ReadDashboardSummaryDeps } from "../../application/readDashboardSummary.js";
-import type { ReadWordsListDeps } from "../../application/readWordsList.js";
-import type { ReadWordDetailDeps } from "../../application/readWordDetail.js";
-import type { ReadPlacementSlateDeps } from "../../application/readPlacementSlate.js";
-import type { RecordPlacementMarksDeps } from "../../application/recordPlacementMarks.js";
+import type { StartSessionDeps } from "../../application/session/startSession.js";
+import type { SeedIntroductionsDeps } from "../../application/session/seedIntroductions.js";
+import type { RunReviewPassDeps } from "../../application/review/runReviewPass.js";
+import type { ResolveReviewPromptDeps } from "../../application/review/resolveReviewPrompt.js";
+import type { ReadUsableCounterDeps } from "../../application/progress/readUsableCounter.js";
+import type { ReadDashboardSummaryDeps } from "../../application/progress/readDashboardSummary.js";
+import type { ReadWordsListDeps } from "../../application/progress/readWordsList.js";
+import type { ReadWordDetailDeps } from "../../application/progress/readWordDetail.js";
+import type { ReadPlacementSlateDeps } from "../../application/placement/readPlacementSlate.js";
+import type { RecordPlacementMarksDeps } from "../../application/placement/recordPlacementMarks.js";
 import type { ReadSettingsDeps } from "../../application/readSettings.js";
 import type { UpdateSettingsDeps } from "../../application/updateSettings.js";
-import type { ReadPlacementProfileDeps } from "../../application/readPlacementProfile.js";
-import type { RecordCoarseLevelDeps } from "../../application/recordCoarseLevel.js";
-import type { RecordLexTaleResultDeps } from "../../application/recordLexTaleResult.js";
-import type { CompleteOnboardingDeps } from "../../application/completeOnboarding.js";
+import type { ReadPlacementProfileDeps } from "../../application/placement/readPlacementProfile.js";
+import type { RecordCoarseLevelDeps } from "../../application/placement/recordCoarseLevel.js";
+import type { RecordLexTaleResultDeps } from "../../application/placement/recordLexTaleResult.js";
+import type { CompleteOnboardingDeps } from "../../application/placement/completeOnboarding.js";
 
 /**
  * Server-only composition root (ARCH-3): the single place the concrete adapters are wired to the

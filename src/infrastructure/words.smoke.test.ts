@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest";
 import { composeSession, composeReviewPass, composeWords, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { makeTestStores } from "./testStores.js";
 import { FakeJudge } from "./fakeJudge.js";
-import { startSession } from "../application/startSession.js";
-import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
-import { readWordsList } from "../application/readWordsList.js";
-import { readWordDetail } from "../application/readWordDetail.js";
+import { startSession } from "../application/session/startSession.js";
+import { runReviewPass, type RunReviewPassDeps } from "../application/review/runReviewPass.js";
+import { readWordsList } from "../application/progress/readWordsList.js";
+import { readWordDetail } from "../application/progress/readWordDetail.js";
 import { USER_A } from "./testIds.js";
 
 /**
