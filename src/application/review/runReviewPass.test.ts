@@ -10,7 +10,7 @@ import type { Catalog } from "../ports/catalog.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { Lemmatizer } from "../ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
-import { FakeJudge, passingVerdict } from "../../infrastructure/fakeJudge.js";
+import { FakeJudge, passingVerdict } from "../../infrastructure/judge/fakeJudge.js";
 import { JudgeUnavailableError } from "../ports/judge.js";
 import type { Scheduler } from "../ports/scheduler.js";
 import type { MemoVersions } from "../ports/verdictMemo.js";

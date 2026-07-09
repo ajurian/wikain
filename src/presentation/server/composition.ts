@@ -1,10 +1,10 @@
-import { DrizzleCardRepository } from "../../infrastructure/drizzleCardRepository.js";
-import { DrizzleVerdictMemo } from "../../infrastructure/drizzleVerdictMemo.js";
-import { DrizzlePlacementMarks } from "../../infrastructure/drizzlePlacementMarks.js";
-import { DrizzlePlacementProfile } from "../../infrastructure/drizzlePlacementProfile.js";
-import { DrizzleSettings } from "../../infrastructure/drizzleSettings.js";
-import { DrizzleCatalog } from "../../infrastructure/drizzleCatalog.js";
-import { DrizzleWordSource } from "../../infrastructure/drizzleWordSource.js";
+import { DrizzleCardRepository } from "../../infrastructure/persistence/drizzleCardRepository.js";
+import { DrizzleVerdictMemo } from "../../infrastructure/persistence/drizzleVerdictMemo.js";
+import { DrizzlePlacementMarks } from "../../infrastructure/persistence/drizzlePlacementMarks.js";
+import { DrizzlePlacementProfile } from "../../infrastructure/persistence/drizzlePlacementProfile.js";
+import { DrizzleSettings } from "../../infrastructure/persistence/drizzleSettings.js";
+import { DrizzleCatalog } from "../../infrastructure/persistence/drizzleCatalog.js";
+import { DrizzleWordSource } from "../../infrastructure/persistence/drizzleWordSource.js";
 import { neonDbFromEnv } from "../../infrastructure/db/neon.js";
 import { makeAuth, type Auth } from "../../infrastructure/auth/auth.js";
 import {

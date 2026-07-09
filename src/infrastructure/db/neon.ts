@@ -8,7 +8,7 @@
  * not at process start.
  */
 import { drizzle } from "drizzle-orm/neon-serverless";
-import type { DrizzleDb } from "../drizzleCardRepository.js";
+import type { DrizzleDb } from "../persistence/drizzleCardRepository.js";
 import * as schema from "./schema.js";
 
 export function makeNeonDb(connectionString: string): DrizzleDb {

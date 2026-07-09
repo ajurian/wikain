@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { recordPlacementMarks } from "./recordPlacementMarks.js";
-import { DrizzlePlacementMarks } from "../../infrastructure/drizzlePlacementMarks.js";
+import { DrizzlePlacementMarks } from "../../infrastructure/persistence/drizzlePlacementMarks.js";
 import { makePgliteDb } from "../../infrastructure/db/pglite.js";
 import { USER_A, USER_B } from "../../infrastructure/testIds.js";
 

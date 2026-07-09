@@ -13,7 +13,7 @@ import { randomUUID } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import type { DrizzleDb } from "../drizzleCardRepository.js";
+import type { DrizzleDb } from "../persistence/drizzleCardRepository.js";
 import { account, session, user, verification } from "../db/authSchema.js";
 
 export interface AuthConfig {

@@ -26,11 +26,11 @@ import type { Catalog } from "../application/ports/catalog.js";
 import type { WordSource } from "../application/ports/wordSource.js";
 import type { MemoVersions, VerdictMemoPort } from "../application/ports/verdictMemo.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
-import { WinkLemmatizer } from "./winkLemmatizer.js";
-import { TAGALOG_LEXICON } from "./tagalogLexicon.js";
-import { DeepSeekJudge } from "./deepSeekJudge.js";
-import { deepSeekConfigFromEnv } from "./deepSeekConfig.js";
-import { RUBRIC_VERSION } from "./deepSeekRubric.js";
+import { WinkLemmatizer } from "./nlp/winkLemmatizer.js";
+import { TAGALOG_LEXICON } from "./nlp/tagalogLexicon.js";
+import { DeepSeekJudge } from "./judge/deepSeekJudge.js";
+import { deepSeekConfigFromEnv } from "./judge/deepSeekConfig.js";
+import { RUBRIC_VERSION } from "./judge/deepSeekRubric.js";
 
 /**
  * spec/05 MEMO-6: a fixed memo version stamp for wirings that use a FAKE judge (tests). A memo hit must
