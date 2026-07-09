@@ -131,7 +131,10 @@ export class DrizzleCardRepository implements CardRepository {
     await this.db
       .insert(cards)
       .values(row)
-      .onConflictDoUpdate({ target: [cards.userId, cards.senseId], set: mutable });
+      .onConflictDoUpdate({
+        target: [cards.userId, cards.senseId],
+        set: mutable,
+      });
   }
 
   async appendReviewLog(log: ReviewLog): Promise<void> {
@@ -143,13 +146,18 @@ export class DrizzleCardRepository implements CardRepository {
     const rows = await this.db
       .select()
       .from(reviewLogs)
-      .where(and(eq(reviewLogs.userId, userId), eq(reviewLogs.senseId, senseId)))
+      .where(
+        and(eq(reviewLogs.userId, userId), eq(reviewLogs.senseId, senseId)),
+      )
       .orderBy(asc(reviewLogs.seq));
     return rows.map(fromLogRow);
   }
 
   async listCards(userId: string): Promise<Card[]> {
-    const rows = await this.db.select().from(cards).where(eq(cards.userId, userId));
+    const rows = await this.db
+      .select()
+      .from(cards)
+      .where(eq(cards.userId, userId));
     return rows.map(fromCardRow);
   }
 }
