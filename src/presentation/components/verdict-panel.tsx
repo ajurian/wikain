@@ -3,7 +3,7 @@ import { CircleCheck, CircleX } from "lucide-react";
 import { EditedSentence } from "./edited-sentence";
 import { MasteryChip } from "./mastery-chip";
 import type { MasteryState } from "../../domain/card.js";
-import type { MockReplacement } from "../mock/judge";
+import type { Replacement } from "../types/verdict";
 
 /**
  * Judged verdict (LOOP-4). Pass and fail use the SAME reveal animation — color
@@ -23,7 +23,7 @@ export function VerdictPanel({
 }: {
   passed: boolean;
   rawSentence: string;
-  replacements: MockReplacement[];
+  replacements: Replacement[];
   correctedSentence?: string;
   detectedSense?: string;
   intendedSense?: string;

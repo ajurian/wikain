@@ -269,6 +269,23 @@ code + `spec/` IDs for detail:
     *(Corrects the stale note below: `build/out/items.json` holds 100 items, not `[]`; the old 5 `"abandon"`
     failures were fixture-word drift, now removed at the root.)*
 
+25. **User-local timezone + dead-mock removal** (`wire/onboarding-placement`). Wires the "separate calendar
+    days" boundary (SM-5b/CNT-2) to the learner's own clock — previously the band was plumbed as
+    `utcOffsetMinutes` but never driven (defaulted to UTC) and the `/settings` timezone "Change" button was a
+    no-op. domain: `timezone.ts` — pure `utcOffsetMinutesFor(ianaZone, at)` (via `Intl.DateTimeFormat`, no I/O,
+    DST-correct because it's computed per-instant) + `isValidTimeZone` (a `try { Intl… }` probe); sign matches
+    `judgedPassLedger.localDayKey` (minutes to ADD to UTC, +east). application: `updateSettings` now rejects a
+    junk timezone (a bad zone would silently corrupt every day-bucket). presentation-server: `usableCounterFn` +
+    `dashboardSummaryFn` read the persisted `settings.timezone`, compute the offset for `now`, and pass
+    `utcOffsetMinutes` (the timezone→offset conversion stays at the composition edge; the application read-models
+    keep their tested `utcOffsetMinutes` input). presentation-UI: `settings.tsx`'s dead "Change" button becomes a
+    real `<select>` of every `Intl.supportedValuesOf("timeZone")` zone (UTC/device/current always present) + a
+    "use this device's time" shortcut. cleanup: **deleted** the design-time `mock/judge.ts` + `mock/catalog.ts`
+    (runtime exports were referenced nowhere live); the two type-only survivors moved to `types/verdict.ts`,
+    renamed off the `Mock*` prefix (`BounceKind`, `Replacement`), consumed by `bounce-callout`/`edited-sentence`/
+    `verdict-panel`. **Covers:** SM-5b, CNT-2. **No migration** (`settings.timezone` already existed).
+    **Verified:** both typecheck gates; `npm test` (346 green); `npm run build` (no server ids in the client bundle).
+
 **Key design conventions (follow in later slices):**
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
@@ -292,13 +309,13 @@ code + `spec/` IDs for detail:
 **Deferred — do NOT build until pulled into scope (`PRAG-1`):** **per-user FSRS optimization** (SEED-8;
 needs `@open-spaced-repetition/binding`); **SEED-2's second LexTALE output** — the scalar driving FSRS
 cold-start difficulty (`coldStartDifficulty` still keys off the item's own CEFR, and the spec gives no
-offset magnitude); the counter's **yesterday-delta** (needs a persisted daily snapshot); the `/settings`
-**timezone** "Change" button (still rendered dead); an **un-mark** path for `placement_marks` (its absence
-is why `/placement` does not re-offer per-word marking). *(BetterAuth (20), the verdict memo (18), the
-placement-marks store (19), the **LexTALE instrument** (SEED-4, slice 22), and the `/settings` **"Retune"**
-entry point (slice 23) are wired — no longer deferred.)*
+offset magnitude); the counter's **yesterday-delta** (needs a persisted daily snapshot); an **un-mark**
+path for `placement_marks` (its absence is why `/placement` does not re-offer per-word marking).
+*(BetterAuth (20), the verdict memo (18), the placement-marks store (19), the **LexTALE instrument**
+(SEED-4, slice 22), the `/settings` **"Retune"** entry point (slice 23), and the **user-local timezone**
+(SM-5b/CNT-2, slice 25) are wired — no longer deferred.)*
 
-> **Status (2026-07-09):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–24 (wiring)
+> **Status (2026-07-09):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–25 (wiring)
 > land on **`design/brand-ui-system`** and descendant wiring branches (currently `wire/onboarding-placement`
 > — `git log` to confirm). **Every surface is wired and guarded**: `/`, `/review`, `/words`,
 > `/onboarding`, `/settings` run on real use-cases behind a real **BetterAuth** session (slice 20), and

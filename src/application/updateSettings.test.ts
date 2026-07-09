@@ -44,9 +44,19 @@ describe("updateSettings (CNT-8)", () => {
     ).rejects.toThrow(RangeError);
   });
 
-  it("CNT-8: a patch without dailyGoal skips the guard and writes", async () => {
+  it("CNT-8: a patch without dailyGoal skips the guard and writes a valid timezone", async () => {
     const settings = fakeStore();
     await updateSettings({ userId: USER, patch: { timezone: "Asia/Manila" } }, { settings });
     expect((await readSettings({ userId: USER }, { settings })).timezone).toBe("Asia/Manila");
+  });
+
+  it("CNT-2/SM-5b: rejects a junk timezone (no write) so the day boundary can't be corrupted", async () => {
+    const settings = fakeStore();
+    await expect(
+      updateSettings({ userId: USER, patch: { timezone: "Not/AZone" } }, { settings }),
+    ).rejects.toThrow(RangeError);
+    expect((await readSettings({ userId: USER }, { settings })).timezone).toBe(
+      DEFAULT_USER_SETTINGS.timezone,
+    );
   });
 });

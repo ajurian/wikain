@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from "motion/react";
 import { Info } from "lucide-react";
-import type { MockBounceKind } from "../mock/judge";
+import type { BounceKind } from "../types/verdict";
 
 /**
  * Rule-layer bounce callout (RL-2/3/4). Deliberately NEUTRAL — a bounce is not
@@ -12,11 +12,11 @@ export function BounceCallout({
   kind,
   lemma,
 }: {
-  kind: MockBounceKind;
+  kind: BounceKind;
   lemma: string;
 }) {
   const reduced = useReducedMotion();
-  const copy: Record<MockBounceKind, string> = {
+  const copy: Record<BounceKind, string> = {
     absent: `Your sentence needs “${lemma}” in it — any form works (${lemma}, ${lemma}d, ${lemma}s…).`,
     degenerate: "Give it a bit more — a full sentence with a few more words.",
     taglish: "Let’s keep this one in English — try rewriting it.",

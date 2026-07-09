@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { resolveEdits, type ResolvedEdit } from "../../domain/editResolution.js";
-import type { MockReplacement } from "../mock/judge";
+import type { Replacement } from "../types/verdict";
 import { cn } from "@/lib/utils";
 
 /**
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  * (EDIT-3/4/5/6); on fallback the whole corrected_sentence is shown (EDIT-4).
  */
 
-const REASON_TEXT: Record<MockReplacement["reason"], string> = {
+const REASON_TEXT: Record<Replacement["reason"], string> = {
   sense: "text-reason-sense",
   grammar: "text-reason-grammar",
   collocation: "text-reason-collocation",
@@ -25,7 +25,7 @@ export function EditedSentence({
   correctedSentence,
 }: {
   rawSentence: string;
-  replacements: MockReplacement[];
+  replacements: Replacement[];
   correctedSentence?: string;
 }) {
   const reduced = useReducedMotion();

@@ -3,7 +3,7 @@
  * persisted through `updateSettingsFn` and read back by the dashboard goal ring. Identity (name/email)
  * + sign-out come from the real session. No notification or streak settings — streaks don't exist (CNT-9).
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
@@ -17,6 +17,22 @@ import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "../../../../domain/constants.js"
 import type { UserSettings } from "../../../../domain/settings.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+/** Fallback zone list for runtimes without `Intl.supportedValuesOf` (older engines). */
+const COMMON_TIMEZONES = [
+  "UTC",
+  "Asia/Manila",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Asia/Kolkata",
+  "Europe/London",
+  "Europe/Berlin",
+  "America/New_York",
+  "America/Chicago",
+  "America/Los_Angeles",
+  "Australia/Sydney",
+];
 
 export const Route = createFileRoute("/_authenticated/_onboarded/settings")({
   component: SettingsPage,
@@ -58,6 +74,19 @@ function SettingsPage() {
     setPendingGoal(clamped);
     mutation.mutate({ dailyGoal: clamped });
   }
+
+  // The day-boundary clock (SM-5b/CNT-2). Offer every IANA zone the runtime knows, with UTC, the
+  // device's own zone, and the persisted one always present so the current value is always selectable.
+  const currentTz = settings?.timezone ?? "UTC";
+  const deviceTz =
+    typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
+  const zones = useMemo(() => {
+    const supportedValuesOf = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
+      .supportedValuesOf;
+    const all =
+      typeof supportedValuesOf === "function" ? supportedValuesOf("timeZone") : COMMON_TIMEZONES;
+    return Array.from(new Set(["UTC", deviceTz, currentTz, ...all].filter(Boolean)));
+  }, [deviceTz, currentTz]);
 
   async function onSignOut() {
     await signOut();
@@ -130,16 +159,39 @@ function SettingsPage() {
                 <Link to="/placement">Retune</Link>
               </Button>
             </div>
-            <div className="flex items-center justify-between border-t border-line pt-4">
+            <div className="space-y-2 border-t border-line pt-4">
               <div>
                 <p className="text-sm font-medium text-ink">Timezone</p>
                 <p className="mt-0.5 text-xs text-ink-faint">
-                  {settings?.timezone ?? "UTC"} — “separate days” for your progress follow this clock.
+                  “Separate days” for your counter and daily goal follow this clock.
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                Change
-              </Button>
+              <select
+                aria-label="Timezone"
+                value={currentTz}
+                disabled={mutation.isPending}
+                onChange={(e) => mutation.mutate({ timezone: e.target.value })}
+                className={cn(
+                  "h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none",
+                  "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                  "disabled:cursor-not-allowed disabled:opacity-50",
+                )}
+              >
+                {zones.map((z) => (
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
+                ))}
+              </select>
+              {deviceTz && deviceTz !== currentTz && (
+                <button
+                  type="button"
+                  onClick={() => mutation.mutate({ timezone: deviceTz })}
+                  className="text-xs text-primary underline-offset-2 hover:underline"
+                >
+                  Use this device’s time ({deviceTz})
+                </button>
+              )}
             </div>
           </CardContent>
         </Card>
