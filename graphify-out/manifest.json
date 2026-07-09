@@ -365,8 +365,8 @@
     "semantic_hash": "c698309979460d0f02ba616417844399"
   },
   "CLAUDE.md": {
-    "mtime": 1783595433.787108,
-    "ast_hash": "c1975375089f4d5b5015a12f7406a2b7",
+    "mtime": 1783596017.2534623,
+    "ast_hash": "fb0b0538208ca3b3cae6d3863026094a",
     "semantic_hash": ""
   },
   "docs/BUILD.md": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   "src/presentation/components/bounce-callout.tsx": {
-    "mtime": 1783084063.1464372,
-    "ast_hash": "efa5e9ab9f73b8e9b709efc342b6666c",
+    "mtime": 1783595840.156425,
+    "ast_hash": "c47041ee7a0cdee14163d24ae1ff25a0",
     "semantic_hash": ""
   },
   "src/presentation/components/checking-indicator.tsx": {
@@ -775,8 +775,8 @@
     "semantic_hash": ""
   },
   "src/presentation/components/edited-sentence.tsx": {
-    "mtime": 1783057875.466943,
-    "ast_hash": "11d94e5547c32151d9fe0edcc82f62a2",
+    "mtime": 1783595847.3721116,
+    "ast_hash": "7e0146d5ca963577f970036a19c40a84",
     "semantic_hash": ""
   },
   "src/presentation/components/goal-ring.tsx": {
@@ -810,8 +810,8 @@
     "semantic_hash": ""
   },
   "src/presentation/components/verdict-panel.tsx": {
-    "mtime": 1783261961.8863451,
-    "ast_hash": "306781bc23907a9b169eb4c60c4e92e5",
+    "mtime": 1783595849.7409654,
+    "ast_hash": "b4e64833a1fa1c5e4db9b2716bd3cc26",
     "semantic_hash": ""
   },
   "src/presentation/components/wordmark.tsx": {
@@ -819,19 +819,9 @@
     "ast_hash": "827ea774da5a74a43244215a79af4352",
     "semantic_hash": ""
   },
-  "src/presentation/mock/catalog.ts": {
-    "mtime": 1783057650.019506,
-    "ast_hash": "cff09afcac186dcd36857a35bec874f6",
-    "semantic_hash": ""
-  },
-  "src/presentation/mock/judge.ts": {
-    "mtime": 1783057709.1116467,
-    "ast_hash": "97ff8b1aecc2f05796ee66dc4306992b",
-    "semantic_hash": ""
-  },
   "src/presentation/server/counter.ts": {
-    "mtime": 1783261456.7914448,
-    "ast_hash": "b4ca23dc7f23bb8ddb0cf309ae1b528a",
+    "mtime": 1783595678.930197,
+    "ast_hash": "7e65cdb2fcec887f6bc38e223bae4e60",
     "semantic_hash": ""
   },
   ".claude/skills/brand/SKILL.md": {
@@ -890,8 +880,8 @@
     "semantic_hash": ""
   },
   "src/presentation/server/dashboard.ts": {
-    "mtime": 1783261461.5588903,
-    "ast_hash": "14aa9abbbc5dd2a340454f92b9bdd30b",
+    "mtime": 1783595693.3202786,
+    "ast_hash": "814c610100fe2035bbdd8215006348ee",
     "semantic_hash": ""
   },
   "src/application/readWordDetail.test.ts": {
@@ -1095,13 +1085,13 @@
     "semantic_hash": ""
   },
   "src/application/updateSettings.test.ts": {
-    "mtime": 1783230689.8954487,
-    "ast_hash": "a788f6428ab8106877484fdf20224aac",
+    "mtime": 1783595655.2652118,
+    "ast_hash": "23b3f4c70993f4797ae43656e2330fb1",
     "semantic_hash": ""
   },
   "src/application/updateSettings.ts": {
-    "mtime": 1783230252.07585,
-    "ast_hash": "d157b560992b1653c106597baad07d4d",
+    "mtime": 1783595645.7452426,
+    "ast_hash": "9f5246c795949decbab67c53016aee51",
     "semantic_hash": ""
   },
   "src/domain/settings.ts": {
@@ -1345,8 +1335,8 @@
     "semantic_hash": ""
   },
   "src/presentation/routes/_authenticated/_onboarded/settings.tsx": {
-    "mtime": 1783504072.9623418,
-    "ast_hash": "75e62af62534c3eb30c9da461034fa08",
+    "mtime": 1783595782.72729,
+    "ast_hash": "53f9a3cc894548c90264778cf32c1eaa",
     "semantic_hash": ""
   },
   "src/presentation/routes/_authenticated/_onboarded/words.$wordId.tsx": {
@@ -1412,6 +1402,21 @@
   "src/presentation/components/word-option-list.tsx": {
     "mtime": 1783521842.261632,
     "ast_hash": "fe8d3597c60cc1ea223ef1f46d73ec3c",
+    "semantic_hash": ""
+  },
+  "src/domain/timezone.test.ts": {
+    "mtime": 1783595599.5022254,
+    "ast_hash": "b556f7a5ea66ab5dd5419f4ea4ae346a",
+    "semantic_hash": ""
+  },
+  "src/domain/timezone.ts": {
+    "mtime": 1783595589.8840427,
+    "ast_hash": "294ae0fdf12d6d352e1a2a96430c1731",
+    "semantic_hash": ""
+  },
+  "src/presentation/types/verdict.ts": {
+    "mtime": 1783595825.344005,
+    "ast_hash": "0b29d2459b8541b98965102f13b86b1e",
     "semantic_hash": ""
   }
 }
