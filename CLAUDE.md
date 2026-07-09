@@ -306,7 +306,38 @@ code + `spec/` IDs for detail:
     `npm run build` (no server ids in the client bundle). `npm run db:migrate` applies `0006` against Neon
     before the column is written.
 
+27. **Subject grouping below the four layers — the `DIR` rule** (`wire/onboarding-placement`). `ARCH-2` fixed
+    the four layers but said nothing about what goes *inside* them, so every layer root had grown into a flat
+    pile (`domain/` 26 modules, `application/` 30, `infrastructure/` 40+) with `grading.ts` beside `timezone.ts`
+    and `drizzleSettings.ts` beside `tagalogLexicon.ts`. A `CMP-2` failure with no rule naming it. rules: new
+    **`.claude/rules/09-structure.md`** (`DIR-1..6`) — group by **subject, not kind** (`review/`, `mastery/`;
+    never `utils/`/`types/`/`services/`), with infrastructure carved out because there the **vendor seam IS the
+    subject** (`db/`, `judge/`, `nlp/`, `persistence/`); create a folder **on the third file** and nest **one**
+    level (`DIR-2`); **cross-subject modules stay at the layer root** (`DIR-3`); tests/doubles/contracts sit with
+    what they serve (`DIR-4`); **framework-owned paths are exempt** (`DIR-5`); **no `index.ts` barrels** (`DIR-6`
+    — a barrel re-exporting a server module is exactly how a Neon/DeepSeek id reaches the client bundle).
+    tree: `domain/{review,mastery,scheduling,placement}`; `application/{review,session,placement,progress}`;
+    `infrastructure/{persistence,judge,nlp,smoke}`; `presentation/components/review/`. **`application/ports/`
+    stays a by-kind folder** — it is the layer's published abstract surface (`CMP-6`) and `ports/cardRepository`
+    alone has **26 importers across six subjects**, so filing it under one would invent a false owner. `db/` and
+    `auth/` did not move (`drizzle.config.ts` + `db:seed:catalog` name `db/`, and `db/pglite.ts` resolves
+    `drizzle/` by its own depth). The 12 end-to-end smokes have no single impl — their unit under test is
+    `composition.ts`, so they sit one level below it in `smoke/`, the **one sanctioned kind-folder**. Three
+    corrections the rule forced against the plan: `entryState.ts` → `mastery/` (it returns a `MasteryState`;
+    its reason to change is the ladder, not seeding); no `components/shell/` (usage showed `mastery-chip` has
+    6 call sites and `wordmark` 3 subjects → both cross-subject, `DIR-3`); no `components/dashboard/` or
+    `components/placement/` (2 files each, under `DIR-2`'s threshold). **Pure move, zero behavior change** —
+    every import re-based by an exact `git mv` rename map, never a basename guess. **Verified:** both typecheck
+    gates; **`npm test` 348 green at every one of the four commits** (the baseline was captured first, so any
+    delta would have been the refactor's); `npm run build` + a grep of `dist/client` for `drizzle-orm`/`neon`/
+    `pglite`/`DEEPSEEK_API_KEY`/`BETTER_AUTH_SECRET`/`DATABASE_URL` (0 hits); and a real `npm run dev` + Neon
+    drive-through confirming the three-layout guard chain still 307s `/`, `/review`, `/words`, `/settings`,
+    `/onboarding`, `/placement` → `/signin` while `/signin`+`/signup` render 200.
+
 **Key design conventions (follow in later slices):**
+- **The tree is grouped by subject below the layer boundary** (`.claude/rules/09-structure.md`, `DIR-1..6`).
+  A new module goes in the subject folder it changes with — not the layer root, and not a kind-folder. Create
+  a folder on the third file; keep cross-subject modules (and `application/ports/`) at the layer root.
 - **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
   domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
   a **separate** `SentenceAnalyzer` port (SOLID-4). One wink adapter implements both.
@@ -335,9 +366,12 @@ path for `placement_marks` (its absence is why `/placement` does not re-offer pe
 (SEED-4, slice 22), the `/settings` **"Retune"** entry point (slice 23), and the **user-local timezone**
 (SM-5b/CNT-2, slice 25) are wired — no longer deferred.)*
 
-> **Status (2026-07-09):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–26 (wiring)
-> land on **`design/brand-ui-system`** and descendant wiring branches (currently `wire/onboarding-placement`
-> — `git log` to confirm). **Every surface is wired and guarded**: `/`, `/review`, `/words`,
+> **Status (2026-07-09):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–26 (wiring) + 27
+> (the `DIR` tree refactor) land on **`design/brand-ui-system`** and descendant wiring branches (currently
+> `wire/onboarding-placement`
+> — `git log` to confirm). Since slice 27 every layer is grouped into **subject folders** — paths written in
+> older slice notes above (`src/domain/grading.ts`, `src/infrastructure/drizzleCatalog.ts`, …) are stale; the
+> module names are unchanged, only their folders. **Every surface is wired and guarded**: `/`, `/review`, `/words`,
 > `/onboarding`, `/settings` run on real use-cases behind a real **BetterAuth** session (slice 20), and
 > since slice 22 the guard is a **three-layout chain** (`_public` → `_authenticated` → `_onboarded`) that
 > makes onboarding mandatory and bounces signed-in users off `/signin`/`/signup`; the
