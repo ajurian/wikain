@@ -1,7 +1,7 @@
 # Graph Report - wikain  (2026-07-09)
 
 ## Corpus Check
-- 284 files · ~136,764 words
+- 286 files · ~139,033 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4efdab88`
+- Built from commit: `b6b21fcf`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -484,8 +484,8 @@ Cohesion: 0.25
 Nodes (7): PlacementProfileStore, ReadPlacementProfileDeps, ReadPlacementProfileInput, DEFAULT_PLACEMENT_PROFILE, PlacementProfile, DrizzlePlacementProfile, describePlacementProfileContract()
 
 ### Community 178 - "review.tsx"
-Cohesion: 0.13
-Nodes (13): CardRepository, card(), fsrs(), FSRS_STUB, FUTURE, NOW, PAST, Card (+5 more)
+Cohesion: 0.15
+Nodes (11): CardRepository, card(), fsrs(), FSRS_STUB, NOW, Card, ReviewLog, card() (+3 more)
 
 ### Community 179 - "ruleLayer.ts"
 Cohesion: 0.13
@@ -581,7 +581,7 @@ Nodes (6): Layout, Motion principles (details in `references/motion.md`), Non-ne
 
 ### Community 205 - "readWordDetail.test.ts"
 Cohesion: 0.11
-Nodes (22): Scheduler, readUsableCounter(), ReadUsableCounterDeps, ReadUsableCounterInput, card(), fsrs(), FSRS_STUB, log() (+14 more)
+Nodes (21): card(), fsrs(), FSRS_STUB, FUTURE, NOW, PAST, readUsableCounter(), card() (+13 more)
 
 ### Community 206 - "PlacementMarksStore"
 Cohesion: 0.24
@@ -592,8 +592,8 @@ Cohesion: 0.40
 Nodes (4): Component inventory, Composites, Iconography, Primitives (ui/)
 
 ### Community 208 - "coldStart.ts"
-Cohesion: 0.11
-Nodes (23): readWordDetail(), ReadWordDetailDeps, ReadWordDetailInput, WordDetail, readWordsList(), ReadWordsListDeps, ReadWordsListInput, card() (+15 more)
+Cohesion: 0.10
+Nodes (26): Scheduler, ReadUsableCounterDeps, ReadUsableCounterInput, readWordDetail(), ReadWordDetailDeps, ReadWordDetailInput, WordDetail, readWordsList() (+18 more)
 
 ### Community 209 - "app-shell.tsx"
 Cohesion: 0.21
@@ -661,7 +661,7 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `MasteryState` connect `submitFreeProduction.test.ts` to `Catalog & Lexical Item`, `drizzleCardRepository.ts`, `readWordsList.test.ts`, `DeepSeekJudge`, `Scheduler`, `readWordDetail.test.ts`, `startSession.test.ts`, `coldStart.ts`, `review.tsx`, `ruleLayer.ts`, `masteryHistory.ts`, `composition.ts`, `submitFreeProduction.ts`, `deepSeekJudge.test.ts`, `editResolution.ts`, `deepSeekJudge.test.ts`, `session-summary.tsx`?**
   _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `CardRepository` connect `review.tsx` to `Catalog & Lexical Item`, `Grading & Rule Layer`, `drizzleCardRepository.ts`, `submitFreeProduction.test.ts`, `Scheduler`, `readWordDetail.test.ts`, `submitCloze.test.ts`, `coldStart.ts`, `masteryHistory.ts`, `composition.ts`, `ruleLayer.ts`, `MemoVersions`, `submitFreeProduction.ts`, `Community 23`, `Community 62`, `JudgeVerdict`, `deepSeekJudge.test.ts`, `deepSeekJudge.test.ts`?**
+- **Why does `CardRepository` connect `review.tsx` to `Catalog & Lexical Item`, `Grading & Rule Layer`, `drizzleCardRepository.ts`, `submitFreeProduction.test.ts`, `Scheduler`, `readWordDetail.test.ts`, `submitCloze.test.ts`, `coldStart.ts`, `masteryHistory.ts`, `ruleLayer.ts`, `composition.ts`, `MemoVersions`, `submitFreeProduction.ts`, `Community 23`, `Community 62`, `JudgeVerdict`, `deepSeekJudge.test.ts`, `deepSeekJudge.test.ts`?**
   _High betweenness centrality (0.010) - this node is a cross-community bridge._
 - **Why does `JudgeVerdict` connect `seedIntroductions.test.ts` to `index.tsx`, `Catalog & Lexical Item`, `Review Use-Cases`, `readWordsList.test.ts`, `drizzleCardRepository.ts`, `MemoVersions`, `submitFreeProduction.ts`, `deepSeekJudge.test.ts`, `deepSeekJudge.test.ts`?**
   _High betweenness centrality (0.009) - this node is a cross-community bridge._

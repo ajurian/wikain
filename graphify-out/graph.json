@@ -1608,7 +1608,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_application_ports_scheduler_scheduler",
-      "community": 205,
+      "community": 208,
       "norm_label": "scheduler"
     },
     {
@@ -1618,7 +1618,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_application_ports_scheduler_scheduler_newcard",
-      "community": 205,
+      "community": 208,
       "norm_label": ".newcard()"
     },
     {
@@ -1638,7 +1638,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_application_ports_scheduler_scheduler_getretrievability",
-      "community": 205,
+      "community": 208,
       "norm_label": ".getretrievability()"
     },
     {
@@ -1938,7 +1938,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test",
-      "community": 178,
+      "community": 205,
       "norm_label": "readdashboardsummary.test.ts"
     },
     {
@@ -1948,7 +1948,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test_now",
-      "community": 178,
+      "community": 205,
       "norm_label": "now"
     },
     {
@@ -1958,7 +1958,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test_fsrs_stub",
-      "community": 178,
+      "community": 205,
       "norm_label": "fsrs_stub"
     },
     {
@@ -1968,7 +1968,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test_fsrs",
-      "community": 178,
+      "community": 205,
       "norm_label": "fsrs()"
     },
     {
@@ -1978,7 +1978,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test_card",
-      "community": 178,
+      "community": 205,
       "norm_label": "card()"
     },
     {
@@ -1988,7 +1988,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test_log",
-      "community": 178,
+      "community": 205,
       "norm_label": "log()"
     },
     {
@@ -1998,7 +1998,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test_settingsstub",
-      "community": 178,
+      "community": 205,
       "norm_label": "settingsstub()"
     },
     {
@@ -2008,7 +2008,7 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test_makedeps",
-      "community": 178,
+      "community": 205,
       "norm_label": "makedeps()"
     },
     {
@@ -2018,7 +2018,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test_past",
-      "community": 178,
+      "community": 205,
       "norm_label": "past"
     },
     {
@@ -2028,7 +2028,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "src_application_readdashboardsummary_test_future",
-      "community": 178,
+      "community": 205,
       "norm_label": "future"
     },
     {
@@ -2328,7 +2328,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_readusablecounter",
-      "community": 205,
+      "community": 208,
       "norm_label": "readusablecounter.ts"
     },
     {
@@ -2338,7 +2338,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_application_readusablecounter_readusablecounterinput",
-      "community": 205,
+      "community": 208,
       "norm_label": "readusablecounterinput"
     },
     {
@@ -2348,7 +2348,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_application_readusablecounter_readusablecounterdeps",
-      "community": 205,
+      "community": 208,
       "norm_label": "readusablecounterdeps"
     },
     {
@@ -2378,7 +2378,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_application_readworddetail_test",
-      "community": 205,
+      "community": 178,
       "norm_label": "readworddetail.test.ts"
     },
     {
@@ -2388,7 +2388,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_application_readworddetail_test_now",
-      "community": 205,
+      "community": 178,
       "norm_label": "now"
     },
     {
@@ -2398,7 +2398,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_application_readworddetail_test_fsrs_stub",
-      "community": 205,
+      "community": 178,
       "norm_label": "fsrs_stub"
     },
     {
@@ -2408,7 +2408,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_application_readworddetail_test_fsrs",
-      "community": 205,
+      "community": 178,
       "norm_label": "fsrs()"
     },
     {
@@ -2418,7 +2418,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_application_readworddetail_test_card",
-      "community": 205,
+      "community": 178,
       "norm_label": "card()"
     },
     {
@@ -2428,7 +2428,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_application_readworddetail_test_log",
-      "community": 205,
+      "community": 178,
       "norm_label": "log()"
     },
     {
@@ -2438,7 +2438,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_application_readworddetail_test_item",
-      "community": 205,
+      "community": 178,
       "norm_label": "item()"
     },
     {
@@ -2448,7 +2448,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "src_application_readworddetail_test_makedeps",
-      "community": 205,
+      "community": 178,
       "norm_label": "makedeps()"
     },
     {
@@ -6325,7 +6325,7 @@
       "label": "verdictMemos",
       "file_type": "code",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L96",
+      "source_location": "L101",
       "_origin": "ast",
       "id": "src_infrastructure_db_schema_verdictmemos",
       "community": 196,
@@ -6335,7 +6335,7 @@
       "label": "placementMarks",
       "file_type": "code",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L115",
+      "source_location": "L120",
       "_origin": "ast",
       "id": "src_infrastructure_db_schema_placementmarks",
       "community": 196,
@@ -6345,7 +6345,7 @@
       "label": "settings",
       "file_type": "code",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L132",
+      "source_location": "L137",
       "_origin": "ast",
       "id": "src_infrastructure_db_schema_settings",
       "community": 196,
@@ -6355,7 +6355,7 @@
       "label": "placementProfile",
       "file_type": "code",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L152",
+      "source_location": "L157",
       "_origin": "ast",
       "id": "src_infrastructure_db_schema_placementprofile",
       "community": 196,
@@ -6365,7 +6365,7 @@
       "label": "lexicalItems",
       "file_type": "code",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L172",
+      "source_location": "L177",
       "_origin": "ast",
       "id": "src_infrastructure_db_schema_lexicalitems",
       "community": 220,
@@ -6915,7 +6915,7 @@
       "label": "fromLogRow()",
       "file_type": "code",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L87",
+      "source_location": "L90",
       "_origin": "ast",
       "id": "src_infrastructure_drizzlecardrepository_fromlogrow",
       "community": 1,
@@ -6925,7 +6925,7 @@
       "label": "DrizzleCardRepository",
       "file_type": "code",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L109",
+      "source_location": "L115",
       "_origin": "ast",
       "id": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
       "community": 2,
@@ -6935,7 +6935,7 @@
       "label": ".constructor()",
       "file_type": "code",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L110",
+      "source_location": "L116",
       "_origin": "ast",
       "id": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_constructor",
       "community": 2,
@@ -6945,7 +6945,7 @@
       "label": ".load()",
       "file_type": "code",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L112",
+      "source_location": "L118",
       "_origin": "ast",
       "id": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_load",
       "community": 1,
@@ -6955,7 +6955,7 @@
       "label": ".save()",
       "file_type": "code",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L121",
+      "source_location": "L127",
       "_origin": "ast",
       "id": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_save",
       "community": 1,
@@ -6965,7 +6965,7 @@
       "label": ".appendReviewLog()",
       "file_type": "code",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L131",
+      "source_location": "L137",
       "_origin": "ast",
       "id": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_appendreviewlog",
       "community": 1,
@@ -6975,7 +6975,7 @@
       "label": ".logsForWord()",
       "file_type": "code",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L136",
+      "source_location": "L142",
       "_origin": "ast",
       "id": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_logsforword",
       "community": 1,
@@ -6985,7 +6985,7 @@
       "label": ".listCards()",
       "file_type": "code",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L145",
+      "source_location": "L151",
       "_origin": "ast",
       "id": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_listcards",
       "community": 1,
@@ -12365,7 +12365,7 @@
       "label": "Build pipeline architecture (`build/`, docs/BUILD.md)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L332",
+      "source_location": "L351",
       "_origin": "ast",
       "id": "claude_build_pipeline_architecture_build_docs_build_md",
       "community": 64,
@@ -12375,7 +12375,7 @@
       "label": "Stage B generation loop \u2014 ACTIVE WORK (this is the task in progress)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L367",
+      "source_location": "L386",
       "_origin": "ast",
       "id": "claude_stage_b_generation_loop_active_work_this_is_the_task_in_progress",
       "community": 64,
@@ -15102,7 +15102,7 @@
       "contributor": null,
       "community": 133,
       "norm_label": "graphify trigger (project claude.md)",
-      "id": "claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_graphify_trigger"
+      "id": "claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_claude_graphify_trigger"
     },
     {
       "label": "Engineering Rules Overview",
@@ -19749,7 +19749,7 @@
       "context": "type",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L109",
+      "source_location": "L115",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
       "target": "src_application_ports_cardrepository_cardrepository",
@@ -32166,7 +32166,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/application/submitFreeProduction.ts",
-      "source_location": "L183",
+      "source_location": "L193",
       "weight": 1.0,
       "source": "src_application_submitfreeproduction_submitfreeproduction",
       "target": "src_domain_fluentgate_qualifiesforfluent"
@@ -32177,7 +32177,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/application/submitFreeProduction.ts",
-      "source_location": "L184",
+      "source_location": "L194",
       "weight": 1.0,
       "source": "src_application_submitfreeproduction_submitfreeproduction",
       "target": "src_domain_judgedpassledger_distinctpassdays"
@@ -32188,7 +32188,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/application/submitFreeProduction.ts",
-      "source_location": "L186",
+      "source_location": "L196",
       "weight": 1.0,
       "source": "src_application_submitfreeproduction_submitfreeproduction",
       "target": "src_domain_judgedpassledger_mostrecentpassscaffolded"
@@ -32199,7 +32199,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/application/submitFreeProduction.ts",
-      "source_location": "L174",
+      "source_location": "L184",
       "weight": 1.0,
       "source": "src_application_submitfreeproduction_submitfreeproduction",
       "target": "src_domain_mastery_demoteonerung"
@@ -32210,7 +32210,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/application/submitFreeProduction.ts",
-      "source_location": "L188",
+      "source_location": "L198",
       "weight": 1.0,
       "source": "src_application_submitfreeproduction_submitfreeproduction",
       "target": "src_domain_mastery_promoteonjudgedpass"
@@ -32221,7 +32221,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/application/submitFreeProduction.ts",
-      "source_location": "L156",
+      "source_location": "L161",
       "weight": 1.0,
       "source": "src_application_submitfreeproduction_submitfreeproduction",
       "target": "src_domain_rating_deriverating"
@@ -32232,7 +32232,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/application/submitFreeProduction.ts",
-      "source_location": "L155",
+      "source_location": "L160",
       "weight": 1.0,
       "source": "src_application_submitfreeproduction_submitfreeproduction",
       "target": "src_domain_verdict_passesgate"
@@ -33411,7 +33411,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L145",
+      "source_location": "L151",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_listcards",
       "target": "src_domain_card_card",
@@ -33422,7 +33422,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L112",
+      "source_location": "L118",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_load",
       "target": "src_domain_card_card",
@@ -33433,7 +33433,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L121",
+      "source_location": "L127",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_save",
       "target": "src_domain_card_card",
@@ -36586,7 +36586,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L131",
+      "source_location": "L137",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_appendreviewlog",
       "target": "src_domain_review_reviewlog",
@@ -36597,7 +36597,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L136",
+      "source_location": "L142",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_logsforword",
       "target": "src_domain_review_reviewlog",
@@ -39760,7 +39760,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L172",
+      "source_location": "L177",
       "weight": 1.0,
       "source": "src_infrastructure_db_schema",
       "target": "src_infrastructure_db_schema_lexicalitems",
@@ -39770,7 +39770,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L115",
+      "source_location": "L120",
       "weight": 1.0,
       "source": "src_infrastructure_db_schema",
       "target": "src_infrastructure_db_schema_placementmarks",
@@ -39780,7 +39780,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L152",
+      "source_location": "L157",
       "weight": 1.0,
       "source": "src_infrastructure_db_schema",
       "target": "src_infrastructure_db_schema_placementprofile",
@@ -39800,7 +39800,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L132",
+      "source_location": "L137",
       "weight": 1.0,
       "source": "src_infrastructure_db_schema",
       "target": "src_infrastructure_db_schema_settings",
@@ -39810,7 +39810,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/db/schema.ts",
-      "source_location": "L96",
+      "source_location": "L101",
       "weight": 1.0,
       "source": "src_infrastructure_db_schema",
       "target": "src_infrastructure_db_schema_verdictmemos",
@@ -40901,7 +40901,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L109",
+      "source_location": "L115",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository",
       "target": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
@@ -40931,7 +40931,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L87",
+      "source_location": "L90",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository",
       "target": "src_infrastructure_drizzlecardrepository_fromlogrow",
@@ -41115,7 +41115,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L133",
+      "source_location": "L139",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_appendreviewlog",
       "target": "src_infrastructure_drizzlecardrepository_drizzledb"
@@ -41126,7 +41126,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L146",
+      "source_location": "L152",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_listcards",
       "target": "src_infrastructure_drizzlecardrepository_drizzledb"
@@ -41137,7 +41137,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L113",
+      "source_location": "L119",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_load",
       "target": "src_infrastructure_drizzlecardrepository_drizzledb"
@@ -41148,7 +41148,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L137",
+      "source_location": "L143",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_logsforword",
       "target": "src_infrastructure_drizzlecardrepository_drizzledb"
@@ -41159,7 +41159,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L125",
+      "source_location": "L131",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_save",
       "target": "src_infrastructure_drizzlecardrepository_drizzledb"
@@ -41400,7 +41400,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L122",
+      "source_location": "L128",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_save",
       "target": "src_infrastructure_drizzlecardrepository_tocardrow",
@@ -41411,7 +41411,7 @@
       "context": "argument",
       "confidence": "INFERRED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L147",
+      "source_location": "L153",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_listcards",
       "target": "src_infrastructure_drizzlecardrepository_fromcardrow",
@@ -41422,7 +41422,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L118",
+      "source_location": "L124",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_load",
       "target": "src_infrastructure_drizzlecardrepository_fromcardrow",
@@ -41433,7 +41433,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L133",
+      "source_location": "L139",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_appendreviewlog",
       "target": "src_infrastructure_drizzlecardrepository_tologrow",
@@ -41444,7 +41444,7 @@
       "context": "argument",
       "confidence": "INFERRED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L142",
+      "source_location": "L148",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_logsforword",
       "target": "src_infrastructure_drizzlecardrepository_fromlogrow",
@@ -41454,7 +41454,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L131",
+      "source_location": "L137",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
       "target": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_appendreviewlog",
@@ -41464,7 +41464,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L110",
+      "source_location": "L116",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
       "target": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_constructor",
@@ -41474,7 +41474,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L145",
+      "source_location": "L151",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
       "target": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_listcards",
@@ -41484,7 +41484,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L112",
+      "source_location": "L118",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
       "target": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_load",
@@ -41494,7 +41494,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L136",
+      "source_location": "L142",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
       "target": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_logsforword",
@@ -41504,7 +41504,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "src/infrastructure/drizzleCardRepository.ts",
-      "source_location": "L121",
+      "source_location": "L127",
       "weight": 1.0,
       "source": "src_infrastructure_drizzlecardrepository_drizzlecardrepository",
       "target": "src_infrastructure_drizzlecardrepository_drizzlecardrepository_save",
@@ -50331,7 +50331,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L332",
+      "source_location": "L351",
       "weight": 1.0,
       "source": "claude_md_claude_claude",
       "target": "claude_build_pipeline_architecture_build_docs_build_md",
@@ -50401,7 +50401,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L367",
+      "source_location": "L386",
       "weight": 1.0,
       "source": "claude_build_pipeline_architecture_build_docs_build_md",
       "target": "claude_stage_b_generation_loop_active_work_this_is_the_task_in_progress",
@@ -53026,5 +53026,5 @@
       "source_file": "spec/11-end-to-end-loop.md"
     }
   ],
-  "built_at_commit": "4efdab88205c1cc345704c80457a372b98f2b7cc"
+  "built_at_commit": "b6b21fcf43018404f625440132a8ed08b7e5b98a"
 }
