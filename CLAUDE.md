@@ -31,6 +31,7 @@ with `00-overview.md` (legend + prefix map).
 @.claude/rules/06-tdd.md
 @.claude/rules/07-stack.md
 @.claude/rules/08-comments.md
+@.claude/rules/09-structure.md
 
 ## Current state
 

@@ -28,3 +28,4 @@ is built. The implemented `build/` pipeline is the **living proof** cited throug
 | `06-tdd.md` | `TDD` | red→green→refactor discipline, test placement |
 | `07-stack.md` | `STACK` | Node/ESM/npm/Vite/TanStack/Neon/BetterAuth/shadcn |
 | `08-comments.md` | `CMT` | comment the why, not the what |
+| `09-structure.md` | `DIR` | directory tree: subject grouping below the four layers |
