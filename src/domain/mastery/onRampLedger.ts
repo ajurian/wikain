@@ -1,4 +1,4 @@
-import type { ReviewLog } from "./review.js";
+import type { ReviewLog } from "../review/review.js";
 
 /**
  * The `Seen` on-ramp ledger (spec/01 SM-3, spec/02 RAT-7) — a pure reduction over a word's ReviewLog

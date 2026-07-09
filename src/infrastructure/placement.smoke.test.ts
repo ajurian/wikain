@@ -5,7 +5,7 @@ import { readPlacementProfile } from "../application/readPlacementProfile.js";
 import { seedIntroductions } from "../application/seedIntroductions.js";
 import { composeSeeding } from "./composition.js";
 import { makeTestStores } from "./testStores.js";
-import { LEXTALE_ITEMS } from "../domain/lextale.js";
+import { LEXTALE_ITEMS } from "../domain/placement/lextale.js";
 import { USER_A } from "./testIds.js";
 
 /** A perfect LexTALE run ⇒ score 100 ⇒ the C1 frontier. */

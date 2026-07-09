@@ -33,8 +33,8 @@ import { ArrowRight, CircleCheck, CloudOff, Loader2 } from "lucide-react";
 import {
   frontierBandForCoarseLevel,
   type CoarseLevel,
-} from "../../../domain/placement.js";
-import type { RuleBounceReason } from "../../../domain/ruleLayer.js";
+} from "../../../domain/placement/placement.js";
+import type { RuleBounceReason } from "../../../domain/review/ruleLayer.js";
 import type { SeededWordView } from "../../../application/presentSeededWords.js";
 import {
   seedFirstSessionFn,

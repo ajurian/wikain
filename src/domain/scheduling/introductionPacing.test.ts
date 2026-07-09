@@ -4,7 +4,7 @@ import {
   FIRST_SESSION_SEED_WORDS,
   NEW_PER_DAY,
   NEW_FRACTION_UNDER_BACKLOG,
-} from "./constants.js";
+} from "../constants.js";
 
 describe("SEED-6 introduction pacing", () => {
   it("SEED-1/6: the first session seeds FIRST_SESSION_SEED_WORDS regardless of backlog", () => {

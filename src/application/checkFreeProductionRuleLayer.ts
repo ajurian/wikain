@@ -1,4 +1,4 @@
-import { checkRuleLayer, type RuleBounceReason } from "../domain/ruleLayer.js";
+import { checkRuleLayer, type RuleBounceReason } from "../domain/review/ruleLayer.js";
 import { MAX_RULE_BOUNCE_RETRIES } from "../domain/constants.js";
 import type { Catalog } from "./ports/catalog.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";

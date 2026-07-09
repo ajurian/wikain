@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { WinkLemmatizer } from "./winkLemmatizer.js";
-import { isLemmaMatch } from "../domain/grading.js";
+import { isLemmaMatch } from "../domain/review/grading.js";
 
 const lem = new WinkLemmatizer();
 

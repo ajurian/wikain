@@ -6,7 +6,7 @@
  * enforced by the caller (submitFreeProduction), which simply never schedules on a bounce.
  */
 import { isLemmaMatch } from "./grading.js";
-import { DEGENERATE_MIN_CONTENT_TOKENS, VERBATIM_SIMILARITY_THRESHOLD } from "./constants.js";
+import { DEGENERATE_MIN_CONTENT_TOKENS, VERBATIM_SIMILARITY_THRESHOLD } from "../constants.js";
 
 /**
  * Structural token data the rule layer reasons over. Declared in the domain (no NLP library) so the

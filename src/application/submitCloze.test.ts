@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { submitCloze, type SubmitClozeDeps } from "./submitCloze.js";
-import type { Card, FsrsCardState } from "../domain/card.js";
+import type { Card, FsrsCardState } from "../domain/mastery/card.js";
 import type { LexicalItem } from "../domain/lexicalItem.js";
-import type { FsrsReviewLog, ReviewLog } from "../domain/review.js";
-import type { Rating } from "../domain/rating.js";
+import type { FsrsReviewLog, ReviewLog } from "../domain/review/review.js";
+import type { Rating } from "../domain/review/rating.js";
 import type { Catalog } from "./ports/catalog.js";
 import type { CardRepository } from "./ports/cardRepository.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";

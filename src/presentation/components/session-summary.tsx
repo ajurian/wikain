@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, MoveDown, MoveUp } from "lucide-react";
 import { MasteryChip } from "./mastery-chip";
-import type { MasteryState } from "../../domain/card.js";
+import type { MasteryState } from "../../domain/mastery/card.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 

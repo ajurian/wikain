@@ -5,7 +5,7 @@ import { FakeJudge, passingVerdict } from "./fakeJudge.js";
 import { makeTestStores, smokeFixtureItem } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
-import type { MasteryState } from "../domain/card.js";
+import type { MasteryState } from "../domain/mastery/card.js";
 import { USER_A } from "./testIds.js";
 
 /**

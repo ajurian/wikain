@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from "vitest";
 import type { PlacementProfileStore } from "../application/ports/placementProfile.js";
-import { DEFAULT_PLACEMENT_PROFILE } from "../domain/placementProfile.js";
+import { DEFAULT_PLACEMENT_PROFILE } from "../domain/placement/placementProfile.js";
 import { USER_A, USER_B } from "./testIds.js";
 
 export function describePlacementProfileContract(

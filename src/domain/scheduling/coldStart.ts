@@ -1,4 +1,4 @@
-import type { Cefr } from "./lexicalItem.js";
+import type { Cefr } from "../lexicalItem.js";
 
 /** FSRS difficulty is bounded to [1, 10] (1 = easiest). */
 const MIN_DIFFICULTY = 1;

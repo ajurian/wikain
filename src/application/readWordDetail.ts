@@ -1,8 +1,8 @@
-import { distinctPassDays } from "../domain/judgedPassLedger.js";
+import { distinctPassDays } from "../domain/mastery/judgedPassLedger.js";
 import { isCounted } from "../domain/counter.js";
 import { COUNTER_R_FLOOR } from "../domain/constants.js";
-import { deriveMasteryHistory, type MasteryHistoryEntry } from "../domain/masteryHistory.js";
-import type { MasteryState } from "../domain/card.js";
+import { deriveMasteryHistory, type MasteryHistoryEntry } from "../domain/mastery/masteryHistory.js";
+import type { MasteryState } from "../domain/mastery/card.js";
 import type { CardRepository } from "./ports/cardRepository.js";
 import type { Scheduler } from "./ports/scheduler.js";
 import type { Catalog } from "./ports/catalog.js";

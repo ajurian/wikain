@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { deriveMasteryHistory } from "./masteryHistory.js";
-import type { FsrsReviewLog, ReviewLog, ReviewTier } from "./review.js";
-import type { Rating } from "./rating.js";
-import { FLUENT_MIN_STABILITY_DAYS } from "./constants.js";
+import type { FsrsReviewLog, ReviewLog, ReviewTier } from "../review/review.js";
+import type { Rating } from "../review/rating.js";
+import { FLUENT_MIN_STABILITY_DAYS } from "../constants.js";
 
 const USER = "u1";
 const SENSE = "negotiate_verb_01";

@@ -9,7 +9,7 @@
  */
 import { and, eq } from "drizzle-orm";
 import type { MemoVersions, VerdictMemoPort } from "../application/ports/verdictMemo.js";
-import type { JudgeVerdict } from "../domain/verdict.js";
+import type { JudgeVerdict } from "../domain/review/verdict.js";
 import type { DrizzleDb } from "./drizzleCardRepository.js";
 import { verdictMemos } from "./db/schema.js";
 

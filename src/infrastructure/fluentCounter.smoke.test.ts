@@ -6,7 +6,7 @@ import { makeTestStores, smokeFixtureItem } from "./testStores.js";
 import { runReviewPass, type RunReviewPassDeps } from "../application/runReviewPass.js";
 import { readUsableCounter } from "../application/readUsableCounter.js";
 import type { DrizzleCardRepository } from "./drizzleCardRepository.js";
-import type { Card, FsrsCardState } from "../domain/card.js";
+import type { Card, FsrsCardState } from "../domain/mastery/card.js";
 import { USER_A } from "./testIds.js";
 
 /**

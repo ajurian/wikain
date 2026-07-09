@@ -1,4 +1,4 @@
-import type { MasteryState } from "./card.js";
+import type { MasteryState } from "../mastery/card.js";
 import type { ReviewTier } from "./review.js";
 
 /**

@@ -1,7 +1,7 @@
-import type { Card } from "../domain/card.js";
-import { introductionState } from "../domain/entryState.js";
-import { newIntroductionsAllowed } from "../domain/introductionPacing.js";
-import { coldStartDifficulty } from "../domain/coldStart.js";
+import type { Card } from "../domain/mastery/card.js";
+import { introductionState } from "../domain/mastery/entryState.js";
+import { newIntroductionsAllowed } from "../domain/scheduling/introductionPacing.js";
+import { coldStartDifficulty } from "../domain/scheduling/coldStart.js";
 import type { Catalog } from "./ports/catalog.js";
 import type { WordSource } from "./ports/wordSource.js";
 import type { CardRepository } from "./ports/cardRepository.js";

@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { runReviewPass, type RunReviewPassDeps } from "./runReviewPass.js";
-import type { Card, FsrsCardState, MasteryState } from "../domain/card.js";
+import type { Card, FsrsCardState, MasteryState } from "../domain/mastery/card.js";
 import type { LexicalItem } from "../domain/lexicalItem.js";
-import type { NlpToken } from "../domain/ruleLayer.js";
-import type { JudgeVerdict } from "../domain/verdict.js";
-import type { FsrsReviewLog, ReviewLog } from "../domain/review.js";
-import type { Rating } from "../domain/rating.js";
+import type { NlpToken } from "../domain/review/ruleLayer.js";
+import type { JudgeVerdict } from "../domain/review/verdict.js";
+import type { FsrsReviewLog, ReviewLog } from "../domain/review/review.js";
+import type { Rating } from "../domain/review/rating.js";
 import type { Catalog } from "./ports/catalog.js";
 import type { CardRepository } from "./ports/cardRepository.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";

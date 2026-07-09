@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { CircleCheck, CircleX } from "lucide-react";
 import { EditedSentence } from "./edited-sentence";
 import { MasteryChip } from "./mastery-chip";
-import type { MasteryState } from "../../domain/card.js";
+import type { MasteryState } from "../../domain/mastery/card.js";
 import type { Replacement } from "../types/verdict";
 
 /**

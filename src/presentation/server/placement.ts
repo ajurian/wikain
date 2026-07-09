@@ -7,9 +7,9 @@ import { recordPlacementMarks } from "../../application/recordPlacementMarks.js"
 import { readPlacementProfile } from "../../application/readPlacementProfile.js";
 import { recordCoarseLevel } from "../../application/recordCoarseLevel.js";
 import { recordLexTaleResult, type LexTaleResult } from "../../application/recordLexTaleResult.js";
-import { isCoarseLevel, type CoarseLevel } from "../../domain/placement.js";
-import { LEXTALE_ITEMS } from "../../domain/lextale.js";
-import type { PlacementProfile } from "../../domain/placementProfile.js";
+import { isCoarseLevel, type CoarseLevel } from "../../domain/placement/placement.js";
+import { LEXTALE_ITEMS } from "../../domain/placement/lextale.js";
+import type { PlacementProfile } from "../../domain/placement/placementProfile.js";
 import { currentUserId } from "./currentUser.js";
 import { placementSlateDeps, recordMarksDeps, placementProfileDeps } from "./composition.js";
 

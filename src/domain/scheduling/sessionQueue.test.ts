@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { orderSessionQueue } from "./sessionQueue.js";
-import type { Card, MasteryState } from "./card.js";
+import type { Card, MasteryState } from "../mastery/card.js";
 
 /**
  * Cards only need `senseId` + `fsrs.due` for surfacing/ordering; the rest of the FSRS payload is

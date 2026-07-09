@@ -1,4 +1,4 @@
-import { distinctPassDays } from "../domain/judgedPassLedger.js";
+import { distinctPassDays } from "../domain/mastery/judgedPassLedger.js";
 import { isCounted } from "../domain/counter.js";
 import type { CardRepository } from "./ports/cardRepository.js";
 import type { Scheduler } from "./ports/scheduler.js";

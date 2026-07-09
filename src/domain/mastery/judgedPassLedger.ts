@@ -1,4 +1,4 @@
-import type { ReviewLog } from "./review.js";
+import type { ReviewLog } from "../review/review.js";
 
 /**
  * The judged-pass ledger (spec/01 SM-5, spec/10 CNT-2) — pure reductions over a word's ReviewLog

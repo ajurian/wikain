@@ -10,7 +10,7 @@ import {
 } from "../../application/judgeFirstProduction.js";
 import { recordCoarseLevel } from "../../application/recordCoarseLevel.js";
 import { completeOnboarding } from "../../application/completeOnboarding.js";
-import { isCoarseLevel, type CoarseLevel } from "../../domain/placement.js";
+import { isCoarseLevel, type CoarseLevel } from "../../domain/placement/placement.js";
 import { currentUserId } from "./currentUser.js";
 import { seedingDeps, reviewDeps, placementProfileDeps } from "./composition.js";
 

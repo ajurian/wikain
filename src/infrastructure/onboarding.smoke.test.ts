@@ -8,7 +8,7 @@ import type { JudgePort } from "../application/ports/judge.js";
 import { composeSeeding, composeFreeProduction, DEV_JUDGE_VERSIONS } from "./composition.js";
 import { makeTestStores } from "./testStores.js";
 import { FIRST_SESSION_SEED_WORDS } from "../domain/constants.js";
-import { LEXTALE_ITEMS } from "../domain/lextale.js";
+import { LEXTALE_ITEMS } from "../domain/placement/lextale.js";
 import { USER_A } from "./testIds.js";
 
 /** A judge that always passes the gate (offline; no DeepSeek key or network). */

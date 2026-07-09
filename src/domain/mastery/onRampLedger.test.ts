@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { nextSeenTier } from "./onRampLedger.js";
-import type { ReviewLog } from "./review.js";
-import type { ReviewTier } from "./review.js";
-import type { Rating } from "./rating.js";
+import type { ReviewLog } from "../review/review.js";
+import type { ReviewTier } from "../review/review.js";
+import type { Rating } from "../review/rating.js";
 
 /**
  * The ledger reads only `tier` + `rating` (the fold replays logs in append order); the FSRS payload

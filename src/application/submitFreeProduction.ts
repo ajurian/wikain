@@ -1,10 +1,10 @@
-import { demoteOneRung, promoteOnJudgedPass } from "../domain/mastery.js";
-import { passesGate, type JudgeVerdict } from "../domain/verdict.js";
-import { deriveRating, type Rating } from "../domain/rating.js";
-import { distinctPassDays, mostRecentPassScaffolded } from "../domain/judgedPassLedger.js";
-import { qualifiesForFluent } from "../domain/fluentGate.js";
-import type { Card, MasteryState } from "../domain/card.js";
-import type { ReviewLog } from "../domain/review.js";
+import { demoteOneRung, promoteOnJudgedPass } from "../domain/mastery/mastery.js";
+import { passesGate, type JudgeVerdict } from "../domain/review/verdict.js";
+import { deriveRating, type Rating } from "../domain/review/rating.js";
+import { distinctPassDays, mostRecentPassScaffolded } from "../domain/mastery/judgedPassLedger.js";
+import { qualifiesForFluent } from "../domain/mastery/fluentGate.js";
+import type { Card, MasteryState } from "../domain/mastery/card.js";
+import type { ReviewLog } from "../domain/review/review.js";
 import type { Catalog } from "./ports/catalog.js";
 import type { CardRepository } from "./ports/cardRepository.js";
 import type { Scheduler } from "./ports/scheduler.js";
@@ -12,7 +12,7 @@ import type { Lemmatizer } from "./ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";
 import { JudgeUnavailableError, type JudgePort, type JudgeUnavailableReason } from "./ports/judge.js";
 import type { MemoVersions, VerdictMemoPort } from "./ports/verdictMemo.js";
-import { memoKey, normalizeSentence } from "../domain/verdictMemo.js";
+import { memoKey, normalizeSentence } from "../domain/review/verdictMemo.js";
 import {
   checkFreeProductionRuleLayer,
   type BounceResult,

@@ -1,5 +1,5 @@
 import type { MasteryState } from "./card.js";
-import type { ReviewLog, ReviewTier } from "./review.js";
+import type { ReviewLog, ReviewTier } from "../review/review.js";
 import {
   promoteOnClozePass,
   promoteOnCuedPass,

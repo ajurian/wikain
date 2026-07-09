@@ -1,4 +1,4 @@
-import { FLUENT_JUDGED_PASSES, FLUENT_MIN_STABILITY_DAYS } from "./constants.js";
+import { FLUENT_JUDGED_PASSES, FLUENT_MIN_STABILITY_DAYS } from "../constants.js";
 
 /** The SM-5 inputs, pre-reduced from the judged-pass ledger + FSRS state. */
 export interface FluentGateInput {

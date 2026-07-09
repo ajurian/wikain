@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { presentSeededWords } from "./presentSeededWords.js";
-import type { Card, FsrsCardState } from "../domain/card.js";
+import type { Card, FsrsCardState } from "../domain/mastery/card.js";
 import type { LexicalItem } from "../domain/lexicalItem.js";
 import type { Catalog } from "./ports/catalog.js";
 

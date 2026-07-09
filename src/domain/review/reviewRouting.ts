@@ -1,6 +1,6 @@
-import type { MasteryState } from "./card.js";
+import type { MasteryState } from "../mastery/card.js";
 import type { ReviewLog, ReviewTier } from "./review.js";
-import { nextSeenTier } from "./onRampLedger.js";
+import { nextSeenTier } from "../mastery/onRampLedger.js";
 import { selectTier } from "./tier.js";
 
 /**

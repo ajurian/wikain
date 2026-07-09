@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { qualifiesForFluent } from "./fluentGate.js";
-import { FLUENT_JUDGED_PASSES, FLUENT_MIN_STABILITY_DAYS } from "./constants.js";
+import { FLUENT_JUDGED_PASSES, FLUENT_MIN_STABILITY_DAYS } from "../constants.js";
 
 describe("qualifiesForFluent (SM-5 a/b/c/d)", () => {
   it("SM-5: qualifies when all four conditions are met", () => {

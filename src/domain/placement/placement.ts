@@ -8,7 +8,7 @@
  * This file owns **band policy**; `lextale.ts` owns **the instrument** (its items and scoring). They meet
  * only at `frontierBandFromLexTale`, which takes a bare number.
  */
-import { DEFAULT_FRONTIER_BAND } from "./constants.js";
+import { DEFAULT_FRONTIER_BAND } from "../constants.js";
 
 /** The three coarse self-report levels the onboarding level step offers (low-friction; FSRS self-corrects). */
 export type CoarseLevel = "b1" | "b2" | "c1";

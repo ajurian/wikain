@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { DeepSeekJudge, parseVerdict, type HttpPost, type HttpResponse } from "./deepSeekJudge.js";
 import type { DeepSeekConfig } from "./deepSeekConfig.js";
 import { JudgeUnavailableError, type JudgeRequest } from "../application/ports/judge.js";
-import { passesGate } from "../domain/verdict.js";
+import { passesGate } from "../domain/review/verdict.js";
 
 const REQUEST: JudgeRequest = {
   sentence: "She negotiate a better price yesterday.",

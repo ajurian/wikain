@@ -7,7 +7,7 @@
 import {
   DEFAULT_PLACEMENT_PROFILE,
   type PlacementProfile,
-} from "../domain/placementProfile.js";
+} from "../domain/placement/placementProfile.js";
 import type { PlacementProfileStore } from "./ports/placementProfile.js";
 
 export function fakePlacementProfileStore(): {

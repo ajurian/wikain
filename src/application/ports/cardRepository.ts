@@ -1,5 +1,5 @@
-import type { Card } from "../../domain/card.js";
-import type { ReviewLog } from "../../domain/review.js";
+import type { Card } from "../../domain/mastery/card.js";
+import type { ReviewLog } from "../../domain/review/review.js";
 
 /**
  * Per-user persistence port (spec/12-data-model.md DM-5..DM-7). Declared by the application;

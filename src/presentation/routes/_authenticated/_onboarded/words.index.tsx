@@ -12,7 +12,7 @@ import { AppShell } from "../../../components/app-shell";
 import { MasteryChip } from "../../../components/mastery-chip";
 import { wordsListFn } from "../../../server/words";
 import { COUNTER_R_FLOOR } from "../../../../domain/constants.js";
-import type { MasteryState } from "../../../../domain/card.js";
+import type { MasteryState } from "../../../../domain/mastery/card.js";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/_onboarded/words/")({

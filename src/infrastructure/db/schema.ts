@@ -26,10 +26,10 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { MasteryState } from "../../domain/card.js";
-import type { ReviewTier } from "../../domain/review.js";
-import type { Rating } from "../../domain/rating.js";
-import type { JudgeVerdict } from "../../domain/verdict.js";
+import type { MasteryState } from "../../domain/mastery/card.js";
+import type { ReviewTier } from "../../domain/review/review.js";
+import type { Rating } from "../../domain/review/rating.js";
+import type { JudgeVerdict } from "../../domain/review/verdict.js";
 import type { ControlledPos } from "../../domain/lexicalItem.js";
 
 // BetterAuth core tables (user/session/account/verification). Re-exported so drizzle-kit + the pglite

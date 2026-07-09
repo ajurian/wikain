@@ -1,4 +1,4 @@
-import { DEFAULT_FRONTIER_BAND } from "./constants.js";
+import { DEFAULT_FRONTIER_BAND } from "../constants.js";
 
 /**
  * What onboarding *persists* about a learner's placement (spec/09 SEED-1/2/4). A pure value object: the

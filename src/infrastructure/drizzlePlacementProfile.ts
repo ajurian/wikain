@@ -12,7 +12,7 @@ import type { PlacementProfileStore } from "../application/ports/placementProfil
 import {
   DEFAULT_PLACEMENT_PROFILE,
   type PlacementProfile,
-} from "../domain/placementProfile.js";
+} from "../domain/placement/placementProfile.js";
 import type { DrizzleDb } from "./drizzleCardRepository.js";
 import { placementProfile } from "./db/schema.js";
 

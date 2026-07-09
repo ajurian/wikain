@@ -6,8 +6,8 @@
  */
 import { describe, expect, it } from "vitest";
 import type { CardRepository } from "../application/ports/cardRepository.js";
-import type { Card, FsrsCardState } from "../domain/card.js";
-import type { ReviewLog, FsrsReviewLog } from "../domain/review.js";
+import type { Card, FsrsCardState } from "../domain/mastery/card.js";
+import type { ReviewLog, FsrsReviewLog } from "../domain/review/review.js";
 import { USER_A, USER_B, USER_C } from "./testIds.js";
 
 function fsrsCardState(overrides: Partial<FsrsCardState> = {}): FsrsCardState {

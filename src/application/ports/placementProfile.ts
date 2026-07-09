@@ -1,4 +1,4 @@
-import type { PlacementProfile } from "../../domain/placementProfile.js";
+import type { PlacementProfile } from "../../domain/placement/placementProfile.js";
 
 /**
  * The per-user placement profile store (spec/09 SEED-1/2/4, ARCH-3). Narrow by intent (SOLID-4): the

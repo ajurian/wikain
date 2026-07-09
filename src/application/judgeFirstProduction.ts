@@ -1,4 +1,4 @@
-import { passesGate, type JudgeVerdict } from "../domain/verdict.js";
+import { passesGate, type JudgeVerdict } from "../domain/review/verdict.js";
 import {
   checkFreeProductionRuleLayer,
   type BounceResult,

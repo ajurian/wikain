@@ -4,8 +4,8 @@ import {
   judgedUsesOnDay,
   mostRecentPassScaffolded,
 } from "./judgedPassLedger.js";
-import type { FsrsReviewLog, ReviewLog, ReviewTier } from "./review.js";
-import type { Rating } from "./rating.js";
+import type { FsrsReviewLog, ReviewLog, ReviewTier } from "../review/review.js";
+import type { Rating } from "../review/rating.js";
 
 const FSRS_STUB: FsrsReviewLog = {
   rating: 3,

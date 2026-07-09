@@ -1,5 +1,5 @@
-import { scoreLexTale } from "../domain/lextale.js";
-import { frontierBandFromLexTale } from "../domain/placement.js";
+import { scoreLexTale } from "../domain/placement/lextale.js";
+import { frontierBandFromLexTale } from "../domain/placement/placement.js";
 import type { PlacementProfileStore } from "./ports/placementProfile.js";
 
 export interface RecordLexTaleResultInput {

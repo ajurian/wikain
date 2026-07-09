@@ -1,4 +1,4 @@
-import type { NlpToken } from "../../domain/ruleLayer.js";
+import type { NlpToken } from "../../domain/review/ruleLayer.js";
 
 /**
  * POS-tagging NLP port for the rule layer's degeneracy check (spec/04 RL-3). Kept SEPARATE from the

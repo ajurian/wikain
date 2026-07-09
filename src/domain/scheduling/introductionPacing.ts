@@ -2,7 +2,7 @@ import {
   FIRST_SESSION_SEED_WORDS,
   NEW_PER_DAY,
   NEW_FRACTION_UNDER_BACKLOG,
-} from "./constants.js";
+} from "../constants.js";
 
 export interface PacingInput {
   /** SEED-1/6: the user's very first session seeds a fixed small batch, ignoring the daily pace. */

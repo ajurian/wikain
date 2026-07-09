@@ -6,9 +6,9 @@
  */
 import { createEmptyCard, fsrs, Rating as FsrsRating, type Card as FsrsCard, type FSRS } from "ts-fsrs";
 import type { ColdStart, Scheduler } from "../application/ports/scheduler.js";
-import type { FsrsCardState } from "../domain/card.js";
-import type { FsrsReviewLog } from "../domain/review.js";
-import type { Rating } from "../domain/rating.js";
+import type { FsrsCardState } from "../domain/mastery/card.js";
+import type { FsrsReviewLog } from "../domain/review/review.js";
+import type { Rating } from "../domain/review/rating.js";
 import { REQUEST_RETENTION } from "../domain/constants.js";
 
 export class TsFsrsScheduler implements Scheduler {

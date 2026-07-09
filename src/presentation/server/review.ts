@@ -7,7 +7,7 @@ import {
   presentReviewOutcome,
   type ReviewOutcomeView,
 } from "../../application/presentReviewOutcome.js";
-import type { RuleBounceReason } from "../../domain/ruleLayer.js";
+import type { RuleBounceReason } from "../../domain/review/ruleLayer.js";
 import { readPlacementProfile } from "../../application/readPlacementProfile.js";
 import { currentUserId } from "./currentUser.js";
 import { placementProfileDeps, promptDeps, reviewDeps, sessionDeps } from "./composition.js";

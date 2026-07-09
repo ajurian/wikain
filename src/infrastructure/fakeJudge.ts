@@ -5,7 +5,7 @@
  * on a rule-layer bounce (INV-2 / RL-1).
  */
 import type { JudgePort, JudgeRequest } from "../application/ports/judge.js";
-import type { JudgeVerdict } from "../domain/verdict.js";
+import type { JudgeVerdict } from "../domain/review/verdict.js";
 
 /** A passing verdict (sense-correct, grammatical) with no advisory noise. */
 export function passingVerdict(overrides: Partial<JudgeVerdict> = {}): JudgeVerdict {

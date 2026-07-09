@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { recordLexTaleResult } from "./recordLexTaleResult.js";
 import { readPlacementProfile } from "./readPlacementProfile.js";
-import { LEXTALE_ITEMS } from "../domain/lextale.js";
+import { LEXTALE_ITEMS } from "../domain/placement/lextale.js";
 import { fakePlacementProfileStore } from "./placementProfileTestDouble.js";
 
 const USER = "u1";

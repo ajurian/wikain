@@ -1,4 +1,4 @@
-import type { Card } from "../domain/card.js";
+import type { Card } from "../domain/mastery/card.js";
 import type { Cefr, ControlledPos } from "../domain/lexicalItem.js";
 import type { Catalog } from "./ports/catalog.js";
 

@@ -9,8 +9,8 @@
 import { and, asc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { CardRepository } from "../application/ports/cardRepository.js";
-import type { Card } from "../domain/card.js";
-import type { ReviewLog } from "../domain/review.js";
+import type { Card } from "../domain/mastery/card.js";
+import type { ReviewLog } from "../domain/review/review.js";
 import { cards, reviewLogs } from "./db/schema.js";
 
 /**

@@ -4,7 +4,7 @@ import {
   type CheckFreeProductionRuleLayerDeps,
 } from "./checkFreeProductionRuleLayer.js";
 import type { LexicalItem } from "../domain/lexicalItem.js";
-import type { NlpToken } from "../domain/ruleLayer.js";
+import type { NlpToken } from "../domain/review/ruleLayer.js";
 import type { Catalog } from "./ports/catalog.js";
 import type { Lemmatizer } from "./ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "./ports/sentenceAnalyzer.js";

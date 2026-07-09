@@ -10,7 +10,7 @@
  * Presentational only: it never persists. The level→band mapping is domain policy
  * (`frontierBandForCoarseLevel`), applied server-side, so no client can nominate a frontier.
  */
-import type { CoarseLevel } from "../../domain/placement.js";
+import type { CoarseLevel } from "../../domain/placement/placement.js";
 import { cn } from "@/lib/utils";
 
 export interface CoarseLevelOption {

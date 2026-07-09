@@ -1,4 +1,4 @@
-import type { PlacementProfile } from "../domain/placementProfile.js";
+import type { PlacementProfile } from "../domain/placement/placementProfile.js";
 import type { PlacementProfileStore } from "./ports/placementProfile.js";
 
 export interface ReadPlacementProfileInput {

@@ -1,4 +1,4 @@
-import type { Card } from "./card.js";
+import type { Card } from "../mastery/card.js";
 
 /**
  * LOOP-1 step 1 (spec/11): surface the due words for a session as an ordered list of `senseId`s the

@@ -21,7 +21,7 @@ import { ArrowRight, CircleCheck, Loader2 } from "lucide-react";
 import {
   coarseLevelForBand,
   type CoarseLevel,
-} from "../../../../domain/placement.js";
+} from "../../../../domain/placement/placement.js";
 import {
   readPlacementProfileFn,
   setCoarseLevelFn,

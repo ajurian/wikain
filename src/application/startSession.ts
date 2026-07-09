@@ -1,5 +1,5 @@
-import type { Card } from "../domain/card.js";
-import { orderSessionQueue } from "../domain/sessionQueue.js";
+import type { Card } from "../domain/mastery/card.js";
+import { orderSessionQueue } from "../domain/scheduling/sessionQueue.js";
 import {
   seedIntroductions,
   type SeedIntroductionsInput,

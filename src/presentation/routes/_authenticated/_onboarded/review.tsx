@@ -37,7 +37,7 @@ import {
 } from "../../../server/review";
 import type { ReviewPrompt } from "../../../../application/resolveReviewPrompt.js";
 import type { ReviewOutcomeView } from "../../../../application/presentReviewOutcome.js";
-import type { MasteryState } from "../../../../domain/card.js";
+import type { MasteryState } from "../../../../domain/mastery/card.js";
 
 import { BounceCallout } from "../../../components/bounce-callout";
 import { BlankAnswer, BlankInput } from "../../../components/blank-input";

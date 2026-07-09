@@ -1,7 +1,7 @@
-import { deriveRating, type Rating } from "../domain/rating.js";
-import type { Card, MasteryState } from "../domain/card.js";
+import { deriveRating, type Rating } from "../domain/review/rating.js";
+import type { Card, MasteryState } from "../domain/mastery/card.js";
 import type { LexicalItem } from "../domain/lexicalItem.js";
-import type { ReviewTier } from "../domain/review.js";
+import type { ReviewTier } from "../domain/review/review.js";
 import type { Catalog } from "./ports/catalog.js";
 import type { CardRepository } from "./ports/cardRepository.js";
 import type { Scheduler } from "./ports/scheduler.js";

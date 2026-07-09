@@ -1,6 +1,6 @@
-import type { MasteryState } from "../domain/card.js";
-import type { Replacement } from "../domain/verdict.js";
-import type { RuleBounceReason } from "../domain/ruleLayer.js";
+import type { MasteryState } from "../domain/mastery/card.js";
+import type { Replacement } from "../domain/review/verdict.js";
+import type { RuleBounceReason } from "../domain/review/ruleLayer.js";
 import type { JudgeUnavailableReason } from "./ports/judge.js";
 import type { RunReviewPassResult } from "./runReviewPass.js";
 
