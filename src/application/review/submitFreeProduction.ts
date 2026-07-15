@@ -8,7 +8,6 @@ import type { ReviewLog } from "~/domain/review/review.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { Scheduler } from "../ports/scheduler.js";
-import type { Lemmatizer } from "../ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
 import { JudgeUnavailableError, type JudgePort, type JudgeUnavailableReason } from "../ports/judge.js";
 import type { MemoVersions, VerdictMemoPort } from "../ports/verdictMemo.js";
@@ -40,7 +39,6 @@ export interface SubmitFreeProductionDeps {
   catalog: Catalog;
   cards: CardRepository;
   scheduler: Scheduler;
-  lemmatizer: Lemmatizer;
   analyzer: SentenceAnalyzer;
   judge: JudgePort;
   /** Shipped Tagalog lexicon, lowercased (RL-4). */
@@ -109,7 +107,7 @@ export async function submitFreeProduction(
   // RL-1..4 / RL-6: the shared rule-layer pre-screen (one source of truth with the presentation's
   // instant rule-check, NET-2). INV-2 / RAT-2: a bounce never derives a rating, never calls the
   // scheduler, never logs — the card is left untouched (stays due).
-  const rule = checkFreeProductionRuleLayer(
+  const rule = await checkFreeProductionRuleLayer(
     { senseId: input.senseId, response: input.response, priorBounces: input.priorBounces },
     deps,
   );

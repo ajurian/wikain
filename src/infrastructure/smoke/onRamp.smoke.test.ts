@@ -18,8 +18,8 @@ describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", 
 
   it("SM-3: a Seen word climbs recognition → cloze → cued to Productive, never calling the judge", async () => {
     const judge = new FakeJudge();
-    const { cards, memo, catalog } = await makeTestStores();
-    const deps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog);
+    const { cards, memo, catalog, analyzer } = await makeTestStores();
+    const deps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer);
 
     const userId = USER_A;
     const senseId = item.sense_id;

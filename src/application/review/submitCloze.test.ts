@@ -6,7 +6,7 @@ import type { FsrsReviewLog, ReviewLog } from "~/domain/review/review.js";
 import type { Rating } from "~/domain/review/rating.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { CardRepository } from "../ports/cardRepository.js";
-import type { Lemmatizer } from "../ports/lemmatizer.js";
+import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
 import type { Scheduler } from "../ports/scheduler.js";
 
 const NOW = new Date("2026-07-01T00:00:00Z");
@@ -36,7 +36,16 @@ function makeItem(): LexicalItem {
 const catalog: Catalog = { get: (id) => (id === SENSE ? makeItem() : undefined) };
 
 /** A fake that lowercases and splits — the match is controlled by what `response` is fed. */
-const lemmatizer: Lemmatizer = { formsOf: (text) => text.toLowerCase().split(/\s+/).filter(Boolean) };
+const analyzer: SentenceAnalyzer = {
+  analyze: (text: string) =>
+    Promise.resolve(
+      text
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => ({ normal: w, lemma: w, pos: "NOUN", isStopword: false, isWord: true })),
+    ),
+};
 
 function makeFsrs(state: number): FsrsCardState {
   return { due: NOW, stability: 1, difficulty: 5, elapsed_days: 0, scheduled_days: 0, reps: 1, lapses: 0, state };
@@ -91,7 +100,7 @@ function seenCard(): Card {
 function deps(card: Card): { d: SubmitClozeDeps; calls: Rating[]; logs: ReviewLog[]; stored: () => Card } {
   const { scheduler, calls } = makeScheduler();
   const repo = makeRepo(card);
-  return { d: { catalog, cards: repo.cards, scheduler, lemmatizer }, calls, logs: repo.logs, stored: repo.stored };
+  return { d: { catalog, cards: repo.cards, scheduler, analyzer }, calls, logs: repo.logs, stored: repo.stored };
 }
 
 describe("submitCloze (Seen typed cloze)", () => {

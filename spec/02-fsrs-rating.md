@@ -55,6 +55,10 @@ And no ReviewLog is persisted
 And the card stays due
 ```
 
+**Notes / edge cases:** Cloze **soft bounces** (`FIT-7`) share this consequence (no rating, no
+scheduler call, no ReviewLog, card stays due) but are **not** `INV-2` bounces — the input is
+well-formed, not malformed. A distinct class; do not fold them into the bounce counter.
+
 ### RAT-3 — Scaffolded pass and typo-fixed cloze rate `Good`
 **Trace:** PRD §3.6.
 **Requirement:** In v1 a scaffolded production pass MUST rate `Good` (flag recorded, `SM-9`), and a
@@ -68,6 +72,10 @@ When the rating is derived
 Then the rating is Good
 And the scaffolded flag is recorded for the mastery ladder
 ```
+
+**Notes / edge cases:** The typo-fix rule is realized by the `FIT-9` lane
+(DL ≤ `CLOZE_TYPO_MAX_DISTANCE` of the target); only the length-scaled distance + `Hard` mapping
+remain Deferred below.
 
 ### RAT-4 — First-genuine-fail; no retry-until-pass against the judge
 **Trace:** PRD §3.6, §10 step 7.
@@ -90,9 +98,10 @@ signal and never touches the rating (`08`, `NET-*`).
 
 ### RAT-5 — Instrument richer signals from day one
 **Trace:** PRD §3.6.
-**Requirement:** Scaffolding, retry count, typo-fix, and latency MUST be instrumented and persisted
-from day one even though v1 does not use them to rate, so the 4-button mapping can be enabled later
-(Deferred).
+**Requirement:** Scaffolding, retry count, typo-fix, latency, and the cloze soft-bounce signals
+(`softBounceCount` / `softBounceLanes`, `FIT-10`) MUST be instrumented and persisted from day one
+even though v1 does not use them to rate, so the 4-button mapping can be enabled later (Deferred).
+An unmeasured signal is recorded as absent, never as a fabricated 0/false.
 
 ---
 
@@ -176,5 +185,6 @@ optimization at `PER_USER_OPT_REVIEW_THRESHOLD` reviews via
 
 - **Full 4-button mapping** (`Again`/`Hard`/`Good`/`Easy`) per tier (PRD §3.6 table): scaffolded
   success → `Hard`; latency as an `Easy`-vs-`Good` tiebreaker on deterministic tiers only (never to
-  manufacture `Again`); cloze typo tolerance (Damerau–Levenshtein ≤1 for ≤6 chars, ≤2 longer) →
-  `Hard`. Not active in v1; the signals are instrumented now (`RAT-5`).
+  manufacture `Again`); **length-scaled** cloze typo tolerance (Damerau–Levenshtein ≤1 for ≤6 chars,
+  ≤2 longer) → `Hard` — the flat DL≤1 → `Good` rule is v1-live (`FIT-9`); "passed after synonym
+  bounce" → `Hard` (`FIT-10`). Not active in v1; the signals are instrumented now (`RAT-5`).

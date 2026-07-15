@@ -17,9 +17,9 @@ import {
   composeWords,
   composePlacementSlate,
   composeRecordPlacementMarks,
-  liveJudge,
-  liveJudgeVersions,
 } from "~/infrastructure/composition.js";
+import { HttpNlp } from "~/infrastructure/nlp/httpNlp.js";
+import { HttpJudge, fetchJudgeVersions } from "~/infrastructure/judge/httpJudge.js";
 import type { JudgePort } from "~/application/ports/judge.js";
 import type { CardRepository } from "~/application/ports/cardRepository.js";
 import type { MemoVersions, VerdictMemoPort } from "~/application/ports/verdictMemo.js";
@@ -46,12 +46,16 @@ import type { CompleteOnboardingDeps } from "~/application/placement/completeOnb
 /**
  * Server-only composition root (ARCH-3): the single place the concrete adapters are wired to the
  * application's ports. Imported only by server-function handlers + the auth route, so the infrastructure
- * (Neon / DeepSeek / wink / ts-fsrs / BetterAuth) and every secret it reads never reach the client bundle.
+ * (Neon / ts-fsrs / BetterAuth / the language-service clients) and every secret it reads never reach the
+ * client bundle.
  *
- * The app **requires** its three secrets — there is no offline/in-memory fallback anymore (removed with
- * STACK-4). Missing any of `DATABASE_URL`, `DEEPSEEK_API_KEY`, or `BETTER_AUTH_SECRET` is a hard error at
- * module load, so a misconfigured deploy fails fast instead of silently degrading. Run
- * `npm run db:migrate` against the Neon instance once before boot.
+ * The app **requires** its secrets — there is no offline/in-memory fallback (removed with STACK-4).
+ * Missing any of them is a hard error at module load, so a misconfigured deploy fails fast instead of
+ * silently degrading. Run `npm run db:migrate` against Neon once before boot, and bring the language
+ * service up (`docker compose up -d nlp`).
+ *
+ * `DEEPSEEK_API_KEY` is NOT read here any more: the judge now lives in the Python language service, which
+ * holds the key. This process only needs the URL + shared token to reach it (NET-7).
  */
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -59,10 +63,11 @@ function requireEnv(name: string): string {
   return value;
 }
 
-// Fail fast on a misconfigured deploy: all three secrets are mandatory (no fallbacks).
+// Fail fast on a misconfigured deploy: every one of these is mandatory (no fallbacks).
 requireEnv("DATABASE_URL");
-requireEnv("DEEPSEEK_API_KEY");
 const BETTER_AUTH_SECRET = requireEnv("BETTER_AUTH_SECRET");
+const NLP_SERVICE_URL = requireEnv("NLP_SERVICE_URL");
+const NLP_SERVICE_TOKEN = requireEnv("NLP_SERVICE_TOKEN");
 
 /**
  * ONE Neon handle (lazy connection, built synchronously) shared by every store — cards, the verdict memo
@@ -99,12 +104,19 @@ export const auth: Auth = makeAuth(db, {
 });
 
 /**
- * The judged branch always uses the real DeepSeek transport (spec/06/08) — no key-gated fallback. The
- * key is read server-side by `deepSeekConfigFromEnv` (already asserted present above). The memo version
- * stamp (MEMO-6) tracks the real model id + RUBRIC_VERSION so a model/rubric swap invalidates stale rows.
+ * The language service (spec/06/08): the judge AND the NLP engine, both behind their existing ports.
+ *
+ * `analyzer` is built ONCE per instance, not per request — it caches catalog `model_sentence` analyses,
+ * which is what keeps the NET-2 rule-layer bounce to a single round trip in steady state.
+ *
+ * The memo versions (MEMO-6) are fetched from the service at cold start rather than mirrored into env
+ * vars here. The rubric version is a property of the judge that produced the verdict, so asking the judge
+ * is the only way it cannot silently drift out of sync and serve a stale memoized verdict (JDG-9).
  */
-const judge: JudgePort = liveJudge();
-const judgeVersions: MemoVersions = liveJudgeVersions();
+const languageService = { baseUrl: NLP_SERVICE_URL, token: NLP_SERVICE_TOKEN };
+const analyzer = new HttpNlp(languageService);
+const judge: JudgePort = new HttpJudge(languageService);
+const judgeVersions: MemoVersions = await fetchJudgeVersions(languageService);
 
 export function sessionDeps(): StartSessionDeps {
   return composeSession(cards, marks, catalog, wordSource);
@@ -130,7 +142,7 @@ export function recordMarksDeps(): RecordPlacementMarksDeps {
 }
 
 export function reviewDeps(): RunReviewPassDeps {
-  return composeReviewPass(judge, cards, memo, judgeVersions, catalog);
+  return composeReviewPass(judge, cards, memo, judgeVersions, catalog, analyzer);
 }
 
 export function promptDeps(): ResolveReviewPromptDeps {

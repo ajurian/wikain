@@ -10,12 +10,6 @@
     "dev": "vite dev",
     "build": "vite build",
     "start": "node dist/server/server.js",
-    "stageA": "tsx build/stageA.ts",
-    "feed": "tsx build/stageB.ts feed",
-    "generate": "tsx build/generate.ts",
-    "ingest": "tsx build/stageB.ts ingest",
-    "validate": "tsx build/stageC.ts",
-    "combine": "tsx build/combine.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed:catalog": "tsx src/infrastructure/db/seedCatalog.ts",
@@ -64,8 +58,6 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwind-merge": "^3.6.0",
-    "ts-fsrs": "^4.6.1",
-    "wink-eng-lite-web-model": "^1.8.0",
-    "wink-nlp": "^2.3.2"
+    "ts-fsrs": "^4.6.1"
   }
 }

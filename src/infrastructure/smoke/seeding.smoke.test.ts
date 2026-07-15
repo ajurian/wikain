@@ -62,7 +62,7 @@ describe("first-session seeding (smoke: real catalog + ts-fsrs)", () => {
   it("end-to-end: a placement-known seeded card (Recognized) is immediately reviewable via runReviewPass", async () => {
     const picks = await firstPicks();
     const known = picks[0]!;
-    const { cards, marks, memo, catalog, wordSource } = await makeTestStores();
+    const { cards, marks, memo, catalog, wordSource, analyzer } = await makeTestStores();
 
     // Seed the word as placement-known → it enters Recognized (the cued tier, SM-1/SM-11).
     const seedDeps = composeSeeding(cards, marks, catalog, wordSource);
@@ -78,6 +78,7 @@ describe("first-session seeding (smoke: real catalog + ts-fsrs)", () => {
       memo,
       DEV_JUDGE_VERSIONS,
       catalog,
+      analyzer,
     );
     const lemma = seedDeps.catalog.get(known)!.lemma;
     const res = await runReviewPass({ userId: USER_A, senseId: known, response: lemma, now }, reviewDeps);

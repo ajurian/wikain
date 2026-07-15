@@ -94,6 +94,12 @@ genuine judge fails, `RAT-4`).
 **Requirement:** The DeepSeek API key MUST live server-side in the backend (secret/environment
 store) and MUST NEVER be exposed to the client. Judge calls MUST be proxied through the backend.
 
+> [FLAG] **The key now lives in the NLP/judge service, not the web backend.** Since the Python
+> cut-over the web backend holds no `DEEPSEEK_API_KEY` at all — it authenticates to our own service
+> with a shared bearer secret (`NLP_SERVICE_TOKEN`), and that service holds the DeepSeek key. This is
+> strictly stronger than `NET-7` as written (one fewer process knows the key), but the requirement's
+> "in the backend" wording predates the split. See the matching flag on `JDG-10` (`spec/06`).
+
 ---
 
 ## Notes / edge cases

@@ -6,7 +6,6 @@ import {
 import type { LexicalItem } from "~/domain/lexicalItem.js";
 import type { NlpToken } from "~/domain/review/ruleLayer.js";
 import type { Catalog } from "../ports/catalog.js";
-import type { Lemmatizer } from "../ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
 import { MAX_RULE_BOUNCE_RETRIES } from "~/domain/constants.js";
 
@@ -35,40 +34,62 @@ function makeItem(): LexicalItem {
 
 const catalog: Catalog = { get: (id) => (id === SENSE ? makeItem() : undefined) };
 
-const lemmatizer: Lemmatizer = {
-  formsOf: (text) => text.toLowerCase().split(/\s+/).filter(Boolean),
+const POS: Readonly<Record<string, string>> = {
+  she: "PRON",
+  a: "DET",
+  negotiate: "VERB",
+  negotiated: "VERB",
+  bought: "VERB",
+  better: "ADJ",
+  contract: "NOUN",
+  price: "NOUN",
+  house: "NOUN",
+  yesterday: "ADV",
+  talaga: "ADV",
 };
+const LEMMAS: Readonly<Record<string, string>> = { negotiated: "negotiate", bought: "buy" };
+const STOPWORDS: ReadonlySet<string> = new Set(["she", "a"]);
 
-/** A healthy, non-degenerate token set (≥4 non-target content tokens + a VERB) for any text. */
-const healthyAnalyzer: SentenceAnalyzer = {
-  analyze: (): NlpToken[] => [
-    { normal: "she", lemma: "she", pos: "PRON", isStopword: true, isWord: true },
-    { normal: "negotiated", lemma: "negotiate", pos: "VERB", isStopword: false, isWord: true },
-    { normal: "better", lemma: "better", pos: "ADJ", isStopword: false, isWord: true },
-    { normal: "contract", lemma: "contract", pos: "NOUN", isStopword: false, isWord: true },
-    { normal: "price", lemma: "price", pos: "NOUN", isStopword: false, isWord: true },
-    { normal: "yesterday", lemma: "yesterday", pos: "ADV", isStopword: false, isWord: true },
-  ],
+/**
+ * A text-DRIVEN analyzer. It must be: `formsOf` (RL-2 presence) is now derived from these very tokens,
+ * so a fixed token set would smuggle the target into every response and the "absent" bounce could
+ * never fire.
+ */
+const analyzer: SentenceAnalyzer = {
+  analyze: (text: string): Promise<NlpToken[]> =>
+    Promise.resolve(
+      text
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => ({
+          normal: w,
+          lemma: LEMMAS[w] ?? w,
+          pos: POS[w] ?? "NOUN",
+          isStopword: STOPWORDS.has(w),
+          isWord: true,
+        })),
+    ),
 };
 
 function deps(
-  analyzer: SentenceAnalyzer = healthyAnalyzer,
+  a: SentenceAnalyzer = analyzer,
   tagalogLexicon: ReadonlySet<string> = new Set(),
 ): CheckFreeProductionRuleLayerDeps {
-  return { catalog, lemmatizer, analyzer, tagalogLexicon };
+  return { catalog, analyzer: a, tagalogLexicon };
 }
 
 describe("checkFreeProductionRuleLayer", () => {
-  it("RL-1: a healthy sentence containing the lemma passes to the judge (ok)", () => {
-    const res = checkFreeProductionRuleLayer(
-      { senseId: SENSE, response: "she negotiate a better contract price" },
+  it("RL-1: a healthy sentence containing the lemma passes to the judge (ok)", async () => {
+    const res = await checkFreeProductionRuleLayer(
+      { senseId: SENSE, response: "she negotiate a better contract price yesterday" },
       deps(),
     );
     expect(res).toEqual({ ok: true });
   });
 
-  it("RL-2: a sentence missing the target lemma bounces 'absent'", () => {
-    const res = checkFreeProductionRuleLayer(
+  it("RL-2: a sentence missing the target lemma bounces 'absent'", async () => {
+    const res = await checkFreeProductionRuleLayer(
       { senseId: SENSE, response: "she bought a house yesterday" },
       deps(),
     );
@@ -76,37 +97,26 @@ describe("checkFreeProductionRuleLayer", () => {
     if (!res.ok) expect(res.bounce.reason).toBe("absent");
   });
 
-  it("RL-3: a degenerate (too-short) response bounces 'degenerate'", () => {
-    const shortAnalyzer: SentenceAnalyzer = {
-      analyze: (): NlpToken[] => [
-        { normal: "negotiate", lemma: "negotiate", pos: "VERB", isStopword: false, isWord: true },
-      ],
-    };
-    const res = checkFreeProductionRuleLayer(
+  it("RL-3: a degenerate (too-short) response bounces 'degenerate'", async () => {
+    const res = await checkFreeProductionRuleLayer(
       { senseId: SENSE, response: "negotiate" },
-      deps(shortAnalyzer),
+      deps(),
     );
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.bounce.reason).toBe("degenerate");
   });
 
-  it("RL-4: a Taglish sentence bounces 'taglish'", () => {
-    const taglishAnalyzer: SentenceAnalyzer = {
-      analyze: (): NlpToken[] => [
-        ...healthyAnalyzer.analyze(""),
-        { normal: "talaga", lemma: "talaga", pos: "ADV", isStopword: false, isWord: true },
-      ],
-    };
-    const res = checkFreeProductionRuleLayer(
-      { senseId: SENSE, response: "she negotiate a better contract price talaga" },
-      deps(taglishAnalyzer, new Set(["talaga"])),
+  it("RL-4: a Taglish sentence bounces 'taglish'", async () => {
+    const res = await checkFreeProductionRuleLayer(
+      { senseId: SENSE, response: "she negotiate a better contract price yesterday talaga" },
+      deps(analyzer, new Set(["talaga"])),
     );
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.bounce.reason).toBe("taglish");
   });
 
-  it("RL-6: reaching MAX_RULE_BOUNCE_RETRIES flags revealModelSentence; below the cap it does not", () => {
-    const belowCap = checkFreeProductionRuleLayer(
+  it("RL-6: reaching MAX_RULE_BOUNCE_RETRIES flags revealModelSentence; below the cap it does not", async () => {
+    const belowCap = await checkFreeProductionRuleLayer(
       { senseId: SENSE, response: "she bought a house", priorBounces: 0 },
       deps(),
     );
@@ -116,7 +126,7 @@ describe("checkFreeProductionRuleLayer", () => {
       expect(belowCap.bounce.revealModelSentence).toBe(false);
     }
 
-    const atCap = checkFreeProductionRuleLayer(
+    const atCap = await checkFreeProductionRuleLayer(
       { senseId: SENSE, response: "she bought a house", priorBounces: MAX_RULE_BOUNCE_RETRIES - 1 },
       deps(),
     );

@@ -13,6 +13,13 @@ data/Subtlex.US.txt
 gen.ts
 merge_data.ts
 
+# python service + content pipeline
+python/.venv/
+python/**/__pycache__/
+python/.mypy_cache/
+python/.pytest_cache/
+python/.ruff_cache/
+
 .env*
 
 # graphify (commit the graph + skill; ignore transient cache + dated backups)

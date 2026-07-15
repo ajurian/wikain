@@ -1,0 +1,18 @@
+# Dev: the language service the web app depends on. `docker compose up -d nlp`, then `npm run dev`.
+#
+# The web app is NOT in here — it runs on Vite (`npm run dev`) and reaches this container on
+# NLP_SERVICE_URL=http://localhost:8000.
+services:
+  nlp:
+    build: ./python
+    env_file:
+      - .env.local
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
+      timeout: 5s
+      # spaCy loads at startup; give it room before the container is called unhealthy.
+      start_period: 40s
+      retries: 3

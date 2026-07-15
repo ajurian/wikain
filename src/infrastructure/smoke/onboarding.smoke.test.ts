@@ -48,7 +48,7 @@ describe("onboarding first-session wiring (SEED-1)", () => {
   });
 
   it("judges the first-win production but persists NOTHING (INV-4: no free log on a Seen word)", async () => {
-    const { cards, marks, memo, catalog, wordSource } = await makeTestStores();
+    const { cards, marks, memo, catalog, wordSource, analyzer } = await makeTestStores();
     const seedDeps = composeSeeding(cards, marks, catalog, wordSource);
     const seeded = await seedIntroductions({ userId: USER_A, frontierBand: "B2" }, seedDeps);
     const first = seeded[0]!;
@@ -61,7 +61,7 @@ describe("onboarding first-session wiring (SEED-1)", () => {
     // structural superset) with an offline passing judge.
     const result = await judgeFirstProduction(
       { senseId: first.senseId, response: sentence },
-      composeFreeProduction(passingJudge, cards, memo, DEV_JUDGE_VERSIONS, catalog),
+      composeFreeProduction(passingJudge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer),
     );
     expect(result.kind).toBe("judged");
 

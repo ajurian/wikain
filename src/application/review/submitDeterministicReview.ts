@@ -1,7 +1,7 @@
 import { deriveRating, type Rating } from "~/domain/review/rating.js";
 import type { Card, MasteryState } from "~/domain/mastery/card.js";
 import type { LexicalItem } from "~/domain/lexicalItem.js";
-import type { ReviewTier } from "~/domain/review/review.js";
+import type { ReviewLog, ReviewTier } from "~/domain/review/review.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { Scheduler } from "../ports/scheduler.js";
@@ -35,8 +35,18 @@ export interface DeterministicReviewResult {
  */
 export interface DeterministicReviewStrategy {
   tier: Extract<ReviewTier, "recognition" | "cloze" | "cued">;
-  grade: (item: LexicalItem) => boolean;
+  /**
+   * Async because the typed tiers grade through the NLP port, which is now out-of-process. Still
+   * deterministic (TIER-1) — no judge, no LLM. Recognition ignores the asynchrony entirely.
+   */
+  grade: (item: LexicalItem) => Promise<boolean> | boolean;
   promote: (state: MasteryState, passed: boolean) => MasteryState;
+  /**
+   * RAT-5 / FIT-10 instrumentation recorded on the single ReviewLog, owned by the tier: the typed
+   * tiers record the signals that apply to them (`typoFixed`; cloze adds its soft-bounce history),
+   * recognition records none — an absent signal stays absent, never a fabricated 0/false.
+   */
+  logExtras?: Partial<Pick<ReviewLog, "typoFixed" | "softBounceCount" | "softBounceLanes">>;
 }
 
 /**
@@ -66,7 +76,7 @@ export async function submitDeterministicReview(
     throw new Error(`no card for user ${input.userId} / sense ${input.senseId}`);
   }
 
-  const passed = strategy.grade(item);
+  const passed = await strategy.grade(item);
   // RAT-1.
   const rating = deriveRating(passed);
   // RAT-6 / INV-3: a graded (non-bounce) deterministic outcome advances the FSRS schedule.
@@ -77,16 +87,16 @@ export async function submitDeterministicReview(
 
   const updated: Card = { ...card, mastery, fsrs: nextFsrs };
   await deps.cards.save(updated);
-  // RAT-8 / DM-6: one ReviewLog per rated review. RAT-5: the typed tiers (cloze, cued) are where typo
-  // tolerance would apply; v1 ships none (spec/02 Deferred), so it is recorded as `false` from day one.
-  // Recognition is MCQ — no typing, so the signal is not applicable and is omitted.
+  // RAT-8 / DM-6: one ReviewLog per rated review. RAT-5 / FIT-10: each tier owns which richer
+  // signals it measures (`logExtras`) — recognition records none, cued records `typoFixed: false`,
+  // cloze records the typo lane + its soft-bounce history. An unmeasured signal stays absent.
   await deps.cards.appendReviewLog({
     userId: input.userId,
     senseId: input.senseId,
     tier: strategy.tier,
     rating,
     reviewedAt: now,
-    ...(strategy.tier === "recognition" ? {} : { typoFixed: false }),
+    ...(strategy.logExtras ?? {}),
     fsrs: fsrsLog,
   });
 

@@ -19,6 +19,7 @@ import { DrizzlePlacementProfile } from "./persistence/drizzlePlacementProfile.j
 import { DrizzleSettings } from "./persistence/drizzleSettings.js";
 import { DrizzleCatalog } from "./persistence/drizzleCatalog.js";
 import { DrizzleWordSource } from "./persistence/drizzleWordSource.js";
+import { FakeAnalyzer } from "./nlp/fakeAnalyzer.js";
 import { seedLexicalItems } from "./db/seedCatalog.js";
 import { makePgliteDb } from "./db/pglite.js";
 
@@ -114,5 +115,12 @@ export async function makeTestStores() {
     settings: new DrizzleSettings(db),
     catalog: await DrizzleCatalog.hydrate(db),
     wordSource: new DrizzleWordSource(db),
+    /**
+     * The NLP port's test double. spaCy is out-of-process now, so a test that reached it would be an
+     * integration test of the container rather than of the use-case under test — the same reason
+     * `FakeJudge` exists. The engine's real behavior is covered in `python/src/wikain/nlp/`, and the
+     * wire contract between the two in `service/main_test.py` + `nlp/httpNlp.test.ts`.
+     */
+    analyzer: new FakeAnalyzer(),
   };
 }

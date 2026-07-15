@@ -42,8 +42,8 @@ describe("SM-5 promotion + counter (smoke: real catalog + wink + ts-fsrs, fake j
     cards: DrizzleCardRepository;
     scheduler: TsFsrsScheduler;
   }> {
-    const { cards, memo, catalog } = await makeTestStores();
-    const deps = composeReviewPass(new FakeJudge(passingVerdict()), cards, memo, DEV_JUDGE_VERSIONS, catalog);
+    const { cards, memo, catalog, analyzer } = await makeTestStores();
+    const deps = composeReviewPass(new FakeJudge(passingVerdict()), cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer);
     // TsFsrsScheduler is stateless; a fresh instance gives the same live retrievability the counter reads.
     return { deps, cards, scheduler: new TsFsrsScheduler() };
   }

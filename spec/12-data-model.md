@@ -43,8 +43,10 @@ them at runtime.
 Carried (build-time Stage A): `word`, `lemma`, `part_of_speech`, `sense_id`, `cefr`, `zipf`,
 `zipf_rank`.
 Generated (build-time Stage B): `intended_sense`, `recognition_meaning`, `distractors` (3),
-`clozed_sentence`, `productive_meaning`, `model_sentence`, `self_reference_prompt`.
-Provenance: `gen_model`, `gen_spec_version`.
+`clozed_sentence`, `productive_meaning`, `model_sentence`, `self_reference_prompt`,
+`cloze_fit_set` (`FIT-1`), `bounce_gloss` (`FIT-4`).
+Provenance: `gen_model`, `gen_spec_version`, `fit_set_version` (`FIT-5` — stamped at ingest, not
+authored).
 
 **Scenario: the runtime consumes a built item without mutating it**
 ```
@@ -63,6 +65,8 @@ reads the right field.
 | --- | --- |
 | `recognition_meaning` + `distractors` | Recognition MCQ (`TIER-2`) |
 | `clozed_sentence` | Cloze tier (`TIER-1`) |
+| `cloze_fit_set` | Cloze lane resolution (`FIT-6`); NEVER shipped to the client pre-answer |
+| `bounce_gloss` | different-sense soft-bounce copy only (`FIT-4`); ships on the bounce response, not pre-answer |
 | `productive_meaning` | Cued tier (`TIER-3`) |
 | `self_reference_prompt` | Free-production prompt (`TIER-6`) |
 | `model_sentence` | rule-layer verbatim-copy guard (`RL-3`); revealed at retry cap (`RL-6`); judge in-context anchor (`06`) |
@@ -121,6 +125,22 @@ history needed for `SM-5` / `CNT-2` MUST be persisted.
 **Trace:** PRD §4.1.
 **Requirement:** The runtime NLP layer (lemma/POS, distractor/cloze handling, presence check) MUST be
 set to **en-US** so American forms are accepted (consistent with build-time generation and `TIER-5`).
+
+### DM-10 — Cloze heal-queue rows (fleet-wide, no user identity)
+**Trace:** AMMENDMENT §A3; `FIT-11`.
+**Requirement:** Heal-queue rows MUST persist `(sense_id, typed_lemma, clozed_sentence)` plus a
+queued-at timestamp and a nullable processed-at marker, keyed on `(sense_id, typed_lemma)` (one row
+per gap, fleet-wide — the row's existence is also the never-re-queue memory). Unlike every other
+persisted app entity except the catalog, the queue MUST carry **no user identity** — it feeds the
+offline build, not any per-user surface.
+
+**Scenario: the queue is anonymous and deduplicated**
+```
+Given two different learners typed the same unlisted lemma for the same sense
+When the heal queue is inspected
+Then exactly one row exists for (sense_id, typed_lemma)
+And no column links it to either user
+```
 
 ---
 

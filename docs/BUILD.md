@@ -1,12 +1,29 @@
 # Wikain — Build-Time Content Generation Spec
 
 **Version:** gen-spec v3
+**Implementation:** **Python** (`python/src/wikain/pipeline/`), run with `uv`. It shares the product's
+**one NLP engine** — `wikain.nlp` (spaCy) — with the runtime, by importing it in-process. That import is
+load-bearing: Stage C's lemma-presence assert (§7.1) is the build-time twin of the runtime's RL-2/TIER-5
+presence check, so an item that passes the gate here cannot be bounced as "word absent" at review.
 **Generator (Stage B):** **manual, via frontier-LLM free chats** (no API). The catalog is split by CEFR
 level: `feed` stages one batch per level (A2/B1/B2/C1), `generate` turns each into a markdown prompt
 (`_prompt_<cefr>.md`) the user pastes into a frontier LLM, the user saves each result to
 `_generated_batch_<cefr>.json`, and `ingest` validates + commits all present levels. No API key needed.
 **Output format:** raw JSON (one array file per committed batch + a combiner) — see §6
 **Read these first:** `PRD.md` (the product). This spec operationalizes them; if this spec and the PRD ever disagree, **stop and flag it** — do not pick one.
+
+```bash
+cd python && uv sync                  # once
+uv run wikain-pipeline stagea         # Stage A → _manifest_<cefr>.json + _quarantine.json
+uv run wikain-pipeline feed           # Stage B → _pending_batch_<cefr>.json (25/level)
+uv run wikain-pipeline generate       # Stage B → _prompt_<cefr>.md   (NO API — paste into a chat)
+uv run wikain-pipeline ingest         # Stage B → batch_NNNN.json (runs Stage C per level)
+uv run wikain-pipeline combine        # all batch_*.json → items.json
+uv run wikain-pipeline validate       # Stage C standalone over items.json (or a given path)
+```
+
+Artifacts still land in **`build/out/`** — unchanged, so `npm run db:seed:catalog` (which reads
+`build/out/items.json`) needs no change. Gates: `uv run ruff check .`, `uv run mypy`, `uv run pytest`.
 
 ---
 
@@ -48,19 +65,30 @@ grades sense + grammar. Recognition/cloze/cued are on-ramps; **the produced sent
 
 ## 2. Input (exact format — verified against the real file)
 
-### 2.1 Merged word list — `data/merged_oxford_a2c1_zipf.csv`
-- Header: `word,pos,cefr,zipf,zipf_rank`. 4,397 data rows. One flat file — this **replaces** the
-  earlier three-CSV stack (NAWL + Oxford-3000/5000), and with it all the reconciliation machinery
-  (sense-parenthetical splitting, NAWL rank fan-out, 3000-vs-5000 collision, function-word allowlist,
-  `source`/`band` tags).
-- **Every row carries a real CEFR** — `A2/B1/B2/C1` only (no A1). `zipf` is a SUBTLEX-scale frequency
-  (higher = more frequent); `zipf_rank` is a **dense** rank (1 = most frequent) present on every row.
-- **One POS per row.** A word with two POS appears as two rows (e.g. `circle,noun` and `circle,verb`).
-  `word` is the bare lemma — **no parentheticals**.
-- `pos` vocabulary observed: `noun`, `verb`, `adj`, `adv` (in scope) plus a few `modalv`/`auxiliaryv`
-  (out of scope → quarantined, §3.4). Normalize per §3.1.
-- A handful of `(word,pos)` pairs recur at two CEFR levels (a merge artifact — `race`, `ring`,
-  `survive`). Stage A keeps the **lower** CEFR and records the collision (§3.5).
+### 2.1 Multisense catalog — `data/oxford_multisense_catalog.csv`
+- Header: **`word,pos,cefr,sense_id,sense_hint,sense_zipf,global_zipf_rank`**. **5,745 data rows.** One
+  flat file — this **replaces** the earlier `merged_oxford_a2c1_zipf.csv` (and, before it, the three-CSV
+  NAWL + Oxford-3000/5000 stack), and with it all the reconciliation machinery.
+- **Multisense.** A `(word,pos)` appears on **one row per WordNet sense**: `sense_id` is the synset key
+  (e.g. `desire.v.01`) and `sense_hint` is its gloss. Most `(word,pos)` have one sense; the maximum is 5
+  (`base`/noun). 4,394 distinct `(word,pos)` pairs. The source `sense_id` is **NOT unique** — one synset
+  can be a sense of several headwords (`desire.v.01` → both `want` and `desire`), so it is carried as
+  `synset` and is **not** the item key (see §3.2). `(word,pos,sense_id)` **is** unique.
+- **Column names ≠ carried names.** The source calls the numerics `sense_zipf` and `global_zipf_rank`;
+  Stage A maps them to the carried `zipf` / `zipf_rank` **at the read boundary**, so the runtime item
+  contract (`src/domain/lexicalItem.ts`) and the `lexical_items` table are untouched.
+  `global_zipf_rank` is dense **1..5745** across the whole file and orders `sense_zipf` descending, so
+  "sort by rank ascending" still means "most frequent sense first".
+- `sense_hint` glosses embed commas and are double-quote-wrapped — read with a real RFC-4180 parser.
+- **Every row carries a real CEFR** — `A2/B1/B2/C1` only, no A1 (A2 1017 / B1 1423 / B2 1682 / C1 1623).
+- `pos` vocabulary: `noun` 2965, `verb` 1549, `adj` 1004, `adv` 224 (in scope), plus `modalv` ×2 and
+  `auxiliaryv` ×1 (out of scope → quarantined, §3.4). Normalize per §3.1.
+- **Sentinels.** 5 rows carry the literal `NO_SENSE_FOUND` / `NO_HINT_FOUND` — WordNet had no sense for
+  that `(word,pos)`. These are **quarantined** (`no-sense-found`), not carried: the gloss is what the
+  prompt shows the LLM as "the sense to author", so generating against `NO_HINT_FOUND` would produce
+  content keyed to nothing (§3.1 halt-don't-guess).
+- Same-sense CEFR collisions (§3.5) do **not** occur in this source — `(word,pos,sense_id)` is unique —
+  but the dedup remains as an integrity guard in case the source regains duplicates.
 
 > **`[VALIDATE]` before Stage A:** confirm the CSV's POS strings against the normalization map in §3.1.
 > If a POS string appears that the map doesn't cover, **halt and flag** — do not guess a mapping.
@@ -73,10 +101,10 @@ Output of this stage: an **assembled manifest** — every in-scope item with its
 and its generated fields empty — plus a **quarantine list** (excluded items + reason). Gate on human
 review before Stage B.
 
-Stage A is now a **single parse loop** over the one CSV (`build/stageA.ts` → `assemble(rows)`):
-per row → normalize POS → scope-filter → validate CEFR/zipf → derive `sense_id` → dedup. No
-sense-splitting, no NAWL merge, no rank fan-out, no `source`/`band` derivation (all removed with the
-three-CSV stack).
+Stage A is a **single parse loop** over the one CSV (`pipeline/stage_a.py` → `assemble(rows)`):
+per row → normalize POS → scope-filter → validate CEFR/zipf → dedup by `(lemma,pos,synset)` → assign the
+per-`(lemma,pos)` sense ordinal `sense_id`. No sense-splitting, no NAWL merge, no rank fan-out, no
+`source`/`band` derivation (all removed with the three-CSV stack).
 
 ### 3.1 Normalize POS
 Map to one controlled vocabulary: `noun, verb, adj, adv, prep, pron, det, num, article, conj, prefix,
@@ -85,8 +113,11 @@ other`. The closed-class exotics in the CSV (`modalv`, `auxiliaryv`) map to `oth
 
 ### 3.2 Derive lemma + sense_id
 There are no parentheticals, so: `lemma` = lowercased `word`; `word` (display) = the CSV `word`
-verbatim; `sense_id = {lemma}_{pos}_01`. (`word` stays a separate field from `lemma` per the
-word≠lemma decision, even though they differ only in case.)
+verbatim. The source `sense_id` (a WordNet synset key) is carried as `synset` (manifest-only, with
+`sense_hint`) but is **not** the item key — it is not unique across headwords. The unique item key is an
+**ordinal** `sense_id = {lemma}_{pos}_{NN}`, where `NN` numbers that `(lemma,pos)`'s distinct senses by
+`zipf_rank` ascending (`_01` = most frequent sense). `synset`/`sense_hint` are generation inputs (they
+disambiguate WHICH sense to author) and stay out of the runtime `LexicalItem` contract.
 
 ### 3.3 Validate carried numerics
 `cefr` must be one of `A2/B1/B2/C1` (empty/invalid → **halt**); `zipf` and `zipf_rank` must be finite
@@ -101,11 +132,12 @@ Keep items whose normalized POS ∈ `{noun, verb, adj, adv}`. Quarantine everyth
 (PRD §1, §8). Modals/auxiliaries cannot host a meaningful self-reference production task and sit below
 the frontier — the PH learner already produces them.
 
-### 3.5 Dedup (key = `sense_id`)
-The source occasionally lists the same `(lemma, pos)` at two CEFR levels (`race`, `ring`, `survive`).
-Stage A keeps the **lower** CEFR (`A2 < B1 < B2 < C1`) and records the collision in the gate summary.
-`zipf`/`zipf_rank` are identical across such a pair, so nothing else is lost. A residual duplicate
-`sense_id` after dedup is an integrity **halt**.
+### 3.5 Dedup (key = `(lemma, pos, synset)`)
+The source occasionally lists the same **sense** (`(lemma, pos, synset)`) at two CEFR levels (`race`,
+`ring`, `survive`). Stage A keeps the **lower** CEFR (`A2 < B1 < B2 < C1`) and records the collision in
+the gate summary. Distinct senses of the same `(lemma, pos)` are **preserved** as separate items (that is
+the point of the multisense source); only an exact same-sense duplicate is collapsed. A residual duplicate
+ordinal `sense_id` after assignment is an integrity **halt**.
 
 **Stage A exit gate:** human reviews (a) the quarantine list, (b) total in-scope count, (c) a sample
 of rows, (d) any halted-and-flagged POS. Only then start Stage B.
@@ -119,8 +151,8 @@ of rows, (d) any halted-and-flagged POS. Only then start Stage B.
   // ---- CARRIED (facts from the source CSV — Stage A fills, Stage B MUST NOT touch) ----
   "word": "specialist",          // display form (CSV verbatim)
   "lemma": "specialist",         // §5.2.1 presence-gate key (lowercased word)
-  "part_of_speech": "noun",      // item key with word; one item per (word,pos)
-  "sense_id": "specialist_noun_01",
+  "part_of_speech": "noun",      // one item per (word,pos,sense)
+  "sense_id": "specialist_noun_01",  // ordinal {lemma}_{pos}_{NN}; _01 = most frequent sense
   "cefr": "B2",                  // ← from the CSV VERBATIM (A2–C1). NEVER invent.
   "zipf": 4.12,                  // ← from the CSV VERBATIM; SUBTLEX-scale, higher = more frequent
   "zipf_rank": 4200,             // ← from the CSV VERBATIM; dense rank, 1 = most frequent
@@ -133,22 +165,32 @@ of rows, (d) any halted-and-flagged POS. Only then start Stage B.
   "productive_meaning": "string",      // cued prompt; DISTINCT phrasing from recognition_meaning
   "model_sentence": "string",          // non-self-referential exemplar of the sense
   "self_reference_prompt": "string",   // concise per-word personal nudge
+  "cloze_fit_set": [                   // AMMENDMENT §A1.2: every plausible blank-filler, classified
+    { "lemma": "string", "class": "target | same_sense_near_miss | different_sense_fit" }
+  ],
+  "bounce_gloss": "string",            // short paraphrase of productive_meaning; the §A2 different-sense bounce cue
 
   // ---- PROVENANCE ----
   "gen_model": "manual-frontier-llm",
-  "gen_spec_version": "gen-spec v3"
+  "gen_spec_version": "gen-spec v3",
+  "fit_set_version": 1                 // stamped by ingest (never authored); increments on heal-merge / rubric change
 }
 ```
 
 > The carried-field values shown above are **illustrative placeholders**. The real values come from
 > the CSV at Stage A. This discipline — carried facts filled once, never touched by generation — is
 > the whole point of the carried/generated split.
+>
+> The Stage A manifest additionally carries the source `synset` + `sense_hint` for each sense. These are
+> **generation inputs** (shown in the prompt so the LLM authors the correct sense of a multisense word);
+> they are deliberately **not** part of the runtime item above — `intended_sense` remains the
+> LLM-authored sense field.
 
 ---
 
 ## 5. Stage B — Generation rules (manual frontier LLM, per CEFR batch)
 
-`build/generate.ts` reads each level's pending batch and writes a self-contained markdown prompt
+`pipeline/generate.py` reads each level's pending batch and writes a self-contained markdown prompt
 (`_prompt_<cefr>.md`) carrying the batch's **carried fields** plus the authoring rules; the user pastes
 it into a frontier-LLM free chat and gets back **only the generated fields** as `{"items":[…]}`, then
 saves that to `_generated_batch_<cefr>.json`. The single source of truth for field content and quality
@@ -187,6 +229,18 @@ sense as everything else (PRD §4: prevents passive-recognition leakage into `Re
 `intended_sense`. **Contains no inflected form of the target** and is not a paraphrase of
 `model_sentence`. Self-reference is a retention multiplier (research Finding 6; PRD §4), not flavor.
 
+**`cloze_fit_set`** — Every word that plausibly fills the `clozed_sentence` blank, each classified
+against `intended_sense` via the two-gate rubric (`docs/CLOZE_FIT_RUBRIC.md`, inlined into the
+prompt): exactly one `target` entry (the item's lemma), plus `same_sense_near_miss` /
+`different_sense_fit` entries as root lemmas. Each entry carries a one-line `why` justification —
+required in the generated output, **stripped by ingest** before commit. No `same_sense_near_miss`
+may also be an MCQ distractor (§7.1). Enumeration is best-effort; the runtime heal queue closes
+gaps at later builds (spec/13 `FIT-11`).
+
+**`bounce_gloss`** — A **short paraphrase variant of `productive_meaning`** shown inside the
+different-sense soft bounce while the learner must still produce the word: no token whose lemma
+equals the target (§7.1 leak rule), not string-identical to either gloss, terse.
+
 **Locale:** all generated text **en-US** (PRD §4.1) so runtime presence/cloze checks don't bounce
 American forms.
 
@@ -202,27 +256,38 @@ Use as the in-context few-shot. (Carried fields here are placeholders; real ones
   "clozed_sentence": "The doctor referred her to a _ for treatment of her heart condition.",
   "productive_meaning": "someone who focuses deeply on a single, narrow area rather than knowing a little about many things",
   "model_sentence": "Diagnosing such a rare condition usually requires a specialist rather than a general practitioner.",
-  "self_reference_prompt": "When have you needed help from someone who focuses on just one narrow field?"
+  "self_reference_prompt": "When have you needed help from someone who focuses on just one narrow field?",
+  "cloze_fit_set": [
+    { "lemma": "specialist", "class": "target", "why": "the target itself" },
+    { "lemma": "expert", "class": "same_sense_near_miss", "why": "same referral-to-an-authority situation, but a looser hypernym — loses the one-narrow-branch component" },
+    { "lemma": "consultant", "class": "same_sense_near_miss", "why": "same situation and roles; register-shifted hospital term for the same kind of doctor" },
+    { "lemma": "surgeon", "class": "different_sense_fit", "why": "fills the blank naturally but asserts a different state of affairs — surgical treatment, not expertise in one branch" }
+  ],
+  "bounce_gloss": "a person devoted to one narrow branch of a field"
 }
 ```
 Why it passes the §7 checklist: distractors are all person-nouns, none meaning "expert"; the two
 glosses share no content-word stem; the cloze reads with the bare lemma; the model sentence has no
 "I" and anchors the sense via the "rather than a general practitioner" contrast; the prompt hides the
-word form.
+word form; the fit set has exactly one `target`, no near-miss doubles as a distractor, every entry
+justifies its class in one line; the bounce gloss repeats neither gloss and never uses "specialist".
 
-### 5.2 Batch generation prompt (assembled by `build/generate.ts` → `_prompt_<cefr>.md`)
+### 5.2 Batch generation prompt (assembled by `pipeline/generate.py` → `_prompt_<cefr>.md`)
 The prompt is one markdown string (`buildPrompt`: the system section + a blank line + the user section).
 The system section carries: the full text of `docs/GENERATION_RULES.md` (authoritative), the §5.1 gold
 one-shot, the code-enforced HARD CONSTRAINTS (a restatement of §7.1 so the model passes on the first
 try), and the output contract. The user section carries the batch's per-item carried context:
 
 ```
-word, part_of_speech, cefr, zipf_rank   // difficulty register + frequency signal
+word, part_of_speech, cefr, zipf_rank,   // difficulty register + frequency signal
+synset, sense_hint                        // WHICH sense to author (multisense disambiguation)
 ```
 
-Output contract: return `{"items": [ … ]}`, one element per input item, each with `sense_id` + the 7
-generated keys (+ optional `_flags`). Generate ORIGINAL content, en-US. If a rule genuinely cannot be
-satisfied for an item, set that field to null and add `"_flags": ["reason"]` — do NOT force it.
+Output contract: return `{"items": [ … ]}`, one element per input item, each with `sense_id` + the 9
+generated keys (+ optional `_flags`). `cloze_fit_set` entries each carry a required one-line `why`
+(stripped by ingest — §A1.2 scratch field); `fit_set_version` is **not** part of the output (ingest
+stamps it). Generate ORIGINAL content, en-US. If a rule genuinely cannot be satisfied for an item,
+set that field to null and add `"_flags": ["reason"]` — do NOT force it.
 
 ---
 
@@ -264,6 +329,15 @@ satisfied for an item, set that field to null and add `"_flags": ["reason"]` —
   fail); is a question or imperative; under ~140 chars.
 - `recognition_meaning` ≠ `productive_meaning`, and they **share no content-word stem** (lemmatize
   both, intersect minus stopwords; non-empty intersection on content words → **flag**, not auto-fail).
+- `cloze_fit_set`: exactly **one** `class:"target"` entry and its lemma equals the item `lemma`
+  (case-insensitive); every `class` ∈ {`target`, `same_sense_near_miss`, `different_sense_fit`};
+  entry lemmas distinct; **no `same_sense_near_miss` lemma appears in `distractors`** (the MCQ
+  taught "not this word" — a near-miss lane would contradict it; a `different_sense_fit` may
+  coincide). Non-target entry count above `FIT_SET_FLAG_THRESHOLD` → **flag**, not auto-fail
+  (constraint-pressure signal, spec/13 `FIT-2`).
+- `bounce_gloss`: contains **no** inflected-or-base form of `lemma` (leak → fail — it is shown while
+  the learner must still produce the word); not string-identical to `recognition_meaning` or
+  `productive_meaning`.
 - All generated strings non-empty unless paired with a `_flags` entry.
 
 ### 7.2 Needs human spot-check (cannot be auto-validated — sample ~10% per batch)
@@ -298,6 +372,45 @@ distractor or sense to clear a flag.
 
 ## 9. Change log & run state
 
+**v6 (cloze fit-set — AMMENDMENT).** Two new generated fields (`cloze_fit_set`, `bounce_gloss`) and
+one new provenance stamp (`fit_set_version`, ingest-stamped) realize `docs/AMMENDMENT.md` §A1
+(spec/13 `FIT-1..5`): the cloze sentence is authored **constrained** (target = uniquely natural
+fill, self-verified ≤ ~3 non-target fits), and every plausible blank-filler is enumerated and
+classified via `docs/CLOZE_FIT_RUBRIC.md` (versioned by `FIT_RUBRIC_VERSION`). Per-entry `why`
+justifications are required in the generated output and stripped at ingest. New §7.1 asserts cover
+the fit set and the bounce gloss. Replaces the never-shipped flat `near_miss_synonyms` field.
+
+**v5 (Python; one shared NLP engine).** The pipeline was rewritten from TypeScript (`build/*.ts`,
+deleted) to **Python** (`python/src/wikain/pipeline/`), and Stage C's NLP moved from **wink-nlp to
+spaCy** — the same `wikain.nlp` engine the runtime now grades with, imported in-process. The reason is
+a correctness one, not a preference: Stage C asserts `model_sentence` contains a form of the lemma, and
+the runtime re-derives exactly that at review (RL-2 / TIER-5). Two engines could disagree, letting an
+item pass the gate and still be bounced as "word absent" — a fabricated `Again` that corrupts FSRS
+(INV-2). One engine makes that unrepresentable. Consequences:
+- **The wink Americanization bug is gone.** wink normalized `aesthetic`→`esthetic`, so those lemmas
+  could *never* satisfy the presence assert and had to ship `model_sentence: null` + a `_flags` reason.
+  spaCy does not normalize spelling; no workaround is needed, and none is carried forward.
+- The source's renamed numeric columns (`sense_zipf`, `global_zipf_rank`) are mapped to the carried
+  `zipf`/`zipf_rank` at the Stage A read boundary (§2.1). The runtime item contract is unchanged.
+- `NO_SENSE_FOUND` / `NO_HINT_FOUND` rows are now quarantined rather than generated against (§2.1).
+- `batch_NNNN` numbering is now `max+1`, not a file count — deleting a batch no longer overwrites a
+  survivor on the next ingest.
+- Producer↔consumer schema drift, previously a TS-to-TS assignability check, is now a **shared contract
+  file** (`docs/lexical-item.contract.json`) asserted by both sides. That is stronger: it also catches
+  the runtime drifting, and it records `_flags` as producer-only (the runtime never declared it).
+- Artifacts, filenames, and `build/out/` are unchanged, so `db:seed:catalog` is untouched.
+- `feed`/`ingest`/`validate`/`combine` had **no tests** in TS; they are covered now.
+
+**v4 (multisense catalog).** The input switched from `data/merged_oxford_a2c1_zipf.csv` to
+`data/oxford_multisense_catalog.csv` (header `word,pos,cefr,sense_id,sense_hint,zipf,zipf_rank`, 4,941
+rows). Stage A now preserves **every WordNet sense** of a `(word,pos)` as its own item instead of
+collapsing to one. The dedup key became `(lemma,pos,synset)`, and the unique item key is now an ordinal
+`sense_id = {lemma}_{pos}_{NN}` (`_01` = most frequent sense) — the source synset key is **not unique**
+across headwords, so it is carried as manifest-only `synset` alongside `sense_hint`, both threaded into the
+generation prompt to pin which sense to author. The CSV reader is quote-aware (the `sense_hint`
+gloss embeds commas). The runtime `LexicalItem` contract is unchanged (`synset`/`sense_hint` stay out of
+it). The build was **reset to batch 0**.
+
 **v3 (CEFR-split manifests + manual frontier-LLM generation).** Stage A now emits **four CEFR-grouped
 manifests** (`_manifest_{A2,B1,B2,C1}.json`), each sorted by `zipf_rank` ascending, instead of one
 `_manifest.json`. Generation moved **off the DeepSeek API entirely**: `generate` writes a markdown prompt
@@ -311,9 +424,10 @@ independently). Removed: `build/deepSeekClient.ts`, `build/tokenCost.ts`, `build
 3000-vs-5000 collision handling, the function-word allowlist, and the `source`/`band`/`sense_hint`/
 `list_rank` carried fields. Added: `zipf`/`zipf_rank`. The build was **reset to batch 0**.
 
-**Stage A run:** **4,391** in-scope items (noun 2330 / verb 1018 / adj 836 / adv 207; by CEFR
-A2 705 / B1 1059 / B2 1289 / C1 1338), **3** quarantined (`have`/auxiliaryv, `need`/`ought`/modalv),
-and **3** CEFR collisions deduped to the lower level (`race`, `ring`, `survive`).
+**Stage A run (v5, Python, current source):** 5,745 rows read → **5,738** in-scope items
+(noun 2964 / verb 1549 / adj 1003 / adv 222; by CEFR A2 1016 / B1 1421 / B2 1680 / C1 1621),
+**7** quarantined — 3 out-of-scope POS (`have`/auxiliaryv, `need`/`ought`/modalv) and 4 `no-sense-found`
+sentinels (`whatsoever`, `rival`, `overall`, `councilor`; `ought` is both) — and **0** CEFR collisions.
 
 **Decisions (still in force):** scope = content POS `{noun, verb, adj, adv}`; batch size **25 per CEFR
 level**; generation is manual (no API key, no cost accounting).

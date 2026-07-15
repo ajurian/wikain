@@ -87,7 +87,7 @@ the research's productive-value ranking (which places cloze above meaning→word
 ### TIER-5 — Lemma-match grading (inflection-agnostic, en-US)
 **Trace:** PRD §4.1, §5.2.
 **Requirement:** Deterministic grading (cloze, cued) MUST accept any inflected form of the target
-lemma as correct, using the en-US wink-nlp lemmatizer — the **same** presence check the rule layer
+lemma as correct, using the en-US NLP layer (`DM-9`) — the **same** presence check the rule layer
 uses (`04`, `RL-2`). American forms (e.g. "color", "organize") MUST be accepted.
 
 **Scenario: American spelling is accepted**
@@ -100,6 +100,9 @@ And not bounced as word-absent
 
 **Notes / edge cases:** Setting the NLP layer to en-US is load-bearing — otherwise American
 sentences get bounced as word-absent, which (per `INV-2`) would silently distort scheduling.
+Since the AMMENDMENT, **cloze** extends this contract with the classified fit-set lanes
+(`FIT-6`) — this lemma match IS the `target` lane; the non-target lanes (soft bounces, typo-fix,
+heal-queue wrong path) are owned by `13`. **Cued is unchanged** (no sentence frame → no fit set).
 
 ---
 

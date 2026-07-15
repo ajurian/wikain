@@ -44,13 +44,13 @@ describe("words read-models (smoke: real catalog + ts-fsrs)", () => {
   });
 
   it("SM-3: a cloze pass shows up as a Seen → Recognized move in readWordDetail history", async () => {
-    const { cards, marks, memo, catalog, wordSource } = await makeTestStores();
+    const { cards, marks, memo, catalog, wordSource, analyzer } = await makeTestStores();
     const sessionDeps = composeSession(cards, marks, catalog, wordSource);
     const { seeded } = await startSession({ userId: USER_A, frontierBand: BAND, now: t0 }, sessionDeps);
     const senseId = seeded[0]!.senseId;
     const word = sessionDeps.catalog.get(senseId)!.word;
 
-    const reviewDeps: RunReviewPassDeps = composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS, catalog);
+    const reviewDeps: RunReviewPassDeps = composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer);
     // Two deterministic passes: recognition (MCQ, no move) then cloze (Seen → Recognized).
     await runReviewPass({ userId: USER_A, senseId, response: word, now: t0 }, reviewDeps);
     await runReviewPass({ userId: USER_A, senseId, response: word, now: t1 }, reviewDeps);

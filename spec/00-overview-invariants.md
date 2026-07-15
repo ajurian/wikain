@@ -65,8 +65,9 @@ Every behavioral requirement is written as:
 ### 1.4 Normative scope = v1
 
 Only **v1 operative behavior is normative.** The v2 4-button rating, the one-tap override / rejudge /
-re-rate, cloze typo tolerance, voice/ASR input, exam-prep mode, and per-word `Seen`-skip efficiency
-are **Deferred** (non-normative). Deferred behavior **MUST NOT** appear in a normative scenario.
+re-rate, length-scaled cloze typo tolerance (the flat DL≤1 → `Good` rule is v1, `FIT-9`), voice/ASR
+input, exam-prep mode, and per-word `Seen`-skip efficiency are **Deferred** (non-normative). Deferred
+behavior **MUST NOT** appear in a normative scenario.
 
 ### 1.5 PRD-conflict rule (SDD discipline)
 
@@ -173,6 +174,8 @@ application, not magic literals. Each is **owned** by one spec; this table is th
 | `FIRST_SESSION_SEED_WORDS` | ~2 | `SEED` | §8 |
 | `DAILY_GOAL_DEFAULT` | 5 | `CNT` | §9 |
 | `CLOUD_RETRY_COUNT` | 1 | `NET` | §7 |
+| `CLOZE_SOFT_BOUNCE_CAP` | 3 | `FIT` | AMMENDMENT §A2.1 |
+| `CLOZE_TYPO_MAX_DISTANCE` | 1 | `FIT` | §3.6, AMMENDMENT §A2 |
 
 > All values are tunable from review data (PRD §11 "sign-offs"). None is load-bearing enough to
 > agonize over pre-build; the spec fixes the **wiring**, not the number.
@@ -196,6 +199,7 @@ application, not magic literals. Each is **owned** by one spec; this table is th
 | `10-counter-goal.md` | `CNT` | counter, retrievability gate, daily goal |
 | `11-end-to-end-loop.md` | `LOOP` | the §10 one-pass orchestration |
 | `12-data-model.md` | `DM` | lexical item / FSRS card / review entities (bridges BUILD.md) |
+| `13-cloze-fit-set.md` | `FIT` | classified cloze fit-set, three-lane grading, soft bounces, typo lane, heal queue |
 
 ---
 
@@ -253,6 +257,7 @@ Every PRD section maps to ≥1 spec file. Reverse map (requirement → PRD §) l
 | §10 | end-to-end loop (one pass) | `11` |
 | §11 | consolidated decisions (P1–P11, items 1–14) | distributed; index here |
 | Risks v4 | false-rejection unrecoverable; drift feed; network dep; cost/abuse | `01`, `06`, `08`; backend out-of-scope |
+| AMMENDMENT §A0–A6 | typed-cloze fit-set & soft bounce (patch to §3.6/§4/§4.1/§5.8; decision item 15) | `13` (`FIT-1..11`); `02`, `03`, `12` cross-refs |
 
 > §11 decision tables are not a separate spec; each decision is realized as a requirement in its
 > owning file and cited above. The "Risks introduced by v4" items 1–3 are encoded as normative
@@ -269,7 +274,9 @@ Indexed here; detailed in each owning file's Deferred section.
 - **One-tap override / "count this as correct" / rejudge / re-rate** — `01`, `06`. Removed in v1;
   the recommended zero-cost no-model-call mitigation for the unrecoverable-false-rejection risk is
   recorded but **not** built.
-- **Cloze typo tolerance** (Damerau–Levenshtein) — `02`/`03`.
+- **Length-scaled cloze typo tolerance + `Hard` mapping** (DL ≤1 for ≤6 chars, ≤2 longer → `Hard`) —
+  `02`. The flat DL≤1 → `Good` rule is **v1** since the AMMENDMENT (`FIT-9`).
+- **Offline heal merge + live cloze LLM escalation** — `13`.
 - **Voice / ASR second input method**; pronunciation scoring — `03`. Gated on PH-accent WER.
 - **Exam-prep mode / register-gating** — `06`. v1 is single clean-English mode.
 - **High-proficiency `Seen`-skip efficiency** — `09`.

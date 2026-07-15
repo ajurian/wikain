@@ -1,7 +1,7 @@
 import { checkRuleLayer, type RuleBounceReason } from "~/domain/review/ruleLayer.js";
+import { formsOf } from "~/domain/review/grading.js";
 import { MAX_RULE_BOUNCE_RETRIES } from "~/domain/constants.js";
 import type { Catalog } from "../ports/catalog.js";
-import type { Lemmatizer } from "../ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
 
 export interface CheckFreeProductionRuleLayerInput {
@@ -17,7 +17,6 @@ export interface CheckFreeProductionRuleLayerInput {
 /** Only the ports the rule layer reasons over — a strict subset of `SubmitFreeProductionDeps` (SOLID-4). */
 export interface CheckFreeProductionRuleLayerDeps {
   catalog: Catalog;
-  lemmatizer: Lemmatizer;
   analyzer: SentenceAnalyzer;
   /** Shipped Tagalog lexicon, lowercased (RL-4). */
   tagalogLexicon: ReadonlySet<string>;
@@ -49,26 +48,29 @@ export type RuleLayerCheck = { ok: true } | { ok: false; bounce: BounceResult };
  * A bounce is NOT a review (INV-2 / RAT-2) — no rating, no scheduler call, no ReviewLog. That is
  * enforced by the caller, which simply never schedules on a bounce; this use-case only decides.
  */
-export function checkFreeProductionRuleLayer(
+export async function checkFreeProductionRuleLayer(
   input: CheckFreeProductionRuleLayerInput,
   deps: CheckFreeProductionRuleLayerDeps,
-): RuleLayerCheck {
+): Promise<RuleLayerCheck> {
   const item = deps.catalog.get(input.senseId);
   if (item === undefined) throw new Error(`unknown sense_id: ${input.senseId}`);
 
-  const modelSentenceWords =
-    item.model_sentence === null
-      ? null
-      : deps.analyzer
-          .analyze(item.model_sentence)
-          .filter((t) => t.isWord)
-          .map((t) => t.normal);
+  // Two analyses, not three: the response is analyzed ONCE and both the forms (RL-2) and the tokens
+  // (RL-3) are derived from it. The model sentence is immutable per sense, so the adapter memoizes it
+  // and the steady-state cost of a rule check is a single round trip (NET-2 must still feel instant).
+  const [responseTokens, modelSentenceTokens] = await Promise.all([
+    deps.analyzer.analyze(input.response),
+    item.model_sentence === null ? null : deps.analyzer.analyze(item.model_sentence),
+  ]);
 
   const rule = checkRuleLayer({
     targetLemma: item.lemma,
-    responseForms: deps.lemmatizer.formsOf(input.response),
-    responseTokens: deps.analyzer.analyze(input.response),
-    modelSentenceWords,
+    responseForms: formsOf(responseTokens),
+    responseTokens,
+    modelSentenceWords:
+      modelSentenceTokens === null
+        ? null
+        : modelSentenceTokens.filter((t) => t.isWord).map((t) => t.normal),
     tagalogLexicon: deps.tagalogLexicon,
   });
 

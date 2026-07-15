@@ -78,7 +78,7 @@ export const ruleCheckFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<RuleCheckResult> => {
     const deps = reviewDeps();
-    const check = checkFreeProductionRuleLayer(
+    const check = await checkFreeProductionRuleLayer(
       { senseId: data.senseId, response: data.response, priorBounces: data.priorBounces },
       deps,
     );

@@ -20,8 +20,8 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
   async function wire(
     judge: FakeJudge,
   ): Promise<{ deps: SubmitFreeProductionDeps; cards: DrizzleCardRepository }> {
-    const { cards, memo, catalog } = await makeTestStores();
-    const deps = composeFreeProduction(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog);
+    const { cards, memo, catalog, analyzer } = await makeTestStores();
+    const deps = composeFreeProduction(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer);
     return { deps, cards };
   }
 
@@ -83,9 +83,9 @@ describe("free-production slice (smoke: real catalog + wink + ts-fsrs, fake judg
   });
 
   it("composeFreeProduction wires the slice without throwing", async () => {
-    const { cards, memo, catalog } = await makeTestStores();
+    const { cards, memo, catalog, analyzer } = await makeTestStores();
     expect(() =>
-      composeFreeProduction(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS, catalog),
+      composeFreeProduction(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer),
     ).not.toThrow();
   });
 });

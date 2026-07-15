@@ -1,0 +1,28 @@
+{
+  "$comment": "DM-2: the producer↔consumer field contract for a lexical item. The producer is the Python content pipeline (python/src/wikain/pipeline/types.py); the consumer is the TS runtime (src/domain/lexicalItem.ts). Both assert against this file, so a field added on one side without the other fails a test rather than silently half-shipping. It replaces the TS-to-TS assignability check that was possible when the pipeline was TypeScript — and unlike that check, it catches drift in either direction.",
+  "carried": [
+    "word",
+    "lemma",
+    "part_of_speech",
+    "sense_id",
+    "cefr",
+    "zipf",
+    "zipf_rank"
+  ],
+  "generated": [
+    "intended_sense",
+    "recognition_meaning",
+    "distractors",
+    "clozed_sentence",
+    "productive_meaning",
+    "model_sentence",
+    "self_reference_prompt",
+    "cloze_fit_set",
+    "bounce_gloss"
+  ],
+  "provenance": ["gen_model", "gen_spec_version", "fit_set_version"],
+  "producerOnly": {
+    "$comment": "Emitted by the pipeline, deliberately NOT part of the runtime type. `_flags` records why the generator left a field null (§7.3 flag-don't-fix); it is a build-time audit annotation, and the runtime just tolerates the null it explains.",
+    "fields": ["_flags"]
+  }
+}

@@ -25,9 +25,9 @@ describe("verdict memo (smoke: real catalog + wink + ts-fsrs, counting judge)", 
   async function wire(
     judge: FakeJudge,
   ): Promise<{ deps: SubmitFreeProductionDeps; cards: DrizzleCardRepository }> {
-    const { cards, memo, catalog } = await makeTestStores();
+    const { cards, memo, catalog, analyzer } = await makeTestStores();
     // One memo table shared across all submissions in a test — the whole point (MEMO-1).
-    const deps = composeFreeProduction(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog);
+    const deps = composeFreeProduction(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer);
     await cards.save({
       userId: USER_A,
       senseId: item.sense_id,

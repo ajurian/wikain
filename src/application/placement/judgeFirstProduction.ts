@@ -64,7 +64,7 @@ export async function judgeFirstProduction(
 
   // RL-1..4/RL-6: the shared rule-layer pre-screen. A bounce is not a review (INV-2) — return it
   // unchanged; the judge is never reached.
-  const rule = checkFreeProductionRuleLayer(input, deps);
+  const rule = await checkFreeProductionRuleLayer(input, deps);
   if (!rule.ok) return rule.bounce;
 
   // JDG-1/JDG-2: the judge runs only on a rule pass. A transport failure (spec/08) is surfaced, never

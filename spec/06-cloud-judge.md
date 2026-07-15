@@ -166,6 +166,14 @@ HTTPS **from the backend** (the API key MUST NOT reach the client — `08`). The
 structured output (`JDG-6`) + 2–3 few-shot calibration examples + a low/minimal thinking level **if**
 the model exposes one (for latency).
 
+> [FLAG] **"from the backend" now means a first-party service, not the web backend.** Since the Python
+> cut-over the DeepSeek HTTPS call is made by our own NLP/judge service (Cloud Run), which the web
+> backend reaches over an authenticated internal call; the DeepSeek key lives only there. This still
+> satisfies `JDG-10`'s intent (transport confined to infrastructure, key off the client) and `NET-7`,
+> but the spec's wording assumes one hop where there are now two. The rubric, `JDG-6` structured
+> output, `JDG-11` cache prefix, and the `NET-3/4/5` failure taxonomy are all preserved **inside** that
+> service — the retry lives there, so a paid call is never double-spent.
+
 ### JDG-11 — Prompt caching of the rubric/system prompt
 **Trace:** PRD §5.7.
 **Requirement:** The rubric/system prompt + few-shots SHOULD be sent so DeepSeek prompt caching

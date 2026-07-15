@@ -25,22 +25,19 @@ import type { SettingsStore } from "~/application/ports/settings.js";
 import type { Catalog } from "~/application/ports/catalog.js";
 import type { WordSource } from "~/application/ports/wordSource.js";
 import type { MemoVersions, VerdictMemoPort } from "~/application/ports/verdictMemo.js";
+import type { SentenceAnalyzer } from "~/application/ports/sentenceAnalyzer.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
-import { WinkLemmatizer } from "./nlp/winkLemmatizer.js";
 import { TAGALOG_LEXICON } from "./nlp/tagalogLexicon.js";
-import { DeepSeekJudge } from "./judge/deepSeekJudge.js";
-import { deepSeekConfigFromEnv } from "./judge/deepSeekConfig.js";
-import { RUBRIC_VERSION } from "./judge/deepSeekRubric.js";
 
 /**
  * spec/05 MEMO-6: a fixed memo version stamp for wirings that use a FAKE judge (tests). A memo hit must
- * match the (model, rubric) pair; the fake judge carries a fixed `"fake"` model id + the real
- * RUBRIC_VERSION so a rubric bump still invalidates. The live wiring stamps the real DeepSeek model id
- * instead (`liveJudgeVersions`).
+ * match the (model, rubric) pair; the fake judge carries a fixed `"fake"` model id + a fixed rubric
+ * stamp. The live wiring reads the REAL pair from the language service (`fetchJudgeVersions`) rather
+ * than duplicating the rubric version here, where it could silently drift from the judge that used it.
  */
 export const DEV_JUDGE_VERSIONS: MemoVersions = {
   modelVersion: "fake",
-  rubricVersion: RUBRIC_VERSION,
+  rubricVersion: "test-rubric",
 };
 
 /**
@@ -48,18 +45,23 @@ export const DEV_JUDGE_VERSIONS: MemoVersions = {
  * than read from the filesystem per call — no `fs`/bundle-tracing on the serverless request path
  * (spec/12 DM-2; STACK-3). The composers thread the already-built `catalog`/`wordSource` singletons in.
  */
-export function composeCuedReview(cards: CardRepository, catalog: Catalog): SubmitCuedReviewDeps {
+export function composeCuedReview(
+  cards: CardRepository,
+  catalog: Catalog,
+  analyzer: SentenceAnalyzer,
+): SubmitCuedReviewDeps {
   return {
     catalog,
     cards,
     scheduler: new TsFsrsScheduler(),
-    lemmatizer: new WinkLemmatizer(),
+    analyzer,
   };
 }
 
 /**
- * Wiring for the judged free-production slice. The `judge`, `cards`, and `memo` are injected; the one
- * wink adapter serves as both Lemmatizer (presence) and SentenceAnalyzer (degeneracy POS).
+ * Wiring for the judged free-production slice. The `judge`, `cards`, `memo` and `analyzer` are all
+ * injected — the analyzer is now a service client (`HttpNlp`), so it is built once at the root and
+ * shared, not constructed per call (its model-sentence cache would be useless otherwise).
  */
 export function composeFreeProduction(
   judge: JudgePort,
@@ -67,14 +69,13 @@ export function composeFreeProduction(
   memo: VerdictMemoPort,
   judgeVersions: MemoVersions,
   catalog: Catalog,
+  analyzer: SentenceAnalyzer,
 ): SubmitFreeProductionDeps {
-  const wink = new WinkLemmatizer();
   return {
     catalog,
     cards,
     scheduler: new TsFsrsScheduler(),
-    lemmatizer: wink,
-    analyzer: wink,
+    analyzer,
     judge,
     tagalogLexicon: TAGALOG_LEXICON,
     memo,
@@ -92,25 +93,9 @@ export function composeReviewPass(
   memo: VerdictMemoPort,
   judgeVersions: MemoVersions,
   catalog: Catalog,
+  analyzer: SentenceAnalyzer,
 ): RunReviewPassDeps {
-  return composeFreeProduction(judge, cards, memo, judgeVersions, catalog);
-}
-
-/**
- * The live judge (spec/06 JDG-10, spec/08 NET-7): a DeepSeek adapter configured from the environment.
- * The single place the API key is read — server-side (NET-7). Kept out of test wirings (tests inject a
- * FakeJudge) so the suite never needs a key or the network.
- */
-export function liveJudge(): JudgePort {
-  return new DeepSeekJudge(deepSeekConfigFromEnv());
-}
-
-/**
- * spec/05 MEMO-6: the live judge's version stamp — the real DeepSeek model id (from config) +
- * RUBRIC_VERSION. Reads the config (server-side, NET-7); requires `DEEPSEEK_API_KEY`.
- */
-export function liveJudgeVersions(): MemoVersions {
-  return { modelVersion: deepSeekConfigFromEnv().model, rubricVersion: RUBRIC_VERSION };
+  return composeFreeProduction(judge, cards, memo, judgeVersions, catalog, analyzer);
 }
 
 /**

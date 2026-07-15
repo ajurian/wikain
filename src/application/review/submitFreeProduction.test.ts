@@ -11,7 +11,6 @@ import type { FsrsReviewLog, ReviewLog } from "~/domain/review/review.js";
 import type { Rating } from "~/domain/review/rating.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { CardRepository } from "../ports/cardRepository.js";
-import type { Lemmatizer } from "../ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
 import { JudgeUnavailableError, type JudgePort, type JudgeRequest } from "../ports/judge.js";
 import type { Scheduler } from "../ports/scheduler.js";
@@ -46,21 +45,45 @@ function makeItem(): LexicalItem {
 
 const catalog: Catalog = { get: (id) => (id === SENSE ? makeItem() : undefined) };
 
-/** Naive forms: lowercase split. A response literally containing "negotiate" is present (RL-2). */
-const lemmatizer: Lemmatizer = {
-  formsOf: (text) => text.toLowerCase().split(/\s+/).filter(Boolean),
+const POS: Readonly<Record<string, string>> = {
+  she: "PRON",
+  a: "DET",
+  negotiate: "VERB",
+  negotiated: "VERB",
+  bought: "VERB",
+  made: "VERB",
+  better: "ADJ",
+  contract: "NOUN",
+  price: "NOUN",
+  house: "NOUN",
+  yesterday: "ADV",
 };
+const LEMMAS: Readonly<Record<string, string>> = {
+  negotiated: "negotiate",
+  bought: "buy",
+  made: "make",
+};
+const STOPWORDS: ReadonlySet<string> = new Set(["she", "a"]);
 
-/** A healthy, non-degenerate token set (≥4 non-target content tokens + a VERB) for any text. */
+/**
+ * A text-DRIVEN analyzer. It must be: RL-2 presence (`formsOf`) is now derived from these very tokens,
+ * so a fixed token set would smuggle the target into every response and "absent" could never bounce.
+ */
 const healthyAnalyzer: SentenceAnalyzer = {
-  analyze: (): NlpToken[] => [
-    { normal: "she", lemma: "she", pos: "PRON", isStopword: true, isWord: true },
-    { normal: "negotiated", lemma: "negotiate", pos: "VERB", isStopword: false, isWord: true },
-    { normal: "better", lemma: "better", pos: "ADJ", isStopword: false, isWord: true },
-    { normal: "contract", lemma: "contract", pos: "NOUN", isStopword: false, isWord: true },
-    { normal: "price", lemma: "price", pos: "NOUN", isStopword: false, isWord: true },
-    { normal: "yesterday", lemma: "yesterday", pos: "ADV", isStopword: false, isWord: true },
-  ],
+  analyze: (text: string): Promise<NlpToken[]> =>
+    Promise.resolve(
+      text
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => ({
+          normal: w,
+          lemma: LEMMAS[w] ?? w,
+          pos: POS[w] ?? "NOUN",
+          isStopword: STOPWORDS.has(w),
+          isWord: true,
+        })),
+    ),
 };
 
 function verdict(overrides: Partial<JudgeVerdict> = {}): JudgeVerdict {
@@ -184,7 +207,6 @@ function deps(
       catalog,
       cards: repo.cards,
       scheduler,
-      lemmatizer,
       analyzer,
       judge,
       tagalogLexicon,
@@ -206,7 +228,7 @@ describe("submitFreeProduction — rule-layer bounce (INV-2)", () => {
     const before = stored();
 
     const res = await submitFreeProduction(
-      { userId: "u1", senseId: SENSE, response: "she bought a house", now: NOW },
+      { userId: "u1", senseId: SENSE, response: "she bought a house yesterday", now: NOW },
       d,
     );
 
@@ -226,7 +248,7 @@ describe("submitFreeProduction — rule-layer bounce (INV-2)", () => {
       {
         userId: "u1",
         senseId: SENSE,
-        response: "she bought a house",
+        response: "she bought a house yesterday",
         priorBounces: MAX_RULE_BOUNCE_RETRIES - 1,
         now: NOW,
       },
@@ -249,7 +271,7 @@ describe("submitFreeProduction — cloud-judge failure path (spec/08, INV-2)", (
     const before = stored();
 
     const res = await submitFreeProduction(
-      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price", now: NOW },
+      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price yesterday", now: NOW },
       d,
     );
 
@@ -265,7 +287,7 @@ describe("submitFreeProduction — cloud-judge failure path (spec/08, INV-2)", (
     for (const reason of ["rate_limited", "offline"] as const) {
       const { d } = deps(productiveCard(), new UnavailableJudge(reason));
       const res = await submitFreeProduction(
-        { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price", now: NOW },
+        { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price yesterday", now: NOW },
         d,
       );
       expect(res.kind).toBe("unavailable");
@@ -280,7 +302,7 @@ describe("submitFreeProduction — judged path (INV-1)", () => {
     const { d, calls, logs } = deps(productiveCard(), judge);
 
     const res = await submitFreeProduction(
-      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price", now: NOW },
+      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price yesterday", now: NOW },
       d,
     );
 
@@ -301,7 +323,7 @@ describe("submitFreeProduction — judged path (INV-1)", () => {
     const { d, stored } = deps(productiveCard(), judge);
 
     const res = await submitFreeProduction(
-      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price", now: NOW },
+      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price yesterday", now: NOW },
       d,
     );
 
@@ -314,7 +336,7 @@ describe("submitFreeProduction — judged path (INV-1)", () => {
     const { d, calls, logs, stored } = deps(productiveCard(), judge);
 
     const res = await submitFreeProduction(
-      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price", now: NOW },
+      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price yesterday", now: NOW },
       d,
     );
 
@@ -341,7 +363,7 @@ describe("submitFreeProduction — judged path (INV-1)", () => {
       const judge = new RecordingJudge(verdict({ used_in_target_sense: false }));
       const { d } = deps(card, judge);
       const res = await submitFreeProduction(
-        { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price", now: NOW },
+        { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price yesterday", now: NOW },
         d,
       );
       if (res.kind === "judged") outcomes.push(res.mastery);
@@ -352,7 +374,7 @@ describe("submitFreeProduction — judged path (INV-1)", () => {
 
 describe("submitFreeProduction — SM-5 Productive → Fluent promotion", () => {
   const DAY3 = new Date("2026-06-30T09:00:00Z");
-  const PASS = "she negotiate a better contract price";
+  const PASS = "she negotiate a better contract price yesterday";
 
   /** A Productive card whose post-review stability clears FLUENT_MIN_STABILITY_DAYS (SM-5 c). */
   function stableProductiveCard(): Card {

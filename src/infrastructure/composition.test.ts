@@ -6,17 +6,17 @@ import { submitCuedReview } from "~/application/review/submitCuedReview.js";
 import { USER_A } from "./testIds.js";
 
 /**
- * End-to-end smoke test of the cued-review slice over the REAL catalog with REAL ts-fsrs + wink —
- * the architecture-proving path (TIER-3, RAT-1, SM-4, RAT-8, INV-3). Persistence is pglite-backed
- * Drizzle; no network/auth/judge needed.
+ * End-to-end smoke test of the cued-review slice over the REAL catalog with REAL ts-fsrs — the
+ * architecture-proving path (TIER-3, RAT-1, SM-4, RAT-8, INV-3). Persistence is pglite-backed
+ * Drizzle; NLP is the FakeAnalyzer (spaCy is out-of-process now), and no network/auth/judge is needed.
  */
-describe("cued-review slice (smoke: real catalog + ts-fsrs + wink)", () => {
+describe("cued-review slice (smoke: real catalog + ts-fsrs)", () => {
   it("grades a correct cued response, promotes Recognized → Productive, schedules, and logs", async () => {
-    const { cards, items, catalog } = await makeTestStores();
+    const { cards, items, catalog, analyzer } = await makeTestStores();
     expect(items.length).toBeGreaterThan(0);
     const item = items[0]!;
 
-    const deps = composeCuedReview(cards, catalog);
+    const deps = composeCuedReview(cards, catalog, analyzer);
     const now = new Date("2026-06-30T00:00:00Z");
     await cards.save({
       userId: USER_A,

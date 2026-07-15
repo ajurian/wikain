@@ -47,39 +47,61 @@ derived from the PRD, then tests are written against the specs, then runtime cod
   cites its PRD `§`; v1 is normative and v2/enable-later sits in non-normative **Deferred** sections;
   any spec/PRD conflict is flagged (`> [FLAG]`), never silently resolved.
 
-**What is implemented:** (1) the **build-time content-generation pipeline** (`build/`,
-TypeScript/Node), which realizes `docs/BUILD.md`; and (2) the **v4 runtime** (`src/`, started
+**What is implemented:** (1) the **build-time content-generation pipeline** (`python/src/wikain/pipeline/`,
+Python/uv since slice 30 — it was TypeScript through slice 28), which realizes `docs/BUILD.md`; (2) the
+**Python NLP + judge microservice** (`python/src/wikain/{nlp,judge,service}/`, slices 29/31) — one FastAPI
+container holding the ONE spaCy engine and the DeepSeek client; and (3) the **v4 runtime** (`src/`, started
 2026-06-30) — see `### v4 runtime (src/)` below — now spanning the whole review loop, first-session
 seeding, the real DeepSeek judge, the usable-words counter, edit resolution, the verdict memo, a
 Drizzle/Neon persistence adapter, **real BetterAuth email+password auth with per-user settings**, and a
 fully **wired, guarded** TanStack Start UI (every surface — `/`, `/review`, `/words`, `/onboarding`,
 `/settings`, `/signin`, `/signup` — runs on real use-cases behind a real session). The app is now
-**multi-tenant and secrets-required**: it fails fast on boot without `DATABASE_URL`, `DEEPSEEK_API_KEY`,
-and `BETTER_AUTH_SECRET` — there are **no in-memory adapters or offline fallbacks** anywhere (tests run
-against embedded pglite). Onboarding is the **mandatory** step after auth, and placement runs on the real
-published **LexTALE** instrument (slice 22). **A few spec pieces remain deferred** — per-user FSRS
-optimization (SEED-8), SEED-2's LexTALE→cold-start-difficulty output, and the counter's yesterday-delta
-(needs a persisted daily snapshot). Do not assume a runtime piece is present; scaffold it only when asked.
+**multi-tenant and secrets-required**: it fails fast on boot without `DATABASE_URL`, `BETTER_AUTH_SECRET`,
+`NLP_SERVICE_URL`, and `NLP_SERVICE_TOKEN` — there are **no in-memory adapters or offline fallbacks**
+anywhere (tests run against embedded pglite). **`DEEPSEEK_API_KEY` is no longer a web-backend secret** —
+since slice 32 it lives only in the Python service. Onboarding is the **mandatory** step after auth, and
+placement runs on the real published **LexTALE** instrument (slice 22). **A few spec pieces remain
+deferred** — per-user FSRS optimization (SEED-8), SEED-2's LexTALE→cold-start-difficulty output, and the
+counter's yesterday-delta (needs a persisted daily snapshot). Do not assume a runtime piece is present;
+scaffold it only when asked.
 *(Note: v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend — ignore any
 stale "Electron" framing elsewhere.)*
 
-### Build pipeline commands
+### Build pipeline commands (Python — slice 30)
 
-TypeScript runs directly via `tsx` (no compile step). The runtime phase added **vitest** (`npm test`)
-as the test runner, and slice 28 added **ESLint** (`npm run lint`, flat config in `eslint.config.js`)
-— it is a **rule gate, not a formatter**: there is still no Prettier and no style rules. The build
-gates are `npm run typecheck` (covers `build/**` + `src/**`), `npm test`, and `npm run lint`.
+The pipeline is a **uv** project under `python/` (Python 3.13). Its gates mirror the TS ones and are the
+same three ideas: `uv run ruff check .` (lint — a **rule gate, not a formatter**: no `E`/style rules, no
+Prettier equivalent, exactly as `eslint.config.js` is on the TS side), `uv run mypy --strict src`
+(typecheck), `uv run pytest` (test). **`build/out/` is still the artifact directory** and every artifact
+keeps its old filename and JSON shape, so `src/infrastructure/db/seedCatalog.ts` reads `items.json`
+unchanged.
 
 ```bash
-npm install
-npm run typecheck   # tsc --noEmit
-npm run stageA      # Stage A: assemble data/merged_oxford_a2c1_zipf.csv → build/out/_manifest_{A2,B1,B2,C1}.json + _quarantine.json
-npm run feed        # Stage B: stage the next 25-item batch PER CEFR level → build/out/_pending_batch_<cefr>.json
-npm run generate    # Stage B: write a markdown prompt per level → build/out/_prompt_<cefr>.md (NO API; paste into a frontier LLM)
-npm run ingest      # Stage B: merge every _generated_batch_<cefr>.json + carried, Stage C, commit → build/out/batch_NNNN.json
-npm run validate    # Stage C: §7.1 auto-asserts over build/out/items.json (or pass a path)
-npm run combine     # concat all batch_*.json → build/out/items.json
+cd python && uv sync
+uv run wikain-pipeline stagea    # Stage A: assemble data/oxford_multisense_catalog.csv → build/out/_manifest_{A2,B1,B2,C1}.json + _quarantine.json
+uv run wikain-pipeline feed      # Stage B: stage the next 25-item batch PER CEFR level → build/out/_pending_batch_<cefr>.json
+uv run wikain-pipeline generate  # Stage B: write a markdown prompt per level → build/out/_prompt_<cefr>.md (NO API; paste into a frontier LLM)
+uv run wikain-pipeline ingest    # Stage B: merge every _generated_batch_<cefr>.json + carried, Stage C, commit → build/out/batch_NNNN.json
+uv run wikain-pipeline validate  # Stage C: §7.1 auto-asserts over build/out/items.json (or pass a path)
+uv run wikain-pipeline combine   # concat all batch_*.json → build/out/items.json
 ```
+
+### The Python service (`python/src/wikain/{nlp,judge,service}/`, slices 29+31)
+
+One FastAPI container. `POST /analyze` (spaCy `en_core_web_sm`), `POST /judge` (DeepSeek V4 Flash),
+`GET /versions` (`modelVersion`/`rubricVersion`, which key the verdict memo), `GET /healthz`. Bearer
+`NLP_SERVICE_TOKEN` on every route but `/healthz`; `DEEPSEEK_API_KEY` lives here and nowhere else.
+
+```bash
+docker compose up nlp            # dev: http://localhost:8000
+cd python && uv run ruff check . && uv run mypy --strict src && uv run pytest
+```
+
+**The load-bearing reason this exists:** Stage C validates content with the **same NLP engine the runtime
+grades with**. The pipeline gets it by importing `wikain.nlp` in-process; the TS runtime gets it over HTTP.
+That shared import, not a convention, is what stops the two from drifting — two engines would let an item
+pass the build gate and still be bounced "word absent" at review, fabricating an `Again` and corrupting
+FSRS (INV-2). It is why moving the pipeline to Python **forced** the runtime's NLP to move too.
 
 ## v4 runtime (`src/`) — STARTED 2026-06-30
 
@@ -91,17 +113,19 @@ gate). NodeNext ESM — relative imports carry `.js`; tests co-located `*.test.t
 slices 1–11 are on **`master`**; every UI slice — 12 (design), 13–20 (backend wiring) — lands on
 **`design/brand-ui-system`** and descendant wiring branches (re-confirm with `git log`).
 
-**Persistence & secrets (since slice 20):** there is **one Drizzle-only persistence path** — no
-in-memory adapters, no offline/URL-gated/key-gated fallbacks. The app **requires** `DATABASE_URL`,
-`DEEPSEEK_API_KEY`, and `BETTER_AUTH_SECRET`; the presentation composition root throws at load if any is
-missing (fail fast). Tests run against embedded **pglite** (`makePgliteDb()`); `FakeJudge` is the one
-test-only double (the judge is a paid external service). Run `npm run db:migrate` once against Neon
-before boot.
+**Persistence & secrets (since slice 20; secrets revised in slice 32):** there is **one Drizzle-only
+persistence path** — no in-memory adapters, no offline/URL-gated/key-gated fallbacks. The app **requires**
+`DATABASE_URL`, `BETTER_AUTH_SECRET`, `NLP_SERVICE_URL`, and `NLP_SERVICE_TOKEN`; the presentation
+composition root throws at load if any is missing (fail fast). **`DEEPSEEK_API_KEY` is NOT one of them** —
+it moved into the Python service. Tests run against embedded **pglite** (`makePgliteDb()`); there are now
+**two** test-only doubles, `FakeJudge` and `FakeAnalyzer`, for the same reason — both stand in for an
+out-of-process service (one of them paid). Run `npm run db:migrate` once against Neon before boot, and have
+`docker compose up nlp` running before `npm run dev`.
 
 ```bash
 npm test               # vitest run (runtime test gate; pglite-backed, capped forks — see vite.config.ts)
 npm run test:watch     # vitest watch
-npm run typecheck      # NodeNext backend gate (build/** + src/** minus presentation)
+npm run typecheck      # NodeNext backend gate (src/** minus presentation)
 npm run typecheck:web  # presentation tsconfig
 npm run dev            # the TanStack Start app (needs the 3 env vars)
 npm run db:migrate     # apply drizzle/ migrations to Neon (once, before the DATABASE_URL path)
@@ -361,15 +385,79 @@ code + `spec/` IDs for detail:
     boundary rules were **proven to bite** by deliberately violating ARCH-1/ARCH-2/DIR-7 and watching each fail.
     *(Not covered by tests: the two React behavior changes — no component test harness exists.)*
 
+29–32. **The Python cut-over: pipeline + NLP/judge service, and the TS runtime onto it** (`wire/onboarding-placement`).
+    Four slices, one indivisible change — see the coupling note under `### The Python service` above: the
+    pipeline could not move to Python without the runtime's NLP moving with it, or Stage C and the grader
+    would have validated against different engines. **Timing made it free:** `build/out/items.json` was `[]`
+    (the multisense batch-0 reset), so there was no wink-validated corpus to stay bug-compatible with.
+    **29 — the engine.** New `python/` uv project (3.13; ruff / mypy --strict / pytest). `wikain/nlp/tokens.py`
+    (`NlpToken`, field-for-field the TS one) + `engine.py` — ONE cached `spacy.load("en_core_web_sm")`;
+    `analyze` maps `norm_`/`lemma_`/`pos_`/`is_stop`/`not (is_punct or is_space)` onto the four wink `its.*`
+    accessors the codebase actually used. **A real behavior change, taken deliberately:** wink Americanized
+    spelling (`aesthetic`→`esthetic`), which made those lemmas *impossible* to satisfy in Stage C's presence
+    assert — the documented "set `model_sentence: null` + `_flags`" workaround. spaCy does not, so **the
+    gotcha is gone**, and the guidance was deleted rather than ported.
+    **30 — the pipeline.** `wikain/pipeline/{constants,stage_a,stage_b,stage_c,generate,cli}.py`, a faithful
+    port; `build/*.ts` + the 6 npm scripts **deleted**. Every artifact keeps its filename/JSON shape/location,
+    so `seedCatalog.ts` is untouched. The new CSV forced three data changes: `sense_zipf`→`zipf` /
+    `global_zipf_rank`→`zipf_rank` mapped **at the Stage A read boundary** (carried field NAMES unchanged ⇒
+    `LexicalItem`, the `lexical_items` table and `seedCatalog.ts` all unchanged, **no migration**); the
+    `NO_SENSE_FOUND`/`NO_HINT_FOUND` sentinel rows are **quarantined** under a new reason (they would
+    otherwise have been shown to the generator as the sense to author — halt-don't-guess); and the
+    CEFR-collision dedup is now a dead-but-kept integrity guard (0 collisions in this data). Real run:
+    **5,745 rows → 7 quarantined → 5,738 in-scope** (A2 1016 / B1 1421 / B2 1680 / C1 1621). `feed`/`ingest`/
+    `validate`/`combine` had **zero tests** in TS; they have them now (TDD-1). Two bugs fixed in the port:
+    `_next_batch_index` counted files instead of taking **max+1** (deleting a batch overwrote a survivor), and
+    two judge few-shots were internally inconsistent (`nominal` carried a `find` that was not a substring of
+    its own sentence; `meticulous` changed `corrected_sentence` while claiming `replacements: []`) —
+    `RUBRIC_VERSION` bumped to `2026-07-12` accordingly.
+    **31 — the service.** `wikain/service/main.py`: `POST /analyze`, `POST /judge`, `GET /versions`,
+    `GET /healthz`, bearer `NLP_SERVICE_TOKEN`, spaCy warmed in the lifespan. The DeepSeek client
+    (`wikain/judge/`) is a port of `deepSeek{Judge,Rubric,Config}.ts` with `SYSTEM_PROMPT` +
+    `calibration_messages()` + `user_turn()` **byte-identical** (JDG-11 cache prefix), `json_object` (JDG-6),
+    `temperature: 0`, the single backed-off retry (NET-3), and the 429→`rate_limited` / 5xx→`transient` /
+    bad-body→`invalid_response` taxonomy. **The DeepSeek retry lives in Python only** — a second retry layer
+    in TS would double-spend a paid call, so `HttpJudge` retries nothing. `docker compose up nlp` for dev.
+    **32 — the TS cut-over.** `formsOf` was never a separate capability — it just flattens each token's
+    `normal` + `lemma`, which `analyze` already returns; behind ONE remote engine, two ports would have meant
+    **two RPCs for one sentence**. So `ports/lemmatizer.ts` is **deleted**, `SentenceAnalyzer.analyze` is the
+    single NLP port, and `formsOf` moved into the **domain** (`domain/review/grading.ts`, beside
+    `isLemmaMatch`) — which strengthens the "port supplies NLP forms, a pure domain rule decides" convention
+    instead of bending it. The async ripple: `checkFreeProductionRuleLayer` → `async` (and 3 NLP calls → 2,
+    via one `Promise.all`); `DeterministicReviewStrategy.grade` → `Promise<boolean> | boolean` with
+    `submitDeterministicReview` awaiting it (the one genuinely invasive change — it is the shared skeleton of
+    recognition/cloze/cued). infra: `nlp/httpNlp.ts` (bounded-LRU memo of `model_sentence` analyses, so a
+    steady-state rule check is **1 RPC**, not 3 parses; **throws** on a non-ok response — a silently empty
+    token list would report the target absent and fabricate an `Again`), `judge/httpJudge.ts` (503 → the four
+    existing `JudgeUnavailableReason`s; anything else → loud), `nlp/fakeAnalyzer.ts` (the new test double).
+    **Deleted:** `winkLemmatizer.ts`, `deepSeek{Judge,Rubric,Config}.ts`, `wink-nlp` + `wink-eng-lite-web-model`.
+    `JudgePort`/`JudgeVerdict`/`passesGate`/`resolveEdits`/`verdictMemo` are **all unchanged** — the port was
+    already async, so nothing above infrastructure moved. New `docs/lexical-item.contract.json` is the DM-2
+    producer↔consumer field contract, asserted from **both** sides (`domain/lexicalItem.test.ts` +
+    `pipeline/types_test.py`) — it replaced a TS↔TS assignability check that could no longer span the language
+    boundary, and immediately caught that the runtime type never declared `_flags` (modeled as `producerOnly`).
+    **Covers:** the whole of `spec/04` (RL-*), `spec/06` (JDG-*), `spec/08` (NET-*), DM-2. Two `> [FLAG]`s added
+    (`JDG-10`, `NET-7`): the judge is now reached via a **first-party service**, so "from the backend" is two
+    hops, and the DeepSeek key lives in one *fewer* process than the spec assumes. **Verified:** all four TS
+    gates (`typecheck`, `typecheck:web`, `lint`, `npm test` — **329 green**, run against a temporary 7-item
+    catalog since the real one is empty pending generation) + the three Python gates (ruff / mypy --strict /
+    **78 pytest**) + `npm run build` with a client bundle free of `drizzle-orm`/`neon`/`pglite`/
+    `DEEPSEEK_API_KEY`/`NLP_SERVICE_TOKEN`/`BETTER_AUTH_SECRET`; and the live service driven on `uvicorn`
+    (`/healthz` ok, 401 without the bearer, `/versions`, `/analyze` → `abandoned`→`abandon`/VERB, and a
+    deliberately bad DeepSeek key → **fail loud, no fabricated verdict**). *(Unverified: the **Docker image
+    build** — the daemon was not running. Slice 33, the Cloud Run deploy, is not done.)*
+
 **Key design conventions (follow in later slices):**
 - **Cross-layer imports use `~/*`; within-layer stay relative** (`DIR-7`). `npm run lint` enforces it, along
   with the ARCH-1 dependency rule — run it before committing; it is a gate, not a style pass.
 - **The tree is grouped by subject below the layer boundary** (`.claude/rules/09-structure.md`, `DIR-1..7`).
   A new module goes in the subject folder it changes with — not the layer root, and not a kind-folder. Create
   a folder on the third file; keep cross-subject modules (and `application/ports/`) at the layer root.
-- **Lemmatizer port returns NLP forms; a pure domain rule decides the match** — keep wink out of the
-  domain. `isLemmaMatch` backs cued/cloze grading (TIER-5) + the RL-2 presence check; RL-3 degeneracy uses
-  a **separate** `SentenceAnalyzer` port (SOLID-4). One wink adapter implements both.
+- **One NLP port returns tokens; pure domain rules decide everything else** (revised in slice 32 —
+  `Lemmatizer` is gone). `SentenceAnalyzer.analyze(text)` is the only NLP capability; `formsOf`,
+  `isLemmaMatch` (cued/cloze grading, TIER-5, and the RL-2 presence check) and RL-3 degeneracy are all pure
+  functions over the returned `NlpToken[]`. The engine is out-of-process, so **every NLP call is an RPC** —
+  derive from the tokens you already have rather than asking again.
 - **Scheduling types** (`FsrsCardState`/`FsrsReviewLog`) are declared **structurally in the domain**;
   ts-fsrs's own types are mapped only inside `tsFsrsScheduler`. Never leak a library into app/domain — put
   it behind a port (ARCH-3).
@@ -384,6 +472,11 @@ code + `spec/` IDs for detail:
   (`db:seed:catalog`). A read-model consumed synchronously on a hot path (`Catalog.get`) may **hydrate
   once** per instance (`SELECT *` at load) instead of a per-call round trip; a set-selection read
   (`WordSource`) stays live SQL.
+- **The Python service is the one source of NLP + judge truth.** Anything that parses English or talks to
+  DeepSeek belongs in `python/`, behind `/analyze` or `/judge` — never re-added to `package.json`. Its two
+  TS-side adapters (`HttpNlp`, `HttpJudge`) are dumb transport: no retry (the judge retries in Python — a
+  second layer would double-spend a paid call) and no fallback (they throw, because a fabricated verdict or
+  an empty token list would corrupt FSRS).
 - Every test names the `spec/` ID it exercises.
 
 **Deferred — do NOT build until pulled into scope (`PRAG-1`):** **per-user FSRS optimization** (SEED-8;
@@ -395,89 +488,115 @@ path for `placement_marks` (its absence is why `/placement` does not re-offer pe
 (SEED-4, slice 22), the `/settings` **"Retune"** entry point (slice 23), and the **user-local timezone**
 (SM-5b/CNT-2, slice 25) are wired — no longer deferred.)*
 
-> **Status (2026-07-09):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–26 (wiring) + 27
-> (the `DIR` tree refactor) land on **`design/brand-ui-system`** and descendant wiring branches (currently
-> `wire/onboarding-placement`
+> **Status (2026-07-12):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–26 (wiring) + 27
+> (the `DIR` tree refactor) + 28 (`~/*` + ESLint) + **29–32 (the Python cut-over)** land on
+> **`design/brand-ui-system`** and descendant wiring branches (currently `wire/onboarding-placement`
 > — `git log` to confirm). Since slice 27 every layer is grouped into **subject folders** — paths written in
 > older slice notes above (`src/domain/grading.ts`, `src/infrastructure/drizzleCatalog.ts`, …) are stale; the
-> module names are unchanged, only their folders. **Every surface is wired and guarded**: `/`, `/review`, `/words`,
+> module names are unchanged, only their folders. **The repo is now two codebases**: the TS app (`src/`) and
+> the Python pipeline + NLP/judge service (`python/`); `build/` holds only generated artifacts (`build/out/`),
+> its TypeScript is gone. **Every surface is wired and guarded**: `/`, `/review`, `/words`,
 > `/onboarding`, `/settings` run on real use-cases behind a real **BetterAuth** session (slice 20), and
 > since slice 22 the guard is a **three-layout chain** (`_public` → `_authenticated` → `_onboarded`) that
 > makes onboarding mandatory and bounces signed-in users off `/signin`/`/signup`; the
 > verdict memo (18) and placement-marks store (19) persist to Neon. The app is **multi-tenant and
-> secrets-required** — `DATABASE_URL` + `DEEPSEEK_API_KEY` + `BETTER_AUTH_SECRET` are mandatory, there are
-> **no in-memory fallbacks**, and tests run against embedded pglite (`FakeJudge` is the one test-only
-> double). Backend gate = `npm run typecheck` (NodeNext) + `npm test`; presentation gate = `npm run
-> typecheck:web`; **`npm run lint`** enforces ARCH-1/ARCH-3/DIR-6/DIR-7 as errors (slice 28);
-> `npm run build` must keep server identifiers out of the client bundle. Test count moves
-> each slice — do not trust any number written here; run `npm test`. Re-confirm state with `git log`,
-> `npm test`, and `npm run dev` (needs the 3 env vars) at session start.
+> secrets-required** — `DATABASE_URL` + `BETTER_AUTH_SECRET` + `NLP_SERVICE_URL` + `NLP_SERVICE_TOKEN` are
+> mandatory (**`DEEPSEEK_API_KEY` moved into the Python service**), there are **no in-memory fallbacks**, and
+> tests run against embedded pglite (`FakeJudge` + `FakeAnalyzer` are the two test-only doubles). TS gates =
+> `npm run typecheck` (NodeNext) + `npm run typecheck:web` + `npm run lint` (ARCH-1/ARCH-3/DIR-6/DIR-7 as
+> errors, slice 28) + `npm test`; Python gates = `uv run ruff check .` + `uv run mypy --strict src` +
+> `uv run pytest` (from `python/`); `npm run build` must keep server identifiers out of the client bundle.
+> Test counts move each slice — do not trust any number written here; run them.
+> **`build/out/items.json` is currently `[]`** (the multisense batch-0 reset), so every "real catalog" smoke
+> test fails until generation runs — that is expected, not a regression. Re-confirm state with `git log`, the
+> gates, and `npm run dev` (needs the 4 env vars **and** `docker compose up nlp`) at session start.
+> **Not done: slice 33** — the Cloud Run deploy + Vercel env wiring, and the Docker image build is unverified.
 
-## Build pipeline architecture (`build/`, docs/BUILD.md)
+## Build pipeline architecture (`python/src/wikain/pipeline/`, docs/BUILD.md)
 
-A **three-stage offline batch pipeline** converting the single word list
-`data/merged_oxford_a2c1_zipf.csv` (`word,pos,cefr,zipf,zipf_rank`; 4,397 rows, A2–C1) into runtime
-lexical items. **Read `docs/BUILD.md` first** — it is the operational spec, and its `§` references are
-cited inline in the code. *(v2 collapsed the earlier three-CSV NAWL + Oxford-3000/5000 stack into this
-one file; v3 split the manifest by CEFR and moved generation to manual frontier-LLM free chats — ignore
-any stale three-CSV/DeepSeek-API/in-session framing.)*
+A **three-stage offline batch pipeline** converting the multisense catalog
+`data/oxford_multisense_catalog.csv` (`word,pos,cefr,sense_id,sense_hint,sense_zipf,global_zipf_rank`;
+**5,745 rows**, A2–C1) into runtime lexical items. **Read `docs/BUILD.md` first** — it is the operational
+spec, and its `§` references are cited inline in the code. *(v2 collapsed the earlier three-CSV NAWL +
+Oxford-3000/5000 stack into one file; v3 split the manifest by CEFR + moved generation to manual
+frontier-LLM free chats; v4 switched the input to the multisense catalog; **v5 (slice 30) rewrote the whole
+pipeline in Python and deleted `build/*.ts`** — ignore any stale three-CSV / DeepSeek-API / single-sense /
+TypeScript framing.)*
 
-- **Stage A — `build/stageA.ts` (deterministic, no LLM):** a single parse loop — `assemble(rows)`:
-  normalize POS → scope-filter (content POS only) → validate CEFR/zipf → `sense_id = {lemma}_{pos}_01`
-  → dedup on `sense_id` (lower CEFR wins) → group by CEFR, sort each by `zipf_rank` asc. Emits four
-  `_manifest_<cefr>.json` (carried only) + `_quarantine.json`, then prints a **gate summary for human
-  review before any generation.**
-- **Stage B — `build/stageB.ts` (`feed`/`ingest`) + `generate.ts` (NO API):** `feed` stages the next
+- **Stage A — `pipeline/stage_a.py` (deterministic, no LLM):** a single parse loop — `assemble(rows)`:
+  normalize POS → scope-filter (content POS only) → validate CEFR/zipf → **quarantine the
+  `NO_SENSE_FOUND`/`NO_HINT_FOUND` sentinel rows** → dedup on `(lemma,pos,synset)` (lower CEFR wins) →
+  assign the per-`(lemma,pos)` ordinal `sense_id = {lemma}_{pos}_{NN}` (`_01` = most frequent sense) →
+  group by CEFR, sort each by `zipf_rank` asc. The CSV's `sense_zipf`/`global_zipf_rank` are mapped to the
+  carried names `zipf`/`zipf_rank` **at this read boundary**, so nothing downstream (the runtime
+  `LexicalItem`, the `lexical_items` table, `seedCatalog.ts`) knows the column names changed. Each WordNet
+  sense survives as its own item; the source synset key (not unique across headwords) rides along as
+  manifest-only `synset` + `sense_hint` (generation inputs, NOT in the runtime item). Parsing is the stdlib
+  `csv` module — RFC-4180 and quote-aware (the `sense_hint` gloss embeds commas). Emits four
+  `_manifest_<cefr>.json` (carried only) + `_quarantine.json`, then prints a **gate summary for human review
+  before any generation.**
+- **Stage B — `pipeline/stage_b.py` (`feed`/`ingest`) + `generate.py` (NO API):** `feed` stages the next
   batch **per CEFR level** (`_pending_batch_<cefr>.json`); `generate` turns each into a markdown prompt
   (`_prompt_<cefr>.md`) the **user pastes into a frontier-LLM free chat**, hand-authoring the result into
   `_generated_batch_<cefr>.json`; `ingest` merges every present level, validates, and commits each level
   independently. Resumable via `_done.json`. No API key.
-- **Stage C — `build/stageC.ts`:** §7.1 auto-asserts using `wink-nlp` (the same en-US NLP the runtime
-  grades with). Reused by `ingest` and runnable standalone.
+- **Stage C — `pipeline/stage_c.py`:** §7.1 auto-asserts using **`wikain.nlp` (spaCy)** — imported
+  in-process, and **the same engine the runtime grades with** (it reaches it over HTTP). That shared import
+  is the anti-drift mechanism; see the note under `### The Python service`. Reused by `ingest` and runnable
+  standalone.
 
 **The one rule that governs all build code (`docs/BUILD.md` §0, §8):** every item has **carried**
 fields (facts from the source CSV — filled once by Stage A: `word, lemma, part_of_speech, sense_id,
 cefr, zipf, zipf_rank`) and **generated** fields (produced by Stage B). **Stage B must never write,
-overwrite, or infer a carried field.** `stageA.ts` stamps a `_carried_hash`; `ingest` reloads carried
+overwrite, or infer a carried field.** `stage_a.py` stamps a `_carried_hash`; `ingest` reloads carried
 from the manifest and rejects any stray/mutated key. Mixing the two is how factual hallucination
-enters the data.
+enters the data. The **field split itself** is pinned by `docs/lexical-item.contract.json`, asserted from
+both sides of the language boundary (`pipeline/types_test.py` + `src/domain/lexicalItem.test.ts`) — that
+file is what keeps producer and consumer honest now that they are different languages (DM-2).
 
-- **Constants are single-source** in `build/constants.ts` (`BATCH_SIZE`, the explicit POS map, scope
-  sets, provenance stamps `GEN_MODEL`/`GEN_SPEC_VERSION`) — never re-hardcode a literal elsewhere.
-- **Halt, don't guess.** An unknown POS string, invalid CEFR, or non-numeric zipf **throws** rather
+- **Constants are single-source** in `pipeline/constants.py` (`BATCH_SIZE`, the explicit POS map, scope
+  sets, the sentinel strings, provenance stamps `GEN_MODEL`/`GEN_SPEC_VERSION`, and the `Artifacts` paths)
+  — never re-hardcode a literal elsewhere.
+- **Halt, don't guess.** An unknown POS string, invalid CEFR, or non-numeric zipf **raises** rather
   than being silently bucketed (`docs/BUILD.md` §3.1 / §2.2 `[VALIDATE]`). `build/out/` is git-ignored
-  generated output.
+  generated output and is still where every artifact lands.
 
 ### Stage B generation loop — ACTIVE WORK (this is the task in progress)
 
-Stage A is done (**4,391** in-scope items across four `_manifest_<cefr>.json` — A2 705 / B1 1059 /
-B2 1289 / C1 1338; 3 quarantined, 3 CEFR-collision dedups). Generation runs **25 items per CEFR level
-per feed** (4 × 25 = 100), **manually via frontier-LLM free chats** (no API). **For current progress,
-read `build/out/_done.json`** (its length = items completed) — do not trust any count here.
+Stage A is done — the **Python** run over the new CSV: **5,745 rows → 7 quarantined → 5,738 in-scope**
+items across four `_manifest_<cefr>.json` (A2 1016 / B1 1421 / B2 1680 / C1 1621), **0 CEFR-collision
+dedups**. (The old TS numbers — 4,933 / A2 847 / B1 1217 / B2 1430 / C1 1439 — are stale; the input file
+changed.) The 7 quarantined are 3 out-of-scope POS (`need/modalv`, `ought/modalv`, `have/auxiliaryv`) and
+4 sentinel rows carrying the literal `NO_SENSE_FOUND` / `NO_HINT_FOUND` (`ought` is in both sets).
+Generation runs **25 items per CEFR level per feed** (4 × 25 = 100), **manually via frontier-LLM free
+chats** (no API). **For current progress, read `build/out/_done.json`** (its length = items completed) — do
+not trust any count here.
 
-**Progress (as of slice 24, 2026-07-09):** `build/out/items.json` holds **100 items** (the first four
-batches; `_done.json` is the source of truth for the exact count — read it, do not trust this number). The
-word set was regenerated and **no longer contains `abandon`**. The `src/infrastructure/*.smoke.test.ts`
-"real catalog" tests are now **catalog-content-agnostic** (slice 24: `smokeFixtureItem()` picks any
-fully-populated verb), so the **entire suite is green** — they no longer depend on a specific lemma being
-present. Continue generation via the manual loop below, then `npm run combine` to refresh `items.json`.
+**Progress (as of the multisense switch, v4 — 2026-07-11):** the input moved to
+`data/oxford_multisense_catalog.csv` and **the build was reset to batch 0** — the previous 100 hand-authored
+items were keyed to the old single-sense scheme, so `build/out/{batch_*,_done,items,_generated_*}.json` were
+cleared (backed up under the session scratchpad) and generation restarts from the most-frequent senses.
+`items.json` is therefore `[]`, and **every "real catalog" smoke test fails until generation runs** — the
+tests themselves are catalog-content-*agnostic* (slice 24: `smokeFixtureItem()` picks any fully-populated
+verb), they just need a non-empty catalog. Re-run the manual loop below, then `uv run wikain-pipeline
+combine` to rebuild `items.json`.
 
-**How generation works now (v3 — manual, no API):** `generate` (`build/generate.ts`) reads each
-`_pending_batch_<cefr>.json` and writes a markdown prompt `_prompt_<cefr>.md` whose content is
-`buildPrompt` = system + "\n\n" + user. `buildPrompt` inlines the full text of
+**How generation works (v3 — manual, no API; v5 — now Python):** `generate` (`pipeline/generate.py`) reads
+each `_pending_batch_<cefr>.json` and writes a markdown prompt `_prompt_<cefr>.md` whose content is
+`build_prompt` = system + "\n\n" + user. `build_prompt` inlines the full text of
 **`docs/GENERATION_RULES.md`** (the single source of truth for field content/quality — user-authored) +
 the gold one-shot + the §7.1 hard constraints + the output contract. The **user pastes each markdown into
 a frontier-LLM free chat**, then saves the returned `{"items":[…]}` to `_generated_batch_<cefr>.json`.
-**Read `docs/GENERATION_RULES.md`** if editing the prompt — but the prompt text is intentionally
-preserved byte-for-byte; only the return shape changed (string, not chat-message array).
+**Read `docs/GENERATION_RULES.md`** if editing the prompt — but **the prompt text is preserved byte-for-byte
+across the Python port**; nothing about what the LLM is asked to produce changed.
 
-**Checkpoint cadence:** rely on `ingest`'s built-in Stage C per level. Run **`npm run combine` then
-`npm run validate` periodically and once at exhaustion** — `combine` makes the `items.json` snapshot,
+**Checkpoint cadence:** rely on `ingest`'s built-in Stage C per level. Run **`uv run wikain-pipeline combine`
+then `… validate` periodically and once at exhaustion** — `combine` makes the `items.json` snapshot,
 standalone `validate` adds the catalog-wide duplicate-`sense_id` assert.
 
 **Division of labor (agreed with the user — keep it):**
 - **The user drives generation** — pasting `_prompt_<cefr>.md` into a frontier LLM and hand-authoring
-  `_generated_batch_<cefr>.json` is a manual human step. `npm run feed`/`generate`/`ingest` are cheap and
+  `_generated_batch_<cefr>.json` is a manual human step. `feed`/`generate`/`ingest` are cheap and
   need no API key, but generation itself is the user's job. Do not fabricate generated content yourself
   unless asked.
 - **`feed` → `generate` → *user authors* → `ingest` is the loop.** `feed` is stateless (`manifest −
@@ -485,10 +604,10 @@ standalone `validate` adds the catalog-wide duplicate-`sense_id` assert.
   appends to `_done.json`. `ingest` commits each level independently — a level that fails Stage C is
   recorded to `_review.json` and does not block the others.
 
-**Generate to pass Stage C (`build/stageC.ts`) on the first try — the non-obvious, code-enforced rules** (a `fail` blocks the whole batch; a `flag` still commits):
+**Generate to pass Stage C (`pipeline/stage_c.py`) on the first try — the non-obvious, code-enforced rules** (a `fail` blocks the whole batch; a `flag` still commits):
 - **`model_sentence`:** embed the **bare lemma surface form verbatim** somewhere (guarantees the
-  wink lemma-presence assert). **No first-person tokens** at all — `I / I'm / im / my / me / myself`.
-- **`self_reference_prompt`:** must contain **no token whose wink lemma equals the target lemma**
+  spaCy lemma-presence assert). **No first-person tokens** at all — `I / I'm / im / my / me / myself`.
+- **`self_reference_prompt`:** must contain **no token whose spaCy lemma equals the target lemma**
   (the leak check is exact-lemma, so other word-family members like `action` for `active` are
   technically fine, but avoid them for clean separation). Must **end with `?`** (or start with a
   verb) and be **< 140 chars**.
@@ -505,18 +624,13 @@ standalone `validate` adds the catalog-wide duplicate-`sense_id` assert.
 - **Carried fields:** never emit them in `_generated_batch_<cefr>.json` — `ingest` reloads carried fields
   from the manifest and **rejects stray keys**. Return generated fields only.
 
-**wink en-US normalization gotcha (discovered while generating `a*`):** the `model_sentence`
-lemma-presence assert compares wink's `normal`/`lemma` against the **raw carried lemma string**. wink
-Americanizes spelling, so a lemma whose carried spelling differs from wink's normalized form can
-**never** satisfy the assert — no sentence can pass. Confirmed: `aesthetic`→`esthetic`,
-`archaeology`→`archeology` (also expect `-yse`→`-yze`, `-our`, `oe`/`ae` words). When you hit one,
-set `model_sentence: null` + a `_flags` reason (spec §7.3 flag-don't-fix) so the batch still commits;
-a human Americanizes the lemma or relaxes the validator later. **Proactively pre-check** risky lemmas
-in a scratch script (`nlp.readDoc(word).tokens().itemAt(0).out(its.normal)`) before generating.
-*Proper nouns are fine* — `April`→`april`, `AIDS`→`aids` match because wink only lowercases them.
+**The wink en-US Americanization gotcha is GONE (slice 29).** It used to be that the `model_sentence`
+lemma-presence assert compared wink's normalized form against the raw carried lemma, and wink Americanizes
+spelling (`aesthetic`→`esthetic`, `archaeology`→`archeology`), so those lemmas were **impossible** to
+satisfy — the documented workaround was `model_sentence: null` + a `_flags` reason. **spaCy does not
+Americanize**, so no such lemma exists any more: write a normal sentence and it passes. Do not carry the
+workaround forward, and do not expect those `_flags` to reappear.
 
 **Flag visibility:** `ingest` routes only Stage C `flags` (e.g. shared-stem) to `_review.json`. An
-item's own `_flags` (like the normalization nulls above) live **inside the committed `batch_*.json`**,
-not `_review.json` — grep the batch files for `_flags` to find them. After the v2 batch-0 reset
-`_review.json` is `[]`; the Americanization nulls (`aesthetic`, `archaeology`, …) will recur on the
-same lemmas when regenerated.
+item's own `_flags` live **inside the committed `batch_*.json`**, not `_review.json` — grep the batch files
+for `_flags` to find them. After the batch-0 reset `_review.json` is `[]`.

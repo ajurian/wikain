@@ -7,7 +7,6 @@ import type { LexicalItem } from "~/domain/lexicalItem.js";
 import type { NlpToken } from "~/domain/review/ruleLayer.js";
 import type { JudgeVerdict } from "~/domain/review/verdict.js";
 import type { Catalog } from "../ports/catalog.js";
-import type { Lemmatizer } from "../ports/lemmatizer.js";
 import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
 import { JudgeUnavailableError, type JudgePort, type JudgeRequest } from "../ports/judge.js";
 
@@ -36,21 +35,45 @@ function makeItem(): LexicalItem {
 
 const catalog: Catalog = { get: (id) => (id === SENSE ? makeItem() : undefined) };
 
-/** Naive forms: lowercase split. A response literally containing "negotiate" is present (RL-2). */
-const lemmatizer: Lemmatizer = {
-  formsOf: (text) => text.toLowerCase().split(/\s+/).filter(Boolean),
+const POS: Readonly<Record<string, string>> = {
+  she: "PRON",
+  a: "DET",
+  negotiate: "VERB",
+  negotiated: "VERB",
+  bought: "VERB",
+  made: "VERB",
+  better: "ADJ",
+  contract: "NOUN",
+  price: "NOUN",
+  house: "NOUN",
+  yesterday: "ADV",
 };
+const LEMMAS: Readonly<Record<string, string>> = {
+  negotiated: "negotiate",
+  bought: "buy",
+  made: "make",
+};
+const STOPWORDS: ReadonlySet<string> = new Set(["she", "a"]);
 
-/** A healthy, non-degenerate token set (≥4 non-target content tokens + a VERB) for any text. */
+/**
+ * A text-DRIVEN analyzer. It must be: RL-2 presence (`formsOf`) is now derived from these very tokens,
+ * so a fixed token set would smuggle the target into every response and "absent" could never bounce.
+ */
 const healthyAnalyzer: SentenceAnalyzer = {
-  analyze: (): NlpToken[] => [
-    { normal: "she", lemma: "she", pos: "PRON", isStopword: true, isWord: true },
-    { normal: "negotiated", lemma: "negotiate", pos: "VERB", isStopword: false, isWord: true },
-    { normal: "better", lemma: "better", pos: "ADJ", isStopword: false, isWord: true },
-    { normal: "contract", lemma: "contract", pos: "NOUN", isStopword: false, isWord: true },
-    { normal: "price", lemma: "price", pos: "NOUN", isStopword: false, isWord: true },
-    { normal: "yesterday", lemma: "yesterday", pos: "ADV", isStopword: false, isWord: true },
-  ],
+  analyze: (text: string): Promise<NlpToken[]> =>
+    Promise.resolve(
+      text
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => ({
+          normal: w,
+          lemma: LEMMAS[w] ?? w,
+          pos: POS[w] ?? "NOUN",
+          isStopword: STOPWORDS.has(w),
+          isWord: true,
+        })),
+    ),
 };
 
 function verdict(overrides: Partial<JudgeVerdict> = {}): JudgeVerdict {
@@ -90,7 +113,6 @@ class UnavailableJudge implements JudgePort {
 function deps(judge: JudgePort): JudgeFirstProductionDeps {
   return {
     catalog,
-    lemmatizer,
     analyzer: healthyAnalyzer,
     tagalogLexicon: new Set<string>(),
     judge,

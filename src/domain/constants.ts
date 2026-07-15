@@ -28,6 +28,21 @@ export const VERBATIM_SIMILARITY_THRESHOLD = 0.9;
 /** RL-6: rule-layer bounces are capped here; the cap reveals the model sentence + offers skip. */
 export const MAX_RULE_BOUNCE_RETRIES = 3;
 
+// --- Typed-cloze fit-set (spec/13, `FIT`) ---
+
+/**
+ * FIT-8: cloze soft bounces are capped here; at the cap the submission grades the wrong path
+ * (Again) and the target is revealed. Mirrors the MAX_RULE_BOUNCE_RETRIES *pattern* (AMMENDMENT
+ * §A2.1 cites §5.2) but is its own knob — the two caps tune independently.
+ */
+export const CLOZE_SOFT_BOUNCE_CAP = 3;
+
+/**
+ * FIT-9: a typed cloze within this Damerau–Levenshtein distance of the target lemma takes the
+ * typo-fix path (Good, `typoFixed` recorded). The length-scaled variant is Deferred (spec/02).
+ */
+export const CLOZE_TYPO_MAX_DISTANCE = 1;
+
 // --- Mastery state machine (spec/01, `SM`) ---
 
 /**

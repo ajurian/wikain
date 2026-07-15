@@ -1,4 +1,5 @@
 import type { Rating } from "./rating.js";
+import type { ClozeSoftBounceLane } from "./clozeFitSet.js";
 
 /**
  * FSRS review log — structurally the ts-fsrs `ReviewLog`. Declared here so the domain stays
@@ -48,11 +49,21 @@ export interface ReviewLog {
    */
   retryCount?: number;
   /**
-   * RAT-5: whether a typo-tolerance correction was applied before grading. Always absent/false in v1 —
-   * cloze typo tolerance is Deferred (spec/02) — but the signal is captured from day one so no history
-   * is lost the day tolerance ships.
+   * RAT-5 / FIT-9: whether the typo-fix lane (DL ≤ CLOZE_TYPO_MAX_DISTANCE of the target) graded this
+   * review. Recorded `false` on typed tiers where it could have applied but didn't; omitted where it
+   * cannot apply (recognition is an MCQ, free production has no single-word answer).
    */
   typoFixed?: boolean;
+  /**
+   * FIT-10: soft bounces accrued on this presentation before the final graded outcome. Persisted from
+   * day one for the v2 "passed after synonym bounce → Hard" mapping; v1 does not rate on it. Absent on
+   * tiers without fit-set lanes (everything but cloze); never a fabricated 0 for them.
+   */
+  softBounceCount?: number;
+  /**
+   * FIT-10: the lane(s) those soft bounces took, in order. Same presence rule as `softBounceCount`.
+   */
+  softBounceLanes?: ClozeSoftBounceLane[];
   /**
    * RAT-5: latency of the graded attempt in milliseconds (submit → gradeable outcome), when the caller
    * measured it. Absent when not measured. For v2 hesitation signals; v1 does not read it.

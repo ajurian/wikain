@@ -27,7 +27,7 @@ export interface RunReviewPassInput {
 
 /**
  * The judged-branch deps are a structural superset of the cued-branch deps (catalog/cards/scheduler/
- * lemmatizer + analyzer/judge/tagalogLexicon), so one dependency set forwards to both use-cases.
+ * analyzer/judge/tagalogLexicon), so one dependency set forwards to both use-cases.
  */
 export type RunReviewPassDeps = SubmitFreeProductionDeps;
 

@@ -22,7 +22,7 @@ export type SubmitRecognitionResult = DeterministicReviewResult;
  * The meaning→word recognition MCQ on-ramp tier (spec/03 TIER-1/TIER-2), the first `Seen` step. A thin
  * config over `submitDeterministicReview`:
  *  - TIER-2: grade by exact identity to the target word (the MCQ is pick-the-word, not lemma-match) —
- *    no judge/LLM (INV-1), no lemmatizer needed.
+ *    no judge/LLM (INV-1), no NLP needed.
  *  - SM-3: an MCQ pass alone does NOT promote (it only advances the on-ramp to the cloze via
  *    `onRampLedger.nextSeenTier`), so the promotion strategy is the identity map; SM-6: a fail never
  *    demotes.
