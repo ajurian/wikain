@@ -3,7 +3,7 @@ import type { ClozeFitEntry } from "../lexicalItem.js";
 import type { NlpToken } from "./ruleLayer.js";
 import { damerauLevenshtein, healCandidateLemma, resolveClozeLane } from "./clozeFitSet.js";
 
-/** The owe/pay/lend fixture from AMMENDMENT §A1.2. */
+/** The owe/pay/lend fixture from spec/13 FIT-1. */
 const FIT_SET: ClozeFitEntry[] = [
   { lemma: "owe", class: "target" },
   { lemma: "pay", class: "same_sense_near_miss" },

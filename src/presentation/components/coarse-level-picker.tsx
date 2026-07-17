@@ -11,6 +11,8 @@
  * (`frontierBandForCoarseLevel`), applied server-side, so no client can nominate a frontier.
  */
 import type { CoarseLevel } from "~/domain/placement/placement.js";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 
 export interface CoarseLevelOption {
@@ -46,25 +48,37 @@ export interface CoarseLevelPickerProps {
 
 export function CoarseLevelPicker({ value, onChange, disabled = false }: CoarseLevelPickerProps) {
   return (
-    <div className="space-y-2.5">
+    // One exclusive choice — a real radio group, so arrow keys move between options and the
+    // selection is announced as such rather than as three independent pressed buttons.
+    <RadioGroup
+      value={value ?? undefined}
+      onValueChange={(v) => onChange(v as CoarseLevel)}
+      disabled={disabled}
+      className="gap-2.5"
+    >
       {COARSE_LEVEL_OPTIONS.map((option) => (
-        <button
+        <Label
           key={option.id}
-          type="button"
-          disabled={disabled}
-          aria-pressed={value === option.id}
-          onClick={() => onChange(option.id)}
+          htmlFor={`coarse-level-${option.id}`}
           className={cn(
-            "w-full rounded-lg border px-4 py-3 text-left transition-colors duration-150 disabled:opacity-60",
+            "flex w-full cursor-pointer items-start gap-3 rounded-md border px-4 py-3 font-normal transition-colors duration-150",
+            "has-disabled:cursor-not-allowed has-disabled:opacity-60",
             value === option.id
-              ? "border-amber-deep bg-amber-wash"
+              ? "border-marigold-deep bg-marigold-wash"
               : "border-line bg-paper-raised hover:border-ink-faint",
           )}
         >
-          <p className="text-sm font-medium text-ink">{option.label}</p>
-          <p className="mt-0.5 text-xs text-ink-faint">{option.detail}</p>
-        </button>
+          <RadioGroupItem
+            id={`coarse-level-${option.id}`}
+            value={option.id}
+            className="mt-0.5"
+          />
+          <span className="block">
+            <span className="block text-sm font-medium text-ink">{option.label}</span>
+            <span className="mt-0.5 block text-xs text-ink-faint">{option.detail}</span>
+          </span>
+        </Label>
       ))}
-    </div>
+    </RadioGroup>
   );
 }

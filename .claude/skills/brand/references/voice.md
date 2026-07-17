@@ -23,16 +23,30 @@ they encode are normative brand. Spec IDs cite why each state exists.
 | Taglish (RL-4) | "Let's keep this one in English — try rewriting it." |
 | Bounce cap reached (RL-6) | "Here's the example to lean on:" + model sentence, then buttons **"Try once more"** / **"Skip for now"**. Sub-line: "Skipping is fine — it stays due and doesn't count against you." |
 
+## Cloze soft bounces (FIT-7 — a distinct no-rating class, NOT an INV-2 bounce)
+
+Same neutral treatment as a rule-layer bounce: the input is well-formed, so nothing here is the
+learner's fault. **Never reveals the target** — every line ends on the first-letter cue (`o___`).
+
+| State | Copy |
+| --- | --- |
+| Same-sense near-miss (FIT-6) | "Close — we're after a more precise word for this exact meaning: {o___}" |
+| Different-sense fit, with gloss (FIT-4/6) | "That's a real sentence — but *{typed}* means something different here. This word means {bounce_gloss}: {o___}" |
+| Different-sense fit, no gloss | "That's a real sentence — but *{typed}* means something different here. Try the word that fits this meaning: {o___}" |
+| Cap reached (FIT-8) | Target revealed, grades `Again` — no scolding line. |
+| Typo lane (FIT-9) | Counted as the target. A quiet "typo noted" in metadata; **never** a correction notice. |
+
 ## Free-production flow
 
 | State | Copy |
 | --- | --- |
 | Fallback offer (TIER-7, after one degenerate/empty self-reference) | Offer chip: "Stuck on something true about you? **Just write any sentence.**" — mode switches only when tapped. |
 | Checking (NET-2) | "Checking…" (nothing else; a quiet inline state, not a modal). |
-| Pass, clean (LOOP-4) | "Nicely used." + green check. |
+| Pass, clean (LOOP-4) | "Nicely used." behind a mono `PASS` label on the moss-wash bar. |
 | Pass with polish edits (JDG/EDIT-7) | "Nicely used — one polish:" + inline edits. Edits framed as upgrade, not fix. |
 | Pass + enrichment (CNT-7) | "You could also say:" + enrichment_suggestion. |
-| Fail, sense (LOOP-4/SM-6) | "Not the sense we're after here." + detected vs intended sense + inline edits. Then: "*{word}* moved back a step — it'll come around again." |
+| Edit feedback hint (EDIT-7) | "Tap an edit to see why." Feedback is on-demand, never the primary surface. |
+| Fail, sense (LOOP-4/SM-6) | "Not the sense we're after here." behind a mono `FAIL` label + mono `DETECTED` / `INTENDED` sense lines + inline edits. Then: "*{word}* moved back a step — it'll come around again." |
 | Fail, grammar (meaning-obscuring) | "The meaning gets lost here." + inline edits + same moved-back line. |
 | Unscored further practice (SM-8) | Input stays open, labeled: "Keep practicing if you like — this one's already recorded." |
 

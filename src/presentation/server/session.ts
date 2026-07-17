@@ -29,9 +29,14 @@ export interface SessionView {
  */
 export const getSessionFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<SessionView | null> => {
-    const session = await auth.api.getSession({ headers: getRequest().headers });
+    const session = await auth.api.getSession({
+      headers: getRequest().headers,
+    });
     if (!session) return null;
-    const profile = await readPlacementProfile({ userId: session.user.id }, placementProfileDeps());
+    const profile = await readPlacementProfile(
+      { userId: session.user.id },
+      placementProfileDeps(),
+    );
     return {
       userId: session.user.id,
       name: session.user.name,

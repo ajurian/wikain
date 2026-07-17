@@ -19,7 +19,9 @@ export class DrizzleCatalog implements Catalog {
   /** Load the whole catalog into memory once (per instance). Async construction; sync reads thereafter. */
   static async hydrate(db: DrizzleDb): Promise<DrizzleCatalog> {
     const rows = await db.select().from(lexicalItems);
-    return new DrizzleCatalog(new Map(rows.map((r) => [r.senseId, fromLexicalRow(r)])));
+    return new DrizzleCatalog(
+      new Map(rows.map((r) => [r.senseId, fromLexicalRow(r)])),
+    );
   }
 
   get(senseId: string): LexicalItem | undefined {

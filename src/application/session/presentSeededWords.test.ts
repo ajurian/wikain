@@ -22,6 +22,9 @@ function makeItem(): LexicalItem {
     productive_meaning: "quick to bounce back",
     model_sentence: "The team stayed resilient after the loss.",
     self_reference_prompt: "When have you had to stay resilient?",
+    cloze_fit_set: null,
+    bounce_gloss: null,
+    fit_set_version: null,
     gen_model: "test",
     gen_spec_version: "test",
   };

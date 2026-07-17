@@ -50,7 +50,7 @@ def build_prompt(payload: dict[str, Any], rules: str, fit_rubric: str) -> str:
         "field's content and quality, distractors especially.\n</system_intructions>\n\n"
         "=== FIELD-AUTHORING RULES ===\n"
         "<rules>\n" + rules + "</rules>"
-        # FIT-3 / §A4.4: inlined verbatim; the (future) heal prompt reuses this exact text.
+        # FIT-3: inlined verbatim; the (future) heal prompt reuses this exact text.
         "\n\n=== CLOZE FIT-SET CLASSIFICATION RUBRIC ===\n"
         "<fit_rubric>\n" + fit_rubric + "</fit_rubric>"
         "\n\n=== GOLD EXAMPLE (one item) ===\n"

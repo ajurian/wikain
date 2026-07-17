@@ -18,8 +18,8 @@ describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", 
 
   it("SM-3: a Seen word climbs recognition → cloze → cued to Productive, never calling the judge", async () => {
     const judge = new FakeJudge();
-    const { cards, memo, catalog, analyzer } = await makeTestStores();
-    const deps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer);
+    const { cards, memo, catalog, analyzer, healQueue } = await makeTestStores();
+    const deps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer, healQueue);
 
     const userId = USER_A;
     const senseId = item.sense_id;
@@ -46,7 +46,11 @@ describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", 
       deps,
     );
     expect(cloze.tier).toBe("cloze");
-    if (cloze.tier === "cloze") expect(cloze.outcome.mastery).toBe("Recognized");
+    if (cloze.tier === "cloze") {
+      // The target answer must GRADE (FIT-6 target lane), not soft-bounce.
+      expect(cloze.outcome.kind).toBe("graded");
+      if (cloze.outcome.kind === "graded") expect(cloze.outcome.mastery).toBe("Recognized");
+    }
 
     // Rep 3 — Recognized now routes to the deterministic cued tier; one cued pass promotes to
     // Productive (SM-4), proving the ladder is continuous from introduction.

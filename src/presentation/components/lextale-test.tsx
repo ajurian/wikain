@@ -12,6 +12,8 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+import { DURATION, EASE } from "@/lib/motion";
+
 import { LEXTALE_ITEMS, LEXTALE_PRACTICE_ITEMS } from "~/domain/placement/lextale.js";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -57,7 +59,7 @@ export function LexTaleTest({ onFinish, onCancel, submitting = false }: LexTaleT
     <div className="space-y-6">
       <div className="space-y-2">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+          <p className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
             {current.practice ? "practice" : "placement test"}
           </p>
           <p className="text-xs text-ink-faint tabular-nums">
@@ -79,7 +81,7 @@ export function LexTaleTest({ onFinish, onCancel, submitting = false }: LexTaleT
             initial={reduced ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: DURATION.fast, ease: EASE }}
             className="font-serif text-4xl font-semibold text-ink"
           >
             {current.item}
@@ -103,14 +105,15 @@ export function LexTaleTest({ onFinish, onCancel, submitting = false }: LexTaleT
         </p>
       ) : null}
 
-      <button
-        type="button"
+      <Button
+        variant="link"
+        size="sm"
         onClick={onCancel}
         disabled={submitting}
-        className="mx-auto block text-xs text-ink-faint underline-offset-4 hover:underline disabled:opacity-50"
+        className="mx-auto h-auto p-0 text-xs text-ink-faint"
       >
         Stop the test
-      </button>
+      </Button>
     </div>
   );
 }

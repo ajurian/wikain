@@ -3,10 +3,28 @@
 # The web app is NOT in here — it runs on Vite (`npm run dev`) and reaches this container on
 # NLP_SERVICE_URL=http://localhost:8000.
 services:
+  db:
+    image: postgres:18.4
+    container_name: wikain-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: wikain
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d wikain"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   nlp:
     build: ./python
     env_file:
-      - .env.local
+      - .env.development
     ports:
       - "8000:8000"
     healthcheck:
@@ -16,3 +34,6 @@ services:
       # spaCy loads at startup; give it room before the container is called unhealthy.
       start_period: 40s
       retries: 3
+
+volumes:
+  db_data:

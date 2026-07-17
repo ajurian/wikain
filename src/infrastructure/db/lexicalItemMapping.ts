@@ -27,8 +27,11 @@ export function toLexicalRow(it: LexicalItem): Insert {
     productiveMeaning: it.productive_meaning,
     modelSentence: it.model_sentence,
     selfReferencePrompt: it.self_reference_prompt,
+    clozeFitSet: it.cloze_fit_set,
+    bounceGloss: it.bounce_gloss,
     genModel: it.gen_model,
     genSpecVersion: it.gen_spec_version,
+    fitSetVersion: it.fit_set_version,
   };
 }
 
@@ -49,6 +52,9 @@ export function fromLexicalRow(row: Row): LexicalItem {
     productive_meaning: row.productiveMeaning,
     model_sentence: row.modelSentence,
     self_reference_prompt: row.selfReferencePrompt,
+    cloze_fit_set: row.clozeFitSet,
+    bounce_gloss: row.bounceGloss,
+    fit_set_version: row.fitSetVersion,
     gen_model: row.genModel,
     gen_spec_version: row.genSpecVersion,
   };

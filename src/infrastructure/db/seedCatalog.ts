@@ -16,10 +16,17 @@ import type { LexicalItem } from "~/domain/lexicalItem.js";
 import type { DrizzleDb } from "../persistence/drizzleCardRepository.js";
 import { lexicalItems } from "./schema.js";
 import { toLexicalRow } from "./lexicalItemMapping.js";
-import { neonDbFromEnv } from "./neon.js";
+import { dbFromEnv } from "./postgres.js";
 import { config } from "dotenv";
 
-config({ path: path.resolve(process.cwd(), ".env.local") });
+config({
+  path: path.resolve(
+    process.cwd(),
+    process.env.NODE_ENV === "production"
+      ? ".env.production"
+      : ".env.development",
+  ),
+});
 
 /** ~16 cols/row; 500 rows ≈ 8k binds, comfortably under Postgres' 65535 limit. */
 const INSERT_CHUNK = 500;
@@ -54,7 +61,7 @@ async function main(): Promise<void> {
         "ingest → combine) before seeding.",
     );
   }
-  const db = neonDbFromEnv();
+  const db = dbFromEnv();
   const n = await seedLexicalItems(db, items);
   console.log(
     `seedCatalog: replaced lexical_items with ${n} items from build/out/items.json`,

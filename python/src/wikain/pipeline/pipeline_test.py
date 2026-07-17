@@ -36,7 +36,7 @@ GENERATED: dict[str, Any] = {
     "productive_meaning": "someone who focuses deeply on a single narrow area",
     "model_sentence": "Diagnosing the condition usually requires a specialist.",
     "self_reference_prompt": "When have you needed help from someone who focuses on one field?",
-    # The authored output carries per-entry `why` justifications (§A1.2) — ingest strips them.
+    # The authored output carries per-entry `why` justifications (FIT-3) — ingest strips them.
     "cloze_fit_set": [
         {"lemma": "specialist", "class": "target", "why": "the target itself"},
         {"lemma": "consultant", "class": "same_sense_near_miss", "why": "register-shifted same role"},

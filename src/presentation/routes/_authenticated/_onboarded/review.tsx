@@ -19,6 +19,8 @@ import { useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { usePrefetchQuery, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+
+import { DURATION, EASE } from "@/lib/motion";
 import {
   ArrowRight,
   CircleCheck,
@@ -38,8 +40,10 @@ import {
 import type { ReviewPrompt } from "~/application/review/resolveReviewPrompt.js";
 import type { ReviewOutcomeView } from "~/application/review/presentReviewOutcome.js";
 import type { MasteryState } from "~/domain/mastery/card.js";
+import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 
 import { BounceCallout } from "@/components/review/bounce-callout";
+import { SoftBounceCallout } from "@/components/review/soft-bounce-callout";
 import { BlankAnswer, BlankInput } from "@/components/review/blank-input";
 import { CheckingIndicator } from "@/components/review/checking-indicator";
 import {
@@ -130,7 +134,7 @@ function ReviewSession() {
           max={Math.max(total, 1)}
           className="h-1.5"
         />
-        <span className="text-xs font-medium text-ink-faint tabular-nums">
+        <span className="font-mono text-xs text-ink-faint tabular-nums">
           {total === 0 ? "0/0" : `${Math.min(index + 1, total)}/${total}`}
         </span>
       </div>
@@ -186,7 +190,7 @@ function StepCard({
       initial={reduced ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: DURATION.base, ease: EASE }}
       className="w-full"
     >
       {prompt.isPending ? (
@@ -224,7 +228,7 @@ function PromptCard({
 
 function TierTag({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+    <p className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
       {children}
     </p>
   );
@@ -261,8 +265,9 @@ function GradeBanner({
     <div
       role="status"
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-3.5 py-3",
-        passed ? "bg-moss-wash" : "bg-terracotta-wash",
+        // Wash + a 3px accent rule on the left edge — the wash tints this bar only.
+        "flex items-center gap-2.5 rounded-sm border-l-[3px] px-3.5 py-3",
+        passed ? "border-moss bg-moss-wash" : "border-terracotta bg-terra-wash",
       )}
     >
       {passed ? (
@@ -370,7 +375,7 @@ function RecognitionCard({
           result.lemma
         ) : chosen !== null ? (
           /* Provisional: a pick set in pencil. A wrong guess must not be typeset as the entry itself. */
-          <span className="border-b-2 border-amber text-ink-soft">
+          <span className="border-b-2 border-marigold text-ink-soft">
             {chosen}
           </span>
         ) : (
@@ -414,6 +419,14 @@ function RecognitionCard({
 
 /* ---------------------------------------- cloze + cued (typed, lemma-match) */
 
+/** One cloze soft bounce as shown (FIT-7). `typed` freezes the word the callout talks about. */
+interface SoftBounceView {
+  lane: ClozeSoftBounceLane;
+  typed: string;
+  hintPrefix: string;
+  gloss: string | null;
+}
+
 function TypedCard({
   prompt,
   onDone,
@@ -427,14 +440,39 @@ function TypedCard({
     { kind: "deterministic" }
   > | null>(null);
   const [busy, setBusy] = useState(false);
+  // FIT-7/FIT-8: per-presentation soft-bounce state (the RL-6 `bounceCount` pattern) — the
+  // use-case is stateless, so the client carries the count + lanes into each submit. Reset on
+  // advance is free: StepCard remounts per queue index.
+  const [softBounce, setSoftBounce] = useState<SoftBounceView | null>(null);
+  const [softBounces, setSoftBounces] = useState(0);
+  const [softLanes, setSoftLanes] = useState<ClozeSoftBounceLane[]>([]);
 
   const grade = async () => {
     setBusy(true);
     try {
       const view = await submitReviewFn({
-        data: { senseId: prompt.senseId, response: value, scaffolded: false },
+        data: {
+          senseId: prompt.senseId,
+          response: value,
+          scaffolded: false,
+          priorSoftBounces: softBounces,
+          priorSoftBounceLanes: softLanes,
+        },
       });
-      if (view.kind === "deterministic") setResult(view);
+      if (view.kind === "deterministic") {
+        setSoftBounce(null);
+        setResult(view);
+      } else if (view.kind === "clozeSoftBounce") {
+        // No rating happened (FIT-7): stay on the card, show the lane's cue, keep the input live.
+        setSoftBounces(view.bounces);
+        setSoftLanes((lanes) => [...lanes, view.lane]);
+        setSoftBounce({
+          lane: view.lane,
+          typed: value,
+          hintPrefix: view.hintPrefix,
+          gloss: view.gloss,
+        });
+      }
     } finally {
       setBusy(false);
     }
@@ -479,7 +517,7 @@ function TypedCard({
         <HeadwordBlank />
       ) : (
         /* Mirrors the sentence input; aria-hidden so it is not read as a second field. */
-        <span aria-hidden className="border-b-2 border-amber text-ink-soft">
+        <span aria-hidden className="border-b-2 border-marigold text-ink-soft">
           {value}
         </span>
       )
@@ -522,6 +560,16 @@ function TypedCard({
         ) : (
           <EntryDefinition id={bodyId}>{prompt.meaning}</EntryDefinition>
         )}
+
+        {/* FIT-7: a soft bounce leaves the card live — the callout cues, the input stays open. */}
+        {softBounce !== null && result === null ? (
+          <SoftBounceCallout
+            lane={softBounce.lane}
+            typed={softBounce.typed}
+            hintPrefix={softBounce.hintPrefix}
+            gloss={softBounce.gloss}
+          />
+        ) : null}
 
         {result === null ? (
           <CheckButton
@@ -665,7 +713,7 @@ function FreeProductionCard({
           Here’s the example to lean on:
         </p>
         {state.modelSentence ? (
-          <blockquote className="border-l-2 border-amber pl-4 font-serif text-xl leading-relaxed text-ink">
+          <blockquote className="border-l-2 border-marigold pl-4 font-serif text-xl leading-relaxed text-ink">
             {state.modelSentence}
           </blockquote>
         ) : null}
@@ -763,9 +811,9 @@ function FreeProductionCard({
         />
 
         {starter ? (
-          <p className="flex items-start gap-2 rounded-lg bg-amber-wash px-3.5 py-2.5 text-sm text-ink-soft">
+          <p className="flex items-start gap-2 rounded-lg bg-marigold-wash px-3.5 py-2.5 text-sm text-ink-soft">
             <Lightbulb
-              className="mt-0.5 size-4 shrink-0 text-amber-deep"
+              className="mt-0.5 size-4 shrink-0 text-marigold-deep"
               strokeWidth={1.5}
             />
             Try starting with: “Last month, I…” (using a starter is recorded —
@@ -777,16 +825,18 @@ function FreeProductionCard({
 
         {/* TIER-7: the offer is surfaced; the mode switches ONLY on the tap */}
         {fallbackOffered && !anySentence ? (
-          <button
-            type="button"
+          <Button
+            variant="outline"
             onClick={() => setAnySentence(true)}
-            className="w-full rounded-lg border border-dashed border-line px-3.5 py-2.5 text-left text-sm text-ink-soft hover:border-ink-faint"
+            className="h-auto w-full justify-start border-dashed px-3.5 py-2.5 text-left text-sm font-normal whitespace-normal text-ink-soft"
           >
-            Stuck on something true about you?{" "}
-            <span className="font-medium text-ink">
-              Just write any sentence.
+            <span>
+              Stuck on something true about you?{" "}
+              <span className="font-medium text-ink">
+                Just write any sentence.
+              </span>
             </span>
-          </button>
+          </Button>
         ) : null}
 
         {state.phase === "offline" ? (

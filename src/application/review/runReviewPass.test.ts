@@ -36,6 +36,9 @@ function makeItem(): LexicalItem {
     productive_meaning: "to reach an agreement by discussion",
     model_sentence: null,
     self_reference_prompt: null,
+    cloze_fit_set: null,
+    bounce_gloss: null,
+    fit_set_version: null,
     gen_model: "test",
     gen_spec_version: "test",
   };
@@ -166,6 +169,8 @@ function deps(
       // No-op memo stub: these tests assert routing/rating/logs, not memo caching (a fresh miss every time).
       memo: { lookup: async () => undefined, record: async () => {} },
       judgeVersions: TEST_VERSIONS,
+      // No-op heal queue: the FIT-11 write path is asserted in submitCloze.test.ts, not here.
+      healQueue: { record: async () => {} },
     },
     judge,
     calls,
@@ -254,7 +259,7 @@ describe("runReviewPass — Seen on-ramp (LOOP-1, SM-3, RAT-7)", () => {
     const res = await runReviewPass({ userId: "u1", senseId: SENSE, response: "negotiate", now: NOW }, d);
 
     expect(res.tier).toBe("cloze");
-    if (res.tier === "cloze") {
+    if (res.tier === "cloze" && res.outcome.kind === "graded") {
       expect(res.outcome.passed).toBe(true);
       expect(res.outcome.mastery).toBe("Recognized"); // SM-3: promotion fires on the cloze pass
     }

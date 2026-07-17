@@ -246,5 +246,19 @@
   "244": "__init__.py",
   "245": "__init__.py",
   "246": "__init__.py",
-  "247": "__init__.py"
+  "247": "__init__.py",
+  "248": "PlacementMarksStore",
+  "249": "submitFreeProduction.ts",
+  "250": "DrizzleDb",
+  "251": "drizzleHealQueue.ts",
+  "252": "review.ts",
+  "253": "Conversation Summary — Typed-Cloze Fit-Set & Soft Bounce (docs/AMMENDMENT.md)",
+  "254": "readPlacementProfile.ts",
+  "255": "auth.ts",
+  "256": "session.ts",
+  "257": "Cloze Fit-Set Classification Rubric",
+  "258": "fakeAnalyzer.ts",
+  "259": "startSession.test.ts",
+  "260": "httpJudge.ts",
+  "261": "checkFreeProductionRuleLayer.test.ts"
 }

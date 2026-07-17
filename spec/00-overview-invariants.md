@@ -174,8 +174,8 @@ application, not magic literals. Each is **owned** by one spec; this table is th
 | `FIRST_SESSION_SEED_WORDS` | ~2 | `SEED` | §8 |
 | `DAILY_GOAL_DEFAULT` | 5 | `CNT` | §9 |
 | `CLOUD_RETRY_COUNT` | 1 | `NET` | §7 |
-| `CLOZE_SOFT_BOUNCE_CAP` | 3 | `FIT` | AMMENDMENT §A2.1 |
-| `CLOZE_TYPO_MAX_DISTANCE` | 1 | `FIT` | §3.6, AMMENDMENT §A2 |
+| `CLOZE_SOFT_BOUNCE_CAP` | 3 | `FIT` | `13` (`FIT-8`) |
+| `CLOZE_TYPO_MAX_DISTANCE` | 1 | `FIT` | §3.6; `13` (`FIT-9`) |
 
 > All values are tunable from review data (PRD §11 "sign-offs"). None is load-bearing enough to
 > agonize over pre-build; the spec fixes the **wiring**, not the number.
@@ -257,7 +257,7 @@ Every PRD section maps to ≥1 spec file. Reverse map (requirement → PRD §) l
 | §10 | end-to-end loop (one pass) | `11` |
 | §11 | consolidated decisions (P1–P11, items 1–14) | distributed; index here |
 | Risks v4 | false-rejection unrecoverable; drift feed; network dep; cost/abuse | `01`, `06`, `08`; backend out-of-scope |
-| AMMENDMENT §A0–A6 | typed-cloze fit-set & soft bounce (patch to §3.6/§4/§4.1/§5.8; decision item 15) | `13` (`FIT-1..11`); `02`, `03`, `12` cross-refs |
+| §11 item 15 | typed-cloze fit-set & soft bounce (patches §3.6/§4/§4.1/§5.8; `13` is its normative home) | `13` (`FIT-1..11`); `02`, `03`, `12` cross-refs |
 
 > §11 decision tables are not a separate spec; each decision is realized as a requirement in its
 > owning file and cited above. The "Risks introduced by v4" items 1–3 are encoded as normative
@@ -275,7 +275,7 @@ Indexed here; detailed in each owning file's Deferred section.
   the recommended zero-cost no-model-call mitigation for the unrecoverable-false-rejection risk is
   recorded but **not** built.
 - **Length-scaled cloze typo tolerance + `Hard` mapping** (DL ≤1 for ≤6 chars, ≤2 longer → `Hard`) —
-  `02`. The flat DL≤1 → `Good` rule is **v1** since the AMMENDMENT (`FIT-9`).
+  `02`. The flat DL≤1 → `Good` rule is **v1** (`FIT-9`).
 - **Offline heal merge + live cloze LLM escalation** — `13`.
 - **Voice / ASR second input method**; pronunciation scoring — `03`. Gated on PH-accent WER.
 - **Exam-prep mode / register-gating** — `06`. v1 is single clean-English mode.

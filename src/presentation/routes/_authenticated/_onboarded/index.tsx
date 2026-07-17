@@ -1,10 +1,12 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
+
+import { DURATION, EASE } from "@/lib/motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { CounterStat } from "@/components/counter-stat";
-import { GoalRing } from "@/components/goal-ring";
+import { GoalGauge } from "@/components/goal-gauge";
 import { MasteryChip } from "@/components/mastery-chip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,16 +46,18 @@ function Dashboard() {
       <motion.div
         initial={reduced ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+        transition={{ duration: DURATION.base, ease: EASE }}
         className="space-y-6"
       >
         {/* headline: honest counter (CNT-2/3/4) + daily goal (CNT-8) */}
         <Card>
           <CardContent className="flex items-center justify-between gap-4 p-6">
             <CounterStat value={counter?.count ?? 0} />
-            <div className="flex flex-col items-center gap-1">
-              <GoalRing done={sentencesToday} goal={dailyGoal} />
-              {goalMet ? <p className="text-xs font-medium text-moss">Goal met.</p> : null}
+            <div className="flex w-32 shrink-0 flex-col items-stretch gap-1">
+              <GoalGauge done={sentencesToday} goal={dailyGoal} />
+              {goalMet ? (
+                <p className="text-right text-xs font-medium text-moss">Goal met.</p>
+              ) : null}
             </div>
           </CardContent>
         </Card>
@@ -62,8 +66,8 @@ function Dashboard() {
         <Card>
           <CardContent className="space-y-4 p-6">
             <div className="flex items-baseline justify-between">
-              <h2 className="font-serif text-2xl font-semibold text-ink">Today</h2>
-              <p className="text-xs tracking-wide text-ink-faint uppercase">
+              <h2 className="text-xl font-semibold text-ink">Today</h2>
+              <p className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
                 {dueReviews} due · up to {newIntroductions} new
               </p>
             </div>
@@ -83,8 +87,8 @@ function Dashboard() {
         {/* mastery ladder distribution (SM-1) */}
         <Card>
           <CardContent className="space-y-4 p-6">
-            <h2 className="font-serif text-2xl font-semibold text-ink">Your ladder</h2>
-            <div className="flex h-3 w-full overflow-hidden rounded-full bg-paper-sunken">
+            <h2 className="text-xl font-semibold text-ink">Your ladder</h2>
+            <div className="flex h-3 w-full overflow-hidden rounded-sm bg-paper-sunken">
               {ladderTotal > 0
                 ? ladder.map(({ state, count }) => (
                     <div

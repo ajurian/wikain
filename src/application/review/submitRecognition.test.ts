@@ -27,6 +27,9 @@ function makeItem(): LexicalItem {
     productive_meaning: null,
     model_sentence: null,
     self_reference_prompt: null,
+    cloze_fit_set: null,
+    bounce_gloss: null,
+    fit_set_version: null,
     gen_model: "test",
     gen_spec_version: "test",
   };

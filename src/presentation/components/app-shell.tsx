@@ -49,8 +49,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
             {/* compact counter — the headline value, always visible (CNT-2) */}
-            <span className="text-sm font-medium text-ink-soft">
-              <span className="font-serif text-base font-semibold text-ink tabular-nums">
+            <span className="text-sm text-ink-soft">
+              <span className="font-mono text-sm font-medium text-ink tabular-nums">
                 {counter?.count ?? 0}
               </span>{" "}
               usable

@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
+
+import { DURATION, EASE, EDIT_STAGGER } from "@/lib/motion";
 import { resolveEdits, type ResolvedEdit } from "~/domain/review/editResolution.js";
 import type { Replacement } from "@/types/verdict";
 import { cn } from "@/lib/utils";
@@ -43,7 +45,7 @@ export function EditedSentence({
   if (resolution.kind === "fallback") {
     return (
       <div className="space-y-1.5">
-        <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+        <p className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
           Suggested rewrite
         </p>
         <p className="font-serif text-xl leading-relaxed text-ink">
@@ -68,7 +70,7 @@ export function EditedSentence({
         type="button"
         initial={reduced ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.25, delay: reduced ? 0 : i * 0.04 }}
+        transition={{ duration: DURATION.base, ease: EASE, delay: reduced ? 0 : i * EDIT_STAGGER }}
         onClick={() => setOpenEdit(openEdit === i ? null : i)}
         className={cn("cursor-pointer rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50", color)}
         aria-label={`Edit: ${edit.find} → ${edit.replace || "(remove)"}`}
@@ -93,7 +95,7 @@ export function EditedSentence({
           key={openEdit}
           initial={reduced ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: DURATION.fast, ease: EASE }}
           className={cn("text-sm leading-relaxed", REASON_TEXT[open.reason])}
         >
           {feedbackFor(open) ?? `${open.find} → ${open.replace}`}

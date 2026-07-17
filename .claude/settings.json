@@ -1,4 +1,7 @@
 {
+  "permissions": {
+    "deny": [".env*"]
+  },
   "enabledPlugins": {
     "skill-creator@claude-plugins-official": true
   },

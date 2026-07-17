@@ -100,7 +100,7 @@ And not bounced as word-absent
 
 **Notes / edge cases:** Setting the NLP layer to en-US is load-bearing — otherwise American
 sentences get bounced as word-absent, which (per `INV-2`) would silently distort scheduling.
-Since the AMMENDMENT, **cloze** extends this contract with the classified fit-set lanes
+**Cloze** extends this contract with the classified fit-set lanes
 (`FIT-6`) — this lemma match IS the `target` lane; the non-target lanes (soft bounces, typo-fix,
 heal-queue wrong path) are owned by `13`. **Cued is unchanged** (no sentence frame → no fit set).
 

@@ -5,7 +5,8 @@ import { DrizzlePlacementProfile } from "~/infrastructure/persistence/drizzlePla
 import { DrizzleSettings } from "~/infrastructure/persistence/drizzleSettings.js";
 import { DrizzleCatalog } from "~/infrastructure/persistence/drizzleCatalog.js";
 import { DrizzleWordSource } from "~/infrastructure/persistence/drizzleWordSource.js";
-import { neonDbFromEnv } from "~/infrastructure/db/neon.js";
+import { DrizzleHealQueue } from "~/infrastructure/persistence/drizzleHealQueue.js";
+import { dbFromEnv } from "~/infrastructure/db/postgres.js";
 import { makeAuth, type Auth } from "~/infrastructure/auth/auth.js";
 import {
   composeReviewPass,
@@ -19,10 +20,16 @@ import {
   composeRecordPlacementMarks,
 } from "~/infrastructure/composition.js";
 import { HttpNlp } from "~/infrastructure/nlp/httpNlp.js";
-import { HttpJudge, fetchJudgeVersions } from "~/infrastructure/judge/httpJudge.js";
+import {
+  HttpJudge,
+  fetchJudgeVersions,
+} from "~/infrastructure/judge/httpJudge.js";
 import type { JudgePort } from "~/application/ports/judge.js";
 import type { CardRepository } from "~/application/ports/cardRepository.js";
-import type { MemoVersions, VerdictMemoPort } from "~/application/ports/verdictMemo.js";
+import type {
+  MemoVersions,
+  VerdictMemoPort,
+} from "~/application/ports/verdictMemo.js";
 import type { PlacementMarksStore } from "~/application/ports/placementMarks.js";
 import type { PlacementProfileStore } from "~/application/ports/placementProfile.js";
 import type { SettingsStore } from "~/application/ports/settings.js";
@@ -59,7 +66,8 @@ import type { CompleteOnboardingDeps } from "~/application/placement/completeOnb
  */
 function requireEnv(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`${name} is not set (required, server-side — NET-7).`);
+  if (!value)
+    throw new Error(`${name} is not set (required, server-side — NET-7).`);
   return value;
 }
 
@@ -75,13 +83,15 @@ const NLP_SERVICE_TOKEN = requireEnv("NLP_SERVICE_TOKEN");
  * to the same Postgres under the same `user_id`, and a row written by one server function is visible to
  * the next. The connection string is read only here (NET-7 / STACK-3).
  */
-const db = neonDbFromEnv();
+const db = dbFromEnv();
 
 const cards: CardRepository = new DrizzleCardRepository(db);
 const memo: VerdictMemoPort = new DrizzleVerdictMemo(db);
 const marks: PlacementMarksStore = new DrizzlePlacementMarks(db);
 const profile: PlacementProfileStore = new DrizzlePlacementProfile(db);
 const settings: SettingsStore = new DrizzleSettings(db);
+// FIT-11: the typed-cloze heal queue — anonymous, global (no user_id), written by the review pass only.
+const healQueue = new DrizzleHealQueue(db);
 
 /**
  * The catalog + frontier word source (spec/12 DM-2, SEED-5). The catalog is GLOBAL, immutable content —
@@ -142,7 +152,15 @@ export function recordMarksDeps(): RecordPlacementMarksDeps {
 }
 
 export function reviewDeps(): RunReviewPassDeps {
-  return composeReviewPass(judge, cards, memo, judgeVersions, catalog, analyzer);
+  return composeReviewPass(
+    judge,
+    cards,
+    memo,
+    judgeVersions,
+    catalog,
+    analyzer,
+    healQueue,
+  );
 }
 
 export function promptDeps(): ResolveReviewPromptDeps {

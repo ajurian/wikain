@@ -3,8 +3,8 @@
  * the suite exercises REAL SQL (via the same Drizzle adapter as Neon) without a network or
  * credentials — mirroring how `liveJudge` keeps the DeepSeek network out of the default test wiring.
  *
- * The schema is applied from the generated migrations (`drizzle/`), the same ones Neon runs, so there
- * is no hand-written DDL and no drift between test and production shape.
+ * The schema is applied from the generated migrations (`drizzle/development/`), the same ones Neon
+ * runs, so there is no hand-written DDL and no drift between test and production shape.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,12 +13,15 @@ import { drizzle, type PgliteDatabase } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "./schema.js";
 
+// `drizzle.config.ts` emits per-environment migration sets (`out: ./drizzle/{development,production}`);
+// the suite runs the development set.
 const MIGRATIONS_FOLDER = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
   "..",
   "..",
   "drizzle",
+  "development",
 );
 
 /**

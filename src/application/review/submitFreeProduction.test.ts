@@ -38,6 +38,9 @@ function makeItem(): LexicalItem {
     productive_meaning: "to reach an agreement by discussion",
     model_sentence: null, // null → no verbatim-similarity check (DM-4)
     self_reference_prompt: null,
+    cloze_fit_set: null,
+    bounce_gloss: null,
+    fit_set_version: null,
     gen_model: "test",
     gen_spec_version: "test",
   };

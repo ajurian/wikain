@@ -127,7 +127,7 @@ history needed for `SM-5` / `CNT-2` MUST be persisted.
 set to **en-US** so American forms are accepted (consistent with build-time generation and `TIER-5`).
 
 ### DM-10 — Cloze heal-queue rows (fleet-wide, no user identity)
-**Trace:** AMMENDMENT §A3; `FIT-11`.
+**Trace:** `FIT-11` (the runtime write); `13` decision item 15.
 **Requirement:** Heal-queue rows MUST persist `(sense_id, typed_lemma, clozed_sentence)` plus a
 queued-at timestamp and a nullable processed-at marker, keyed on `(sense_id, typed_lemma)` (one row
 per gap, fleet-wide — the row's existence is also the never-re-queue memory). Unlike every other

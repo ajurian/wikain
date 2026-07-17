@@ -22,11 +22,11 @@ function Progress({
       aria-valuenow={value}
       aria-valuemin={0}
       aria-valuemax={max}
-      className={cn("h-1 w-full overflow-hidden rounded-full bg-paper-sunken", className)}
+      className={cn("h-1 w-full overflow-hidden rounded-sm bg-paper-sunken", className)}
       {...props}
     >
       <div
-        className={cn("h-full rounded-full bg-amber transition-[width] duration-300", barClassName)}
+        className={cn("h-full rounded-sm bg-marigold transition-[width] duration-300", barClassName)}
         style={{ width: `${fraction * 100}%` }}
       />
     </div>

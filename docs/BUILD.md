@@ -165,10 +165,10 @@ of rows, (d) any halted-and-flagged POS. Only then start Stage B.
   "productive_meaning": "string",      // cued prompt; DISTINCT phrasing from recognition_meaning
   "model_sentence": "string",          // non-self-referential exemplar of the sense
   "self_reference_prompt": "string",   // concise per-word personal nudge
-  "cloze_fit_set": [                   // AMMENDMENT §A1.2: every plausible blank-filler, classified
+  "cloze_fit_set": [                   // spec/13 FIT-1: every plausible blank-filler, classified
     { "lemma": "string", "class": "target | same_sense_near_miss | different_sense_fit" }
   ],
-  "bounce_gloss": "string",            // short paraphrase of productive_meaning; the §A2 different-sense bounce cue
+  "bounce_gloss": "string",            // short paraphrase of productive_meaning; the FIT-4 different-sense bounce cue
 
   // ---- PROVENANCE ----
   "gen_model": "manual-frontier-llm",
@@ -285,7 +285,7 @@ synset, sense_hint                        // WHICH sense to author (multisense d
 
 Output contract: return `{"items": [ … ]}`, one element per input item, each with `sense_id` + the 9
 generated keys (+ optional `_flags`). `cloze_fit_set` entries each carry a required one-line `why`
-(stripped by ingest — §A1.2 scratch field); `fit_set_version` is **not** part of the output (ingest
+(stripped by ingest — the spec/13 `FIT-3` scratch field); `fit_set_version` is **not** part of the output (ingest
 stamps it). Generate ORIGINAL content, en-US. If a rule genuinely cannot be satisfied for an item,
 set that field to null and add `"_flags": ["reason"]` — do NOT force it.
 
@@ -372,9 +372,9 @@ distractor or sense to clear a flag.
 
 ## 9. Change log & run state
 
-**v6 (cloze fit-set — AMMENDMENT).** Two new generated fields (`cloze_fit_set`, `bounce_gloss`) and
-one new provenance stamp (`fit_set_version`, ingest-stamped) realize `docs/AMMENDMENT.md` §A1
-(spec/13 `FIT-1..5`): the cloze sentence is authored **constrained** (target = uniquely natural
+**v6 (cloze fit-set).** Two new generated fields (`cloze_fit_set`, `bounce_gloss`) and
+one new provenance stamp (`fit_set_version`, ingest-stamped) realize spec/13 `FIT-1..5`: the cloze
+sentence is authored **constrained** (target = uniquely natural
 fill, self-verified ≤ ~3 non-target fits), and every plausible blank-filler is enumerated and
 classified via `docs/CLOZE_FIT_RUBRIC.md` (versioned by `FIT_RUBRIC_VERSION`). Per-entry `why`
 justifications are required in the generated output and stripped at ingest. New §7.1 asserts cover

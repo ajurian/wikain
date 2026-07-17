@@ -7,6 +7,8 @@ import { useState } from "react";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "motion/react";
 
+import { DURATION, EASE } from "@/lib/motion";
+
 import { signUp } from "@/lib/auth-client";
 import { Wordmark } from "@/components/wordmark";
 import { Button } from "@/components/ui/button";
@@ -46,7 +48,7 @@ function SignUp() {
       <motion.div
         initial={reduced ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
+        transition={{ duration: DURATION.base, ease: EASE }}
         className="space-y-8"
       >
         <div className="space-y-2">

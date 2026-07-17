@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { animate, useReducedMotion } from "motion/react";
 
+import { DURATION, EASE } from "@/lib/motion";
+
 /**
  * "Words you can use" — the headline metric (CNT-2/3/4). Honest by design:
  * decreases animate identically to increases, no alarm styling.
@@ -20,8 +22,8 @@ export function CounterStat({
   useEffect(() => {
     if (reduced) return;
     const controls = animate(0, value, {
-      duration: 0.6,
-      ease: [0.25, 0.1, 0.25, 1],
+      duration: DURATION.slow,
+      ease: EASE,
       onUpdate: (v) => setAnimated(Math.round(v)),
     });
     return () => controls.stop();
@@ -35,10 +37,11 @@ export function CounterStat({
 
   return (
     <div>
-      <span ref={ref} className="font-serif text-5xl font-semibold text-ink tabular-nums">
+      {/* Mono is the instrument measuring (P1): every count reads in the measuring voice. */}
+      <span ref={ref} className="font-mono text-[40px] leading-none font-medium text-ink tabular-nums">
         {display}
       </span>
-      <p className="mt-1 text-sm font-medium text-ink-soft">Words you can use</p>
+      <p className="mt-1 text-sm font-medium text-nowrap text-ink-soft">Words you can use</p>
       {faded ? (
         <p className="mt-0.5 text-xs text-ink-faint">
           Some words faded — reviewing brings them back.

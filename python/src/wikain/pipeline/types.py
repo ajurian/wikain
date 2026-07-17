@@ -19,7 +19,7 @@ Cefr = Literal["A1", "A2", "B1", "B2", "C1"] | None
 #: spec/13 FIT-1: the three fit-set lanes. Exactly one `target` entry per item.
 ClozeFitClass = Literal["target", "same_sense_near_miss", "different_sense_fit"]
 
-#: One classified blank-filler (AMMENDMENT §A1.2). Functional syntax because `class` is a keyword.
+#: One classified blank-filler (spec/13 FIT-1). Functional syntax because `class` is a keyword.
 #: The generated output additionally carries a per-entry `why` justification — a scratch field
 #: `ingest` strips before commit (FIT-3), so it is deliberately NOT part of this committed shape.
 ClozeFitEntry = TypedDict("ClozeFitEntry", {"lemma": str, "class": ClozeFitClass})
@@ -65,7 +65,7 @@ class LexicalItem(CarriedFields):
     productive_meaning: str | None
     model_sentence: str | None
     self_reference_prompt: str | None
-    #: AMMENDMENT §A1.2 / spec/13 FIT-1 — every plausible blank-filler, classified.
+    #: spec/13 FIT-1 — every plausible blank-filler, classified.
     cloze_fit_set: list[ClozeFitEntry] | None
     #: spec/13 FIT-4 — the different-sense soft-bounce meaning cue (paraphrase of productive_meaning).
     bounce_gloss: str | None

@@ -176,5 +176,27 @@ export function describeCardRepositoryContract(
       expect(logs[0]!.typoFixed).toBeUndefined();
       expect(logs[0]!.latencyMs).toBeUndefined();
     });
+
+    it("FIT-10: round-trips the cloze soft-bounce history (softBounceCount / softBounceLanes)", async () => {
+      const repo = await makeRepo();
+      await repo.appendReviewLog(
+        reviewLog({
+          tier: "cloze",
+          softBounceCount: 2,
+          softBounceLanes: ["same_sense_near_miss", "different_sense_fit"],
+        }),
+      );
+      const logs = await repo.logsForWord(USER_A, "abandon_verb_01");
+      expect(logs[0]!.softBounceCount).toBe(2);
+      expect(logs[0]!.softBounceLanes).toEqual(["same_sense_near_miss", "different_sense_fit"]);
+    });
+
+    it("FIT-10: absent soft-bounce signals round-trip as undefined (non-cloze tiers don't measure them)", async () => {
+      const repo = await makeRepo();
+      await repo.appendReviewLog(reviewLog()); // no softBounceCount/softBounceLanes set
+      const logs = await repo.logsForWord(USER_A, "abandon_verb_01");
+      expect(logs[0]!.softBounceCount).toBeUndefined();
+      expect(logs[0]!.softBounceLanes).toBeUndefined();
+    });
   });
 }

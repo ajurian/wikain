@@ -62,11 +62,11 @@ export function WordOptionList({
             value={option}
             className={cn(
               "flex min-h-11 w-full items-center gap-3 rounded-lg border border-line bg-paper-raised px-4 py-2.5 text-left transition-colors duration-150",
-              "outline-none focus-visible:border-amber-deep focus-visible:ring-[3px] focus-visible:ring-amber-deep/40",
+              "outline-none focus-visible:border-marigold-deep focus-visible:ring-[3px] focus-visible:ring-marigold-deep/40",
               !graded && "hover:border-ink-faint data-[state=checked]:border-ink",
               !graded && "data-[state=checked]:bg-paper-sunken",
               graded && isCorrect && "border-moss bg-moss-wash",
-              graded && isChosen && !isCorrect && "border-terracotta bg-terracotta-wash",
+              graded && isChosen && !isCorrect && "border-terracotta bg-terra-wash",
               graded && !isChosen && !isCorrect && "opacity-50",
             )}
           >

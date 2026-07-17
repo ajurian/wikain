@@ -31,7 +31,7 @@ def test_the_authoring_rules_are_inlined_verbatim() -> None:
 
 
 def test_the_fit_rubric_is_inlined_verbatim() -> None:
-    """FIT-3 / §A4.4: the build prompt and the (future) heal prompt share the rubric byte-for-byte."""
+    """FIT-3: the build prompt and the (future) heal prompt share the rubric byte-for-byte."""
     assert RUBRIC in build_prompt(PAYLOAD, RULES, RUBRIC)
 
 

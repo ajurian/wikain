@@ -1,7 +1,11 @@
 import { defineConfig } from "drizzle-kit";
 import { config } from "dotenv";
 
-config({ path: ".env.local" });
+const isProd = process.env.NODE_ENV === "production";
+
+config({
+  path: isProd ? ".env.production" : ".env.development",
+});
 
 /**
  * drizzle-kit config (STACK-6). Generates SQL migrations from the single schema source
@@ -10,7 +14,7 @@ config({ path: ".env.local" });
  */
 export default defineConfig({
   schema: "./src/infrastructure/db/schema.ts",
-  out: "./drizzle",
+  out: isProd ? "./drizzle/production" : "./drizzle/development",
   dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL!,

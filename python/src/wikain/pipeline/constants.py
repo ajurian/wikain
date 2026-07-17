@@ -20,17 +20,19 @@ OUT_DIR: Final[Path] = REPO_ROOT / "build" / "out"
 GENERATION_RULES_PATH: Final[Path] = DOCS_DIR / "GENERATION_RULES.md"
 
 #: spec/13 FIT-3: the two-gate classification rubric, inlined VERBATIM into the build prompt (and the
-#: future heal prompt) so the two can never drift (AMMENDMENT §A4.4).
+#: future heal prompt) so the two can never drift.
 CLOZE_FIT_RUBRIC_PATH: Final[Path] = DOCS_DIR / "CLOZE_FIT_RUBRIC.md"
 
 #: Versions the rubric text above. An edit to the rubric MUST bump this; it invalidates and re-runs
-#: classification (the §5.3 `rubric_version` mechanism, applied to the fit set).
-FIT_RUBRIC_VERSION: Final[str] = "2026-07-14"
+#: classification (the §5.3 `rubric_version` mechanism, applied to the fit set). The rubric file
+#: itself stays prompt-clean (no file refs / governance notes — it ships verbatim to a free-chat
+#: LLM), so that rule lives ONLY here and in spec/13 FIT-3.
+FIT_RUBRIC_VERSION: Final[str] = "2026-07-16"
 
 #: spec/13 FIT-5: the fit_set_version ingest stamps on a fresh classification. Heal-merges increment.
 INITIAL_FIT_SET_VERSION: Final[int] = 1
 
-#: spec/13 FIT-2: more non-target fit-set entries than this → Stage C FLAG (not fail) — the §A6.3
+#: spec/13 FIT-2: more non-target fit-set entries than this → Stage C FLAG (not fail) — the
 #: constraint-pressure signal that the cloze frame is not constrained enough.
 FIT_SET_FLAG_THRESHOLD: Final[int] = 6
 

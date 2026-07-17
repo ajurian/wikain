@@ -26,6 +26,7 @@ import type { Catalog } from "~/application/ports/catalog.js";
 import type { WordSource } from "~/application/ports/wordSource.js";
 import type { MemoVersions, VerdictMemoPort } from "~/application/ports/verdictMemo.js";
 import type { SentenceAnalyzer } from "~/application/ports/sentenceAnalyzer.js";
+import type { HealQueuePort } from "~/application/ports/healQueue.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { TAGALOG_LEXICON } from "./nlp/tagalogLexicon.js";
 
@@ -85,7 +86,8 @@ export function composeFreeProduction(
 
 /**
  * Wiring for the end-to-end loop (spec/11). `runReviewPass` routes cued vs. judged, so it needs the full
- * judged-branch dependency set (a structural superset of the cued one).
+ * judged-branch dependency set (a structural superset of the cued one) plus the cloze branch's
+ * heal queue (FIT-11).
  */
 export function composeReviewPass(
   judge: JudgePort,
@@ -94,8 +96,12 @@ export function composeReviewPass(
   judgeVersions: MemoVersions,
   catalog: Catalog,
   analyzer: SentenceAnalyzer,
+  healQueue: HealQueuePort,
 ): RunReviewPassDeps {
-  return composeFreeProduction(judge, cards, memo, judgeVersions, catalog, analyzer);
+  return {
+    ...composeFreeProduction(judge, cards, memo, judgeVersions, catalog, analyzer),
+    healQueue,
+  };
 }
 
 /**

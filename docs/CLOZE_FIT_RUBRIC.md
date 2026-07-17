@@ -1,11 +1,6 @@
 # Cloze Fit-Set Classification Rubric
 
-> **Single source of truth** for classifying a candidate word against an item's `intended_sense`
-> in its cloze sentence (`docs/AMMENDMENT.md §A4`). This exact text is inlined **verbatim** into
-> the build-time generation prompt and the (future) heal-classification prompt — the two must
-> never drift (§A4.4). It is versioned by `FIT_RUBRIC_VERSION`
-> (`python/src/wikain/pipeline/constants.py`); **editing this file requires bumping that version**,
-> which invalidates and re-runs classification (same mechanism as `rubric_version` in PRD §5.3).
+How to classify a candidate word against an item's `intended_sense` in its cloze sentence.
 
 The criterion is **not** "is it a synonym" (a dictionary relation; ignores the sentence) and
 **not** "does it fit the blank" (both miss classes fit by construction). It is a **two-gate check
@@ -36,8 +31,7 @@ proposition? If same proposition but less precise → `same_sense_near_miss`.
 > as S-with-T? If no → `different_sense_fit`.
 > (b) If yes: would a teacher say 'correct idea, but the precise word is T'? If yes →
 > `same_sense_near_miss`.
-> Justify in one line." *(The justification is a scratch field, discarded after generation —
-> §A1.2.)*
+> Justify in one line." *(The justification is a scratch field, discarded after generation.)*
 
 ## Boundary rules
 

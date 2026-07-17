@@ -23,8 +23,8 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
     judge: FakeJudge,
     mastery: MasteryState,
   ): Promise<{ deps: RunReviewPassDeps; cards: DrizzleCardRepository }> {
-    const { cards, memo, catalog, analyzer } = await makeTestStores();
-    const deps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer);
+    const { cards, memo, catalog, analyzer, healQueue } = await makeTestStores();
+    const deps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer, healQueue);
     await cards.save({ userId: USER_A, senseId: item.sense_id, mastery, fsrs: new TsFsrsScheduler().newCard(now) });
     return { deps, cards };
   }
@@ -75,9 +75,9 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
   });
 
   it("composeReviewPass wires the loop without throwing", async () => {
-    const { cards, memo, catalog, analyzer } = await makeTestStores();
+    const { cards, memo, catalog, analyzer, healQueue } = await makeTestStores();
     expect(() =>
-      composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer),
+      composeReviewPass(new FakeJudge(), cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer, healQueue),
     ).not.toThrow();
   });
 });

@@ -103,6 +103,52 @@ describe("presentReviewOutcome", () => {
     }
   });
 
+  it("FIT-7: a cloze soft bounce maps to its own no-grade view (gloss ships only here, FIT-4)", () => {
+    const result: RunReviewPassResult = {
+      tier: "cloze",
+      previousMastery: "Seen",
+      outcome: {
+        kind: "softBounce",
+        lane: "different_sense_fit",
+        bounces: 1,
+        hintPrefix: "n",
+        gloss: "to reach an agreement by talking it through",
+      },
+    };
+    const view = presentReviewOutcome(result, "negotiate");
+    expect(view).toEqual({
+      kind: "clozeSoftBounce",
+      tier: "cloze",
+      lane: "different_sense_fit",
+      bounces: 1,
+      hintPrefix: "n",
+      gloss: "to reach an agreement by talking it through",
+    });
+  });
+
+  it("FIT-8: a graded cloze outcome (incl. the capped Again) still maps to the deterministic view", () => {
+    const result: RunReviewPassResult = {
+      tier: "cloze",
+      previousMastery: "Seen",
+      outcome: {
+        kind: "graded",
+        passed: false,
+        rating: "Again",
+        mastery: "Seen",
+        due,
+      },
+    };
+    const view = presentReviewOutcome(result, "negotiate");
+    expect(view).toEqual({
+      kind: "deterministic",
+      tier: "cloze",
+      lemma: "negotiate",
+      passed: false,
+      previousMastery: "Seen",
+      mastery: "Seen",
+    });
+  });
+
   it("NET-3: an unavailable judge maps to an unavailable view carrying the reason", () => {
     const result: RunReviewPassResult = {
       tier: "free",

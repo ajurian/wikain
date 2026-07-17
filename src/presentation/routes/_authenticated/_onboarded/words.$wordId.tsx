@@ -9,6 +9,8 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
+
+import { DURATION, EASE } from "@/lib/motion";
 import { ArrowLeft, ArrowRight, CircleCheck, CircleX } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -73,7 +75,7 @@ function WordDetail() {
       <motion.div
         initial={reduced ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
+        transition={{ duration: DURATION.base, ease: EASE }}
         className="space-y-6"
       >
         <BackLink />
@@ -81,7 +83,7 @@ function WordDetail() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="font-serif text-4xl font-semibold text-ink">{word.lemma}</h1>
-            <p className="mt-1 text-xs tracking-wide text-ink-faint uppercase">
+            <p className="mt-1 font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
               {word.pos}
               {word.cefr ? ` · ${word.cefr}` : ""}
             </p>
@@ -99,9 +101,9 @@ function WordDetail() {
             <p className="text-sm font-medium text-ink">Memory strength</p>
             <p className="text-sm text-ink-soft tabular-nums">{Math.round(word.retrievability * 100)}%</p>
           </div>
-          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-paper-sunken">
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-sm bg-paper-sunken">
             <div
-              className={cn("h-full rounded-full", word.aboveFloor ? "bg-moss" : "bg-terracotta")}
+              className={cn("h-full rounded-sm", word.aboveFloor ? "bg-moss" : "bg-terracotta")}
               style={{ width: `${word.retrievability * 100}%` }}
             />
           </div>
@@ -116,7 +118,7 @@ function WordDetail() {
 
         {/* review history — promotions and demotions with equal weight (CNT-1) */}
         <div className="space-y-3">
-          <h2 className="text-xs font-medium tracking-wide text-ink-faint uppercase">History</h2>
+          <h2 className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">History</h2>
           {history.length === 0 ? (
             <p className="text-sm text-ink-soft">Not reviewed yet — it’s waiting in your queue.</p>
           ) : (
@@ -149,7 +151,7 @@ function WordDetail() {
 
         {word.modelSentence ? (
           <div className="rounded-xl bg-paper-sunken p-5">
-            <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">Example</p>
+            <p className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">Example</p>
             <p className="mt-1.5 font-serif text-base leading-relaxed text-ink-soft">
               “{word.modelSentence}”
             </p>

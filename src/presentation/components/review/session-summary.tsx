@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "motion/react";
+
+import { DURATION, EASE } from "@/lib/motion";
 import { ArrowRight, MoveDown, MoveUp } from "lucide-react";
 import { MasteryChip } from "@/components/mastery-chip";
 import type { MasteryState } from "~/domain/mastery/card.js";
@@ -30,11 +32,11 @@ export function SessionSummary({ results }: { results: StepOutcome[] }) {
     <motion.div
       initial={reduced ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: DURATION.base, ease: EASE }}
       className="w-full space-y-6"
     >
       <div>
-        <h1 className="font-serif text-2xl font-semibold text-ink">Session done.</h1>
+        <h1 className="text-xl font-semibold text-ink">Session done.</h1>
         <p className="mt-1 text-sm text-ink-soft">
           {judged.length > 0
             ? `${judged.length} sentence${judged.length === 1 ? "" : "s"} checked — they count toward today’s goal.`
@@ -45,7 +47,7 @@ export function SessionSummary({ results }: { results: StepOutcome[] }) {
       {moved.length > 0 ? (
         <Card>
           <CardContent className="space-y-3 p-5">
-            <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+            <p className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
               Words that moved
             </p>
             {moved.map((r, i) => (

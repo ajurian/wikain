@@ -1,6 +1,7 @@
 import type { MasteryState } from "~/domain/mastery/card.js";
 import type { Replacement } from "~/domain/review/verdict.js";
 import type { RuleBounceReason } from "~/domain/review/ruleLayer.js";
+import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 import type { JudgeUnavailableReason } from "../ports/judge.js";
 import type { RunReviewPassResult } from "./runReviewPass.js";
 
@@ -51,7 +52,20 @@ export type ReviewOutcomeView =
    * (NET-2) before the judged submit, but the full pass re-runs the rule layer, so this arm keeps the
    * mapping total and defensive.
    */
-  | { kind: "bounce"; tier: "free"; reason: RuleBounceReason; bounces: number; revealModelSentence: boolean };
+  | { kind: "bounce"; tier: "free"; reason: RuleBounceReason; bounces: number; revealModelSentence: boolean }
+  /**
+   * FIT-7: a typed-cloze soft bounce — no rating happened; the card stays due and the client
+   * re-prompts with the lane's copy. `gloss` (the item's `bounce_gloss`) ships ONLY here, on the
+   * `different_sense_fit` lane — never pre-answer (FIT-4, the RL-6 ship-on-reveal pattern).
+   */
+  | {
+      kind: "clozeSoftBounce";
+      tier: "cloze";
+      lane: ClozeSoftBounceLane;
+      bounces: number;
+      hintPrefix: string;
+      gloss: string | null;
+    };
 
 /**
  * Map the use-case result to the UI view-model. Pure and framework-free (no UI copy — that lives in
@@ -61,7 +75,30 @@ export type ReviewOutcomeView =
 export function presentReviewOutcome(result: RunReviewPassResult, lemma: string): ReviewOutcomeView {
   const { previousMastery } = result;
 
-  // LOOP-2: deterministic tiers — pass/fail + the mastery move.
+  // The cloze tier's result is itself a union: FIT-7's soft bounce carries no grade to present.
+  if (result.tier === "cloze") {
+    const outcome = result.outcome;
+    if (outcome.kind === "softBounce") {
+      return {
+        kind: "clozeSoftBounce",
+        tier: "cloze",
+        lane: outcome.lane,
+        bounces: outcome.bounces,
+        hintPrefix: outcome.hintPrefix,
+        gloss: outcome.gloss,
+      };
+    }
+    return {
+      kind: "deterministic",
+      tier: "cloze",
+      lemma,
+      passed: outcome.passed,
+      previousMastery,
+      mastery: outcome.mastery,
+    };
+  }
+
+  // LOOP-2: the other deterministic tiers — pass/fail + the mastery move.
   if (result.tier !== "free") {
     return {
       kind: "deterministic",

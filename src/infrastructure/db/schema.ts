@@ -28,9 +28,10 @@ import {
 } from "drizzle-orm/pg-core";
 import type { MasteryState } from "~/domain/mastery/card.js";
 import type { ReviewTier } from "~/domain/review/review.js";
+import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 import type { Rating } from "~/domain/review/rating.js";
 import type { JudgeVerdict } from "~/domain/review/verdict.js";
-import type { ControlledPos } from "~/domain/lexicalItem.js";
+import type { ClozeFitEntry, ControlledPos } from "~/domain/lexicalItem.js";
 
 // BetterAuth core tables (user/session/account/verification). Re-exported so drizzle-kit + the pglite
 // migrator + the drizzleAdapter all see one schema. `user.id` is `uuid` — the app-table `user_id`
@@ -76,6 +77,10 @@ export const reviewLogs = pgTable("review_logs", {
   retryCount: integer("retry_count"),
   typoFixed: boolean("typo_fixed"),
   latencyMs: integer("latency_ms"),
+  // FIT-10: the typed-cloze soft-bounce history of the presentation this grade closed. Nullable —
+  // only the cloze tier measures them (0/[] there is an honest measurement, not a fabrication).
+  softBounceCount: integer("soft_bounce_count"),
+  softBounceLanes: jsonb("soft_bounce_lanes").$type<ClozeSoftBounceLane[]>(),
   // FsrsReviewLog (src/domain/review.ts), expanded. `fsrs_rating` is the numeric FSRS grade, distinct
   // from the domain `rating` string above.
   fsrsRating: integer("fsrs_rating").notNull(),
@@ -195,9 +200,36 @@ export const lexicalItems = pgTable(
     productiveMeaning: text("productive_meaning"),
     modelSentence: text("model_sentence"),
     selfReferencePrompt: text("self_reference_prompt"),
+    // FIT-1/FIT-4: the classified cloze fit set + the different-sense bounce cue. Nullable like every
+    // generated field (a pre-fit-set item degrades to target/typo/wrong at runtime). No Dates → jsonb
+    // is lossless (cf. the FSRS-state note above).
+    clozeFitSet: jsonb("cloze_fit_set").$type<ClozeFitEntry[]>(),
+    bounceGloss: text("bounce_gloss"),
     // provenance
     genModel: text("gen_model").notNull(),
     genSpecVersion: text("gen_spec_version").notNull(),
+    // FIT-5: ingest-stamped fit-set provenance; nullable — null on a pre-fit-set item.
+    fitSetVersion: integer("fit_set_version"),
   },
   (t) => [index("lexical_items_cefr_rank_idx").on(t.cefr, t.zipfRank)],
+);
+
+/**
+ * The typed-cloze heal queue (spec/13 FIT-11, DM-10) — the runtime half of the offline heal loop.
+ * GLOBAL like `lexical_items` (it describes gaps in the shared catalog, not learners): deliberately
+ * NO `user_id`, so a queue export can never leak who typed what. The `(sense_id, typed_lemma)` PK +
+ * `onConflictDoNothing` make the write idempotent AND double as the never-re-queue memory across
+ * builds; `processed_at` is stamped by the (deferred) heal-ingest tooling, never by the runtime.
+ */
+export const clozeHealQueue = pgTable(
+  "cloze_heal_queue",
+  {
+    senseId: text("sense_id").notNull(),
+    typedLemma: text("typed_lemma").notNull(),
+    // The cloze sentence AS PRESENTED — a later fit_set_version may rewrite it, so it is snapshotted.
+    clozedSentence: text("clozed_sentence").notNull(),
+    queuedAt: timestamp("queued_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    processedAt: timestamp("processed_at", { withTimezone: true, mode: "date" }),
+  },
+  (t) => [primaryKey({ columns: [t.senseId, t.typedLemma] })],
 );

@@ -22,6 +22,13 @@ export function makeLexicalItem(patch: Partial<LexicalItem> = {}): LexicalItem {
     productive_meaning: "a spoken or written unit",
     model_sentence: "Say the word aloud.",
     self_reference_prompt: "What did you just read?",
+    cloze_fit_set: [
+      { lemma: "word", class: "target" },
+      { lemma: "term", class: "same_sense_near_miss" },
+      { lemma: "sentence", class: "different_sense_fit" },
+    ],
+    bounce_gloss: "one meaningful piece of language on its own",
+    fit_set_version: 1,
     gen_model: "manual-frontier-llm",
     gen_spec_version: "gen-spec v3",
     ...patch,

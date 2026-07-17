@@ -8,6 +8,7 @@ import {
   type ReviewOutcomeView,
 } from "~/application/review/presentReviewOutcome.js";
 import type { RuleBounceReason } from "~/domain/review/ruleLayer.js";
+import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 import { readPlacementProfile } from "~/application/placement/readPlacementProfile.js";
 import { currentUserId } from "./currentUser.js";
 import { placementProfileDeps, promptDeps, reviewDeps, sessionDeps } from "./composition.js";
@@ -96,6 +97,21 @@ export interface SubmitReviewInput {
   response: string;
   /** RAT-5 / SM-9: the learner used a starter scaffold. Only the judged branch reads it. */
   scaffolded: boolean;
+  /** FIT-7/FIT-8: this presentation's accrued soft bounces. Only the cloze branch reads them. */
+  priorSoftBounces: number;
+  priorSoftBounceLanes: ClozeSoftBounceLane[];
+}
+
+/** The two soft-bounce lanes as the client may echo them back — anything else is rejected. */
+const SOFT_BOUNCE_LANES: readonly ClozeSoftBounceLane[] = [
+  "same_sense_near_miss",
+  "different_sense_fit",
+];
+
+function isSoftBounceLanes(v: unknown): v is ClozeSoftBounceLane[] {
+  return (
+    Array.isArray(v) && v.every((lane) => SOFT_BOUNCE_LANES.includes(lane as ClozeSoftBounceLane))
+  );
 }
 
 /**
@@ -109,7 +125,15 @@ export const submitReviewFn = createServerFn({ method: "POST" })
     if (!o || typeof o.senseId !== "string" || typeof o.response !== "string") {
       throw new Error("submitReviewFn: { senseId, response } (strings) required");
     }
-    return { senseId: o.senseId, response: o.response, scaffolded: o.scaffolded === true };
+    return {
+      senseId: o.senseId,
+      response: o.response,
+      scaffolded: o.scaffolded === true,
+      priorSoftBounces: typeof o.priorSoftBounces === "number" ? o.priorSoftBounces : 0,
+      priorSoftBounceLanes: isSoftBounceLanes(o.priorSoftBounceLanes)
+        ? o.priorSoftBounceLanes
+        : [],
+    };
   })
   .handler(async ({ data }): Promise<ReviewOutcomeView> => {
     const deps = reviewDeps();
@@ -121,6 +145,8 @@ export const submitReviewFn = createServerFn({ method: "POST" })
         senseId: data.senseId,
         response: data.response,
         scaffolded: data.scaffolded,
+        priorSoftBounces: data.priorSoftBounces,
+        priorSoftBounceLanes: data.priorSoftBounceLanes,
       },
       deps,
     );

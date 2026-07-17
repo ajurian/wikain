@@ -69,8 +69,8 @@ export function BlankInput({
         enterKeyHint="go"
         className={cn(
           "col-start-1 row-start-1 w-full border-b-2 border-ink-faint bg-transparent px-1 text-ink outline-none",
-          "caret-amber-deep placeholder:text-ink-faint/70",
-          "focus-visible:border-amber-deep",
+          "caret-marigold-deep placeholder:text-ink-faint/70",
+          "focus-visible:border-marigold-deep",
           "disabled:cursor-not-allowed disabled:opacity-60",
           TYPE[variant],
           className,

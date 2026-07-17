@@ -1,4 +1,6 @@
 import { resolveReviewTier } from "~/domain/review/reviewRouting.js";
+import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
+import type { HealQueuePort } from "../ports/healQueue.js";
 import {
   submitCuedReview,
   type SubmitCuedReviewInput,
@@ -21,15 +23,19 @@ export interface RunReviewPassInput {
   scaffolded?: boolean;
   /** RL-6: per-presentation bounce count; only the judged branch reads it. Defaults to 0. */
   priorBounces?: number;
+  /** FIT-7/FIT-8: per-presentation soft-bounce state; only the cloze branch reads it. Defaults to 0/[]. */
+  priorSoftBounces?: number;
+  priorSoftBounceLanes?: ClozeSoftBounceLane[];
   /** Defaults to `new Date()`; injectable for deterministic tests. */
   now?: Date;
 }
 
 /**
  * The judged-branch deps are a structural superset of the cued-branch deps (catalog/cards/scheduler/
- * analyzer/judge/tagalogLexicon), so one dependency set forwards to both use-cases.
+ * analyzer/judge/tagalogLexicon), so one dependency set forwards to every use-case; the cloze branch
+ * alone adds the FIT-11 heal queue.
  */
-export type RunReviewPassDeps = SubmitFreeProductionDeps;
+export type RunReviewPassDeps = SubmitFreeProductionDeps & { healQueue: HealQueuePort };
 
 import type { MasteryState } from "~/domain/mastery/card.js";
 

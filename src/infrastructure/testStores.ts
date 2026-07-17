@@ -19,6 +19,7 @@ import { DrizzlePlacementProfile } from "./persistence/drizzlePlacementProfile.j
 import { DrizzleSettings } from "./persistence/drizzleSettings.js";
 import { DrizzleCatalog } from "./persistence/drizzleCatalog.js";
 import { DrizzleWordSource } from "./persistence/drizzleWordSource.js";
+import { DrizzleHealQueue } from "./persistence/drizzleHealQueue.js";
 import { FakeAnalyzer } from "./nlp/fakeAnalyzer.js";
 import { seedLexicalItems } from "./db/seedCatalog.js";
 import { makePgliteDb } from "./db/pglite.js";
@@ -115,6 +116,7 @@ export async function makeTestStores() {
     settings: new DrizzleSettings(db),
     catalog: await DrizzleCatalog.hydrate(db),
     wordSource: new DrizzleWordSource(db),
+    healQueue: new DrizzleHealQueue(db),
     /**
      * The NLP port's test double. spaCy is out-of-process now, so a test that reached it would be an
      * integration test of the container rather than of the use-case under test — the same reason

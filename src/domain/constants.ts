@@ -32,8 +32,8 @@ export const MAX_RULE_BOUNCE_RETRIES = 3;
 
 /**
  * FIT-8: cloze soft bounces are capped here; at the cap the submission grades the wrong path
- * (Again) and the target is revealed. Mirrors the MAX_RULE_BOUNCE_RETRIES *pattern* (AMMENDMENT
- * §A2.1 cites §5.2) but is its own knob — the two caps tune independently.
+ * (Again) and the target is revealed. Mirrors the MAX_RULE_BOUNCE_RETRIES *pattern* (RL-6) but is
+ * its own knob — the two caps tune independently.
  */
 export const CLOZE_SOFT_BOUNCE_CAP = 3;
 

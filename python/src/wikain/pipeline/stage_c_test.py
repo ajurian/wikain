@@ -134,7 +134,7 @@ def test_a_duplicate_sense_id_fails_the_catalog() -> None:
     assert all("duplicate sense_id in catalog" in r.fails for r in results)
 
 
-# ---- cloze_fit_set (spec/13 FIT-1 / FIT-2; AMMENDMENT §A1.2) ----
+# ---- cloze_fit_set (spec/13 FIT-1 / FIT-2) ----
 
 
 def fit(lemma: str, cls: str) -> dict[str, str]:
@@ -193,7 +193,7 @@ def test_a_different_sense_fit_may_coincide_with_a_distractor() -> None:
 
 
 def test_an_oversized_fit_set_flags_but_does_not_fail() -> None:
-    """FIT-2: the §A6.3 constraint-pressure signal — the cloze frame admits too many words."""
+    """FIT-2: the constraint-pressure signal — the cloze frame admits too many words."""
     entries = [fit("specialist", "target")] + [
         fit(f"word{i}", "different_sense_fit") for i in range(7)
     ]

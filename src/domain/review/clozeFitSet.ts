@@ -27,7 +27,7 @@ export interface ResolveClozeLaneInput {
 }
 
 /**
- * FIT-6: the three-lane dictionary lookup, in the AMMENDMENT §A2 table's precedence order —
+ * FIT-6: the three-lane dictionary lookup, in that requirement's table precedence order —
  * target → same_sense_near_miss → different_sense_fit → typo → wrong. Pure over the forms the
  * NLP port already returned (the domain holds no NLP dependency, ARCH-1); the target lane IS the
  * TIER-5 lemma match. Fit-set membership beats typo distance: a listed word one edit from the
@@ -66,22 +66,34 @@ export function resolveClozeLane(input: ResolveClozeLaneInput): ClozeLane {
  * variant differs only at distances ≥3.
  */
 export function damerauLevenshtein(a: string, b: string): number {
-  const rows = a.length + 1;
-  const cols = b.length + 1;
-  const d: number[][] = Array.from({ length: rows }, (_, i) =>
-    Array.from({ length: cols }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
-  );
+  // Rolling rows (i-2, i-1, i); `?? Infinity` marks the never-taken out-of-bounds reads so the
+  // matrix indexing stays honest under noUncheckedIndexedAccess.
+  let prev2: number[] = [];
+  let prev: number[] = Array.from({ length: b.length + 1 }, (_, j) => j);
 
-  for (let i = 1; i < rows; i++) {
-    for (let j = 1; j < cols; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
-      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
-        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+  for (let i = 1; i <= a.length; i++) {
+    const curr: number[] = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      let best = Math.min(
+        (prev[j] ?? Infinity) + 1,
+        (curr[j - 1] ?? Infinity) + 1,
+        (prev[j - 1] ?? Infinity) + cost,
+      );
+      if (
+        i > 1 &&
+        j > 1 &&
+        a.charCodeAt(i - 1) === b.charCodeAt(j - 2) &&
+        a.charCodeAt(i - 2) === b.charCodeAt(j - 1)
+      ) {
+        best = Math.min(best, (prev2[j - 2] ?? Infinity) + 1);
       }
+      curr.push(best);
     }
+    prev2 = prev;
+    prev = curr;
   }
-  return d[rows - 1][cols - 1];
+  return prev[b.length] ?? 0;
 }
 
 const ALPHABETIC_WORD = /^[a-z][a-z'-]*$/i;
@@ -94,8 +106,7 @@ const ALPHABETIC_WORD = /^[a-z][a-z'-]*$/i;
  */
 export function healCandidateLemma(tokens: readonly NlpToken[]): string | null {
   const words = tokens.filter((t) => t.isWord);
-  if (words.length !== 1) return null;
-  const [word] = words;
-  if (!ALPHABETIC_WORD.test(word.normal)) return null;
+  const word = words.length === 1 ? words[0] : undefined;
+  if (word === undefined || !ALPHABETIC_WORD.test(word.normal)) return null;
   return word.lemma.toLowerCase();
 }

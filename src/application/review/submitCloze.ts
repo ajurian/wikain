@@ -45,7 +45,7 @@ export interface ClozeSoftBounceResult {
   lane: ClozeSoftBounceLane;
   /** Soft bounces accrued on this presentation including this one. */
   bounces: number;
-  /** The first letter of the target — the "o___" cue both bounce copies carry (§A2 table). */
+  /** The first letter of the target — the "o___" cue both bounce copies carry (FIT-6). */
   hintPrefix: string;
   /** FIT-4: the item's `bounce_gloss`; present only on the `different_sense_fit` lane. */
   gloss: string | null;
@@ -57,11 +57,11 @@ export type SubmitClozeResult =
 
 /**
  * The typed-cloze tier (spec/03 TIER-1/TIER-5 + spec/13 FIT-6..11), the second `Seen` on-ramp step.
- * One NLP call resolves the lane (FIT-6, the §A2 precedence table); the graded lanes then run
+ * One NLP call resolves the lane (FIT-6's precedence table); the graded lanes then run
  * through the shared deterministic core:
  *  - `target` — the TIER-5 lemma match → `Good`; SM-3: a pass promotes Seen → Recognized.
  *  - `same_sense_near_miss` / `different_sense_fit` under the cap — a FIT-7 soft bounce: returns
- *    early with NO rating, NO scheduler call, NO ReviewLog (the §A2.2 phantom-lapse rule).
+ *    early with NO rating, NO scheduler call, NO ReviewLog (FIT-7's phantom-lapse rule).
  *  - a soft lane AT the cap (FIT-8) — grades the wrong path (`Again`); the caller reveals.
  *  - typo (DL ≤ CLOZE_TYPO_MAX_DISTANCE, FIT-9) → `Good` with `typoFixed: true` recorded.
  *  - `wrong` — `Again`, plus the FIT-11 heal-queue write when the response was a single plausible

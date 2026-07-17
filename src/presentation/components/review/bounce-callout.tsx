@@ -1,4 +1,6 @@
 import { motion, useReducedMotion } from "motion/react";
+
+import { DURATION, EASE } from "@/lib/motion";
 import { Info } from "lucide-react";
 import type { BounceKind } from "@/types/verdict";
 
@@ -25,7 +27,7 @@ export function BounceCallout({
     <motion.div
       initial={reduced ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: DURATION.fast, ease: EASE }}
       role="status"
       className="flex items-start gap-2.5 rounded-lg bg-paper-sunken px-3.5 py-3"
     >

@@ -16,6 +16,8 @@ import { useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
+
+import { DURATION, EASE } from "@/lib/motion";
 import { ArrowRight, CircleCheck, Loader2 } from "lucide-react";
 
 import {
@@ -97,7 +99,7 @@ function PlacementPage() {
       <motion.div
         initial={reduced ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
+        transition={{ duration: DURATION.base, ease: EASE }}
         className="space-y-6"
       >
         {view === "result" && result !== null ? (
@@ -142,7 +144,7 @@ function LexTaleResult({
   return (
     <div className="space-y-6">
       <CircleCheck className="size-10 text-moss" strokeWidth={1.5} />
-      <h1 className="font-serif text-2xl font-semibold text-ink">
+      <h1 className="text-xl font-semibold text-ink">
         You scored{" "}
         <span className="tabular-nums">{Math.round(result.score)}%</span> —
         around {result.frontierBand}.
@@ -184,7 +186,7 @@ function Hub({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-2xl font-semibold text-ink">
+        <h1 className="text-xl font-semibold text-ink">
           Retune your level
         </h1>
         <p className="mt-1 text-xs text-ink-faint">

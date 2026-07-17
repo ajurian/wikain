@@ -11,12 +11,15 @@ Session shell: Progress bar (position/total) + close (×) → back to dashboard.
 
 | State | Spec | Render |
 | --- | --- | --- |
-| Recognition MCQ: gloss + 4 word options | TIER-2 | WordTitle(hidden — gloss is the prompt), 4 option buttons |
-| Recognition graded | RAT-1 | correct → moss tint; wrong choice → terracotta tint + correct shown moss; no demotion language (SM-6) |
-| Cloze: sentence with blank + input | TIER-5 | serif sentence, `______` gap, Input |
-| Cloze graded | TIER-5 | pass/fail tint; on fail show the word; note "we'll show it again soon" |
-| Cued: gloss + type-the-word | TIER-3 | gloss (different phrasing from MCQ — TIER-2), Input |
-| Cued pass promotes | SM-4 | quiet promotion line "recognized → productive" via MasteryChip pair |
+| Recognition MCQ: gloss + 4 word options | TIER-2 | WordOptionList — the prompt is a meaning, the options are 4 words (1 target + 3 distractors) |
+| Recognition graded | RAT-1 | instant; correct → moss tint; wrong choice → terracotta tint + correct shown moss; **150ms tint, no shake**; a wrong choice never demotes and never uses demotion language (SM-6) |
+| Cloze: sentence with blank + input | TIER-5 | serif sentence, auto-sizing BlankInput |
+| Cloze graded | TIER-5 | instant; pass/fail tint; on fail show the word + "we'll show it again soon" — no demotion (SM-6) |
+| Cloze soft bounce (near-miss / diff-sense) | FIT-6/7 | SoftBounceCallout — neutral, **no rating**, card stays due; diff-sense carries `bounce_gloss`; **never reveals the target** |
+| Soft-bounce cap (3) reached | FIT-8 | target revealed, grades `Again`; `softBounceCount`/`softBounceLanes` recorded on the log |
+| Cloze typo (DL ≤ 1) | FIT-9 | counted as the target, rates `Good`, quiet "typo noted" metadata — no scolding |
+| Cued: gloss + type-the-word | TIER-3 | gloss (different phrasing from MCQ — TIER-2), BlankInput |
+| Cued pass promotes | SM-4 | quiet promotion line "recognized → productive" via MasteryChip pair; no fanfare |
 
 ### Free production / maintenance (judged branch — LOOP-3/4)
 
@@ -48,7 +51,7 @@ Session shell: Progress bar (position/total) + close (×) → back to dashboard.
 | State | Spec | Render |
 | --- | --- | --- |
 | Counter (can tick down) | CNT-2/3/4 | CounterStat + optional fade caption |
-| Daily goal ring | CNT-8, SEED-9 | GoalRing (unit: sentences) |
+| Daily goal gauge | CNT-8, SEED-9 | GoalGauge — tick-marked (unit: sentences) |
 | Due queue summary + Start session CTA | LOOP-1, SEED-6 | due count, intro count ("~5 new/day" pacing visible) |
 | Ladder distribution | SM-1 | 5-state bar with MasteryChips |
 | No streaks anywhere | CNT-9 | (absence is the requirement) |
@@ -67,5 +70,10 @@ the word's model sentence, learner's past sentences.
 
 ## `/signin`, `/signup`, `/settings`
 
-Auth: visual-only (BetterAuth deferred). Settings: daily goal stepper (CNT-8, default 5), level
-band, timezone (calendar-day logic SM-5b), sign-out. No notification/streak settings (CNT-9).
+Auth: real BetterAuth email+password (STACK-4), behind the `_public` → `_authenticated` →
+`_onboarded` guard chain. Settings: daily goal stepper (CNT-8, default 5), level band + a `Retune`
+link to `/placement`, timezone (calendar-day logic SM-5b — a **Combobox**, ~400 IANA zones),
+sign-out. No notification/streak settings (CNT-9).
+
+> Per-word marking is **not** re-offered outside onboarding: marks are additive-only in v1, so a
+> mistaken tap would be permanent (SEED-2/3/7).

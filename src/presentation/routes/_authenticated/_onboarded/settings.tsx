@@ -7,6 +7,8 @@ import { useMemo, useState } from "react";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
+
+import { DURATION, EASE } from "@/lib/motion";
 import { Minus, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -17,7 +19,14 @@ import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "~/domain/constants.js";
 import type { UserSettings } from "~/domain/settings.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 /** Fallback zone list for runtimes without `Intl.supportedValuesOf` (older engines). */
 const COMMON_TIMEZONES = [
@@ -99,10 +108,10 @@ function SettingsPage() {
       <motion.div
         initial={reduced ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
+        transition={{ duration: DURATION.base, ease: EASE }}
         className="space-y-6"
       >
-        <h1 className="font-serif text-2xl font-semibold text-ink">Settings</h1>
+        <h1 className="text-xl font-semibold text-ink">Settings</h1>
 
         {/* daily goal (CNT-8): unit is sentences, adjustable, no coercion */}
         <Card>
@@ -124,7 +133,7 @@ function SettingsPage() {
               >
                 <Minus />
               </Button>
-              <span className="min-w-16 text-center font-serif text-3xl font-semibold text-ink tabular-nums">
+              <span className="min-w-16 text-center font-mono text-3xl font-medium text-ink tabular-nums">
                 {goal}
               </span>
               <Button
@@ -166,31 +175,40 @@ function SettingsPage() {
                   “Separate days” for your counter and daily goal follow this clock.
                 </p>
               </div>
-              <select
-                aria-label="Timezone"
+              {/*
+               * A Combobox, not a Select: the runtime knows ~400 IANA zones, well past the point
+               * where scanning a list works — the filter input is the point. A native <select> also
+               * renders its panel in OS chrome, which ignores every paper/ink token.
+               */}
+              <Combobox
+                items={zones}
                 value={currentTz}
+                onValueChange={(timezone) => {
+                  if (timezone && timezone !== currentTz) mutation.mutate({ timezone });
+                }}
                 disabled={mutation.isPending}
-                onChange={(e) => mutation.mutate({ timezone: e.target.value })}
-                className={cn(
-                  "h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none",
-                  "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                  "disabled:cursor-not-allowed disabled:opacity-50",
-                )}
               >
-                {zones.map((z) => (
-                  <option key={z} value={z}>
-                    {z}
-                  </option>
-                ))}
-              </select>
+                <ComboboxInput placeholder="Search time zones…" aria-label="Timezone" />
+                <ComboboxContent>
+                  <ComboboxEmpty>No matching time zone.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(zone: string) => (
+                      <ComboboxItem key={zone} value={zone}>
+                        {zone}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
               {deviceTz && deviceTz !== currentTz && (
-                <button
-                  type="button"
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs"
                   onClick={() => mutation.mutate({ timezone: deviceTz })}
-                  className="text-xs text-primary underline-offset-2 hover:underline"
                 >
                   Use this device’s time ({deviceTz})
-                </button>
+                </Button>
               )}
             </div>
           </CardContent>

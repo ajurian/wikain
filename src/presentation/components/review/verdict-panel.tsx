@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from "motion/react";
-import { CircleCheck, CircleX } from "lucide-react";
 import { EditedSentence } from "./edited-sentence";
 import { MasteryChip } from "@/components/mastery-chip";
+import { DURATION } from "@/lib/motion";
 import type { MasteryState } from "~/domain/mastery/card.js";
 import type { Replacement } from "@/types/verdict";
 
@@ -9,6 +9,10 @@ import type { Replacement } from "@/types/verdict";
  * Judged verdict (LOOP-4). Pass and fail use the SAME reveal animation — color
  * carries the meaning (design-system/references/motion.md). Fail includes the
  * demotion line (SM-6/7) and never says "wrong answer" (brand voice).
+ *
+ * The wash tints the verdict bar ONLY, with a 3px accent rule on its left edge; the panel itself
+ * stays paper. The mono PASS/FAIL label is deliberately text, not an icon — it keeps the verdict
+ * legible without relying on color alone.
  */
 export function VerdictPanel({
   passed,
@@ -36,19 +40,21 @@ export function VerdictPanel({
     <motion.div
       initial={reduced ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: DURATION.base }}
       className="space-y-4"
     >
       <div
-        className={`flex items-center gap-2.5 rounded-lg px-3.5 py-3 ${
-          passed ? "bg-moss-wash" : "bg-terracotta-wash"
+        className={`flex items-baseline gap-2.5 rounded-sm border-l-[3px] px-3.5 py-3 ${
+          passed ? "border-moss bg-moss-wash" : "border-terracotta bg-terra-wash"
         }`}
       >
-        {passed ? (
-          <CircleCheck className="size-5 shrink-0 text-moss" strokeWidth={1.75} />
-        ) : (
-          <CircleX className="size-5 shrink-0 text-terracotta" strokeWidth={1.75} />
-        )}
+        <p
+          className={`shrink-0 font-mono text-[10.5px] font-medium tracking-wide uppercase ${
+            passed ? "text-moss" : "text-terracotta"
+          }`}
+        >
+          {passed ? "Pass" : "Fail"}
+        </p>
         <p className={`text-sm font-medium ${passed ? "text-moss" : "text-terracotta"}`}>
           {passed
             ? replacements.length > 0
@@ -59,12 +65,18 @@ export function VerdictPanel({
       </div>
 
       {!passed && detectedSense && intendedSense ? (
-        <div className="space-y-1 text-sm leading-relaxed text-ink-soft">
+        <div className="space-y-1.5 text-sm leading-relaxed text-ink-soft">
           <p>
-            <span className="font-medium text-ink">Your sentence used:</span> {detectedSense}
+            <span className="mr-1.5 font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
+              Detected
+            </span>
+            {detectedSense}
           </p>
           <p>
-            <span className="font-medium text-ink">We’re practicing:</span> {intendedSense}
+            <span className="mr-1.5 font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
+              Intended
+            </span>
+            {intendedSense}
           </p>
         </div>
       ) : null}

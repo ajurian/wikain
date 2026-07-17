@@ -47,25 +47,13 @@ derived from the PRD, then tests are written against the specs, then runtime cod
   cites its PRD `§`; v1 is normative and v2/enable-later sits in non-normative **Deferred** sections;
   any spec/PRD conflict is flagged (`> [FLAG]`), never silently resolved.
 
-**What is implemented:** (1) the **build-time content-generation pipeline** (`python/src/wikain/pipeline/`,
-Python/uv since slice 30 — it was TypeScript through slice 28), which realizes `docs/BUILD.md`; (2) the
-**Python NLP + judge microservice** (`python/src/wikain/{nlp,judge,service}/`, slices 29/31) — one FastAPI
-container holding the ONE spaCy engine and the DeepSeek client; and (3) the **v4 runtime** (`src/`, started
-2026-06-30) — see `### v4 runtime (src/)` below — now spanning the whole review loop, first-session
-seeding, the real DeepSeek judge, the usable-words counter, edit resolution, the verdict memo, a
-Drizzle/Neon persistence adapter, **real BetterAuth email+password auth with per-user settings**, and a
-fully **wired, guarded** TanStack Start UI (every surface — `/`, `/review`, `/words`, `/onboarding`,
-`/settings`, `/signin`, `/signup` — runs on real use-cases behind a real session). The app is now
-**multi-tenant and secrets-required**: it fails fast on boot without `DATABASE_URL`, `BETTER_AUTH_SECRET`,
-`NLP_SERVICE_URL`, and `NLP_SERVICE_TOKEN` — there are **no in-memory adapters or offline fallbacks**
-anywhere (tests run against embedded pglite). **`DEEPSEEK_API_KEY` is no longer a web-backend secret** —
-since slice 32 it lives only in the Python service. Onboarding is the **mandatory** step after auth, and
-placement runs on the real published **LexTALE** instrument (slice 22). **A few spec pieces remain
-deferred** — per-user FSRS optimization (SEED-8), SEED-2's LexTALE→cold-start-difficulty output, and the
-counter's yesterday-delta (needs a persisted daily snapshot). Do not assume a runtime piece is present;
-scaffold it only when asked.
-*(Note: v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend — ignore any
-stale "Electron" framing elsewhere.)*
+**Three codebases:** (1) the build-time content pipeline (`python/src/wikain/pipeline/`, uv), realizing
+`docs/BUILD.md`; (2) the NLP + judge microservice (`python/src/wikain/{nlp,judge,service}/`) — one FastAPI
+container holding the ONE spaCy engine and the DeepSeek client; (3) the v4 runtime (`src/`) — see `### v4
+runtime (src/)` below. Every surface is wired and guarded. Do not assume a runtime piece is present;
+check, and scaffold only when asked. What is **Deferred** is listed at the end of the runtime section.
+*(v4 dropped the earlier single-user Electron shell for a web/multi-tenant backend — ignore any stale
+"Electron" framing elsewhere.)*
 
 ### Build pipeline commands (Python — slice 30)
 
@@ -109,30 +97,37 @@ Code lives in `src/` under a **clean/onion architecture** (`.claude/rules/`, esp
 **test-first** against `spec/` IDs with **vitest** (`06-tdd.md`). Layout: `src/domain/` (pure),
 `src/application/` (use-cases + `ports/`), `src/infrastructure/` (adapters), `src/presentation/`
 (TanStack Start app — own `tsconfig`, `npm run typecheck:web`, excluded from the NodeNext backend
-gate). NodeNext ESM — relative imports carry `.js`; tests co-located `*.test.ts` (`TDD-4`). Backend
-slices 1–11 are on **`master`**; every UI slice — 12 (design), 13–20 (backend wiring) — lands on
-**`design/brand-ui-system`** and descendant wiring branches (re-confirm with `git log`).
+gate). NodeNext ESM — relative imports carry `.js`; tests co-located `*.test.ts` (`TDD-4`).
 
-**Persistence & secrets (since slice 20; secrets revised in slice 32):** there is **one Drizzle-only
+**Persistence & secrets:** there is **one Drizzle-only
 persistence path** — no in-memory adapters, no offline/URL-gated/key-gated fallbacks. The app **requires**
 `DATABASE_URL`, `BETTER_AUTH_SECRET`, `NLP_SERVICE_URL`, and `NLP_SERVICE_TOKEN`; the presentation
 composition root throws at load if any is missing (fail fast). **`DEEPSEEK_API_KEY` is NOT one of them** —
 it moved into the Python service. Tests run against embedded **pglite** (`makePgliteDb()`); there are now
 **two** test-only doubles, `FakeJudge` and `FakeAnalyzer`, for the same reason — both stand in for an
-out-of-process service (one of them paid). Run `npm run db:migrate` once against Neon before boot, and have
+out-of-process service (one of them paid). Run `npm run db:migrate:dev` once before boot, and have
 `docker compose up nlp` running before `npm run dev`.
 
+**Migrations are per-environment.** `drizzle.config.ts` keys `out` off `NODE_ENV`, so generated SQL
+lands in `drizzle/development/` or `drizzle/production/` (the `drizzle/` root no longer holds any).
+`pglite.ts` runs the **development** set, so the suite and the dev DB share one shape. A migration
+generated under the wrong `NODE_ENV` lands in the wrong tree and the other environment silently never
+gets it — always go through the `:dev` / `:prod` scripts, never bare `drizzle-kit`.
+
 ```bash
-npm test               # vitest run (runtime test gate; pglite-backed, capped forks — see vite.config.ts)
-npm run test:watch     # vitest watch
-npm run typecheck      # NodeNext backend gate (src/** minus presentation)
-npm run typecheck:web  # presentation tsconfig
-npm run dev            # the TanStack Start app (needs the 3 env vars)
-npm run db:migrate     # apply drizzle/ migrations to Neon (once, before the DATABASE_URL path)
+npm test                   # vitest run (runtime test gate; pglite-backed, capped forks — see vite.config.ts)
+npm run test:watch         # vitest watch
+npm run typecheck          # NodeNext backend gate (src/** minus presentation)
+npm run typecheck:web      # presentation tsconfig
+npm run lint               # ARCH-1/ARCH-3/DIR-6/DIR-7 as errors — a rule gate, not a formatter
+npm run dev                # the TanStack Start app (needs the 4 env vars + `docker compose up nlp`)
+npm run db:migrate:dev     # apply drizzle/development/ migrations (once, before the DATABASE_URL path)
+npm run db:seed:catalog:dev # load build/out/items.json into the global lexical_items table
 ```
 
-**Implemented slices** (1–20; each byte-preserves earlier use-cases unless noted). Terse — read the
-code + `spec/` IDs for detail:
+**Implemented slices** (1–33; each byte-preserves earlier use-cases unless noted). Terse — read the
+code + `spec/` IDs for detail. Slices 1–19 are one line each; 20–33 are grouped by theme below, because
+what still matters about them is the rationale, not the sequence:
 
 1. **Cued-production review** — grade→rate→schedule→promote→persist (`submitCuedReview`); wink
    lemmatizer + ts-fsrs behind ports. INV-1/3, SM-4/6, RAT-1/8, TIER-5.
@@ -154,9 +149,9 @@ code + `spec/` IDs for detail:
     LOOP-1 step 1, SEED-6.
 11. **React deterministic review** — the TanStack Start app; `resolveReviewTier` is the single source so
     shown-tier == graded-tier. render TIER-1/2/5, LOOP-1.
-12. **Brand + design system** — full mock-driven UI (warm editorial; Fraunces/Inter; honest counter, no
-    streaks). Two skills (`.claude/skills/brand/`, `.../design-system/`). *(Was mock-only; slices 13–20
-    wired it.)*
+12. **Brand + design system** — full mock-driven UI (honest counter, no streaks). Two skills
+    (`.claude/skills/brand/`, `.../design-system/`) are the **durable home** — read them, not this line.
+    *(Was mock-only + warm-editorial; slices 13–20 wired it, slice 34 re-cast it to Instrument.)*
 13. **Wire `/review`** — real server functions drive the whole loop incl. the judged flow;
     `checkFreeProductionRuleLayer` extracted; `ruleCheckFn` instant bounce (NET-2); `presentReviewOutcome`
     DTO. LOOP-1..5, EDIT-7, NET-2/3/5, INV-2.
@@ -171,281 +166,110 @@ code + `spec/` IDs for detail:
     invisible (no gate-outcome change). `verdictMemo` + `verdict_memos` table. MEMO-1..6, DM-8.
 19. **Placement-marks store** — the onboarding TuneStep persists per-word known flags → flagged words
     lazily card at `Recognized`. `placement_marks` table. SEED-2/3/7, SM-11.
-20. **BetterAuth + single Drizzle path** (this slice, `wire/betterauth-identity`). Real email+password
-    auth (STACK-4) + full route guards + per-user settings, AND the collapse to **one Drizzle-only
-    persistence path** (no in-memory adapters, no fallbacks). domain: `settings.ts`
-    (`UserSettings`/`DEFAULT_USER_SETTINGS`), `DAILY_GOAL_MIN/MAX`. application (TDD): `ports/settings.ts`
-    (`SettingsStore`), `readSettings`/`updateSettings` (goal clamp [1,20]); `readDashboardSummary` now
-    reads the goal from the store (CNT-8). infra: **uuid** `user_id` across all app tables (migration
-    `0003`, `ALTER … USING "user_id"::uuid`); `db/authSchema.ts` (user/session/account/verification, uuid
-    ids); `auth/auth.ts` `makeAuth(db, {secret, baseURL})` (drizzle adapter; `generateId: () =>
-    randomUUID()` — the string `"uuid"` form is silently unsupported in better-auth 1.6; the tanstack-start
-    cookie plugin MUST be last); `drizzleSettings.ts` behind `settingsContract`; **deleted** the three
-    in-memory adapters + the dev-judge and migrated every use-case/smoke test to pglite (shared
-    `makeTestStores`/`testIds`; `vitest.setup.ts` frees each pglite WASM heap per test; `vite.config.ts`
-    caps forks + 30s timeout so the herd of migrations fits the process). presentation-server: the
-    composition root **requires** the 3 env vars (fail fast), builds ONE Neon handle shared by every store
-    + `auth`, and `judge = liveJudge()` always; `currentUserId()` is now **async** (session cookie →
-    `user.id`, else a 401 `Response`); new `session.ts` (`getSessionFn`) + `settings.ts`
-    (`readSettingsFn`/`updateSettingsFn`); `await` added at every call site. presentation-UI:
-    `routes/api/auth/$.ts` handler route; `lib/auth-client.ts`; `/signin`+`/signup` call the real
-    `signIn`/`signUp` then `router.invalidate()`; `/settings` wires the goal stepper + identity + sign-out;
-    `app-shell` shows the user's initial; `__root.beforeLoad` resolves the session once and a
-    **`_authenticated` pathless layout** guards the 6 app routes (redirect to `/signin`). cleanup: deleted
-    `mock/learner.ts` (MasteryState → `domain/card.js`). **Covers (wired):** STACK-3/4, CNT-8, app-route
-    guards. **Verified:** both typecheck gates, `npm test` (282, pglite), `npm run build` (no
-    secret/`drizzle-orm`/`neon`/server identifiers in the client bundle; the better-auth *client* is
-    allowed). *(Slice 20's `UserSettings.levelBand` was dead data; slice 22 removed it.)*
 
-21. **DB-backed catalog (serverless)** (`wire/betterauth-identity`). Moved the global lexical catalog off
-    the filesystem so nothing on the serverless request path reads `node:fs` or depends on bundle file-tracing.
-    New GLOBAL (not `user_id`-scoped) `lexical_items` table (`db/schema.ts`, migration `0004`, index
-    `(cefr, zipf_rank)`); `db/seedCatalog.ts` (`seedLexicalItems` transactional replace) + `npm run
-    db:seed:catalog` seeds it from `build/out/items.json` at **deploy** (the only surviving catalog `fs`
-    read). Two adapters behind the existing ports: `DrizzleWordSource` (SQL `WHERE cefr=? ORDER BY zipf_rank
-    LIMIT` — the frontier selector, async, zero ripple) + `DrizzleCatalog.hydrate(db)` (one `SELECT *` at
-    instance load → in-memory Map → **sync** `get`, so NET-2 instant-bounce + prompt render stay local).
-    Shared `catalogContract`/`wordSourceContract` over pglite; `db/lexicalItemMapping.ts` is the single
-    row↔LexicalItem map. Composers now take **injected** `catalog`/`wordSource`; the presentation composition
-    root hydrates both once (top-level `await`) over the ONE Neon handle. **Deleted** `catalog.ts` +
-    `jsonWordSource.ts` (the `fromFile`/`ITEMS_PATH` fs path); `testStores` seeds the catalog into pglite and
-    exposes `catalog`/`wordSource`/`items`. **Covers:** DM-2, SEED-5, STACK-3. **Verified:** both typecheck
-    gates, `npm run build` (client bundle free of `drizzle-orm`/`neon`/server ids), and `npm test` green
-    **except** the 5 smoke files that hardcode `lemma === "abandon"` (absent from the current 100-item
-    catalog — a pre-existing fixture-word mismatch, not this slice; the generic seeding/session/words/
-    placement/onboarding smokes pass over the DB-backed path). *Neon (`@neondatabase/serverless`, HTTP) + the
-    DeepSeek HTTPS judge were already serverless-correct; `db/pglite.ts`'s `import.meta.url` is test-only.*
+**Slices 20–33 — the wiring era.** Numbering stops here: what follows is why the code is shaped this way,
+not a changelog. For a single slice's story, read `git log`.
 
-22. **Onboarding gate + LexTALE placement** (`wire/catalog-migration`). Onboarding produced **no persisted
-    state** — the coarse level was discarded, `startSessionFn` hardcoded `FRONTIER_BAND = "B2"`, and nothing
-    forced a new user through `/onboarding` (a signed-in user could also still load `/signin`). domain: the
-    **published LexTALE instrument** verbatim (`lextale.ts` — 60 items / 40 words / 20 nonwords, Lemhöfer &
-    Broersma 2012 Appendix A; `scoreLexTale` = the averaged-%-correct yes-bias correction, throws on a partial
-    run); `frontierBandFromLexTale` + `isCoarseLevel` in `placement.ts`; `placementProfile.ts`
-    (`PlacementProfile`/`DEFAULT_PLACEMENT_PROFILE`), `DEFAULT_FRONTIER_BAND`; **`levelBand` removed from
-    `UserSettings`** (it was dead data + a second source of truth for the band). application (TDD):
-    `ports/placementProfile.ts` (`PlacementProfileStore`), `readPlacementProfile`/`recordCoarseLevel`/
-    `recordLexTaleResult`/`completeOnboarding` (idempotent — keeps the FIRST instant). `recordLexTaleResult`'s
-    deps are `{ profile }` ONLY, so the type surface makes a SEED-3 violation impossible. infra: GLOBAL-shaped
-    per-user `placement_profile` table (`user_id` PK, `frontier_band`, `lextale_score`, `onboarded_at`;
-    migration `0005` **+ a hand-added backfill** stamping every user who already has a card, else the new guard
-    re-onboards them); `DrizzlePlacementProfile` behind `placementProfileContract`; `settings.level_band`
-    dropped. presentation-server: `placementProfileDeps()`; `SessionView` gains **`onboarded: boolean`**
-    (resolved in `getSessionFn`'s existing handler — one extra query, NO extra round-trip, one consistent
-    snapshot); `seedFirstSessionFn` now takes a **`CoarseLevel`** (not a client-supplied band string) and
-    persists the band; `placementSlateFn` **drops its argument** and reads the persisted band; new
-    `submitLexTaleFn` (posts ANSWERS — scoring is server-side; validator requires exactly 60), 
-    `completeOnboardingFn`, `readPlacementProfileFn`; **`startSessionFn` reads the persisted band** (the fix
-    that makes the learner's level stick). routes: **three layouts, one predicate each** — new `_public.tsx`
-    (signed-in → `/` or `/onboarding`) wrapping `signin`/`signup`; `_authenticated.tsx` re-returns the narrowed
-    session; new `_authenticated/_onboarded.tsx` (`!onboarded` → `/onboarding`) wrapping the 5 app routes;
-    `/onboarding` sits OUTSIDE it with the inverse guard — that nesting, not a `pathname` test, is what makes
-    the redirects loop-free. UI: `components/lextale-test.tsx` (3 practice + 60 items, both buttons `outline`
-    so the layout doesn't bias the yes/no), a `Recommended` badge on the LexTALE card, `frontierBand` hoisted
-    so a retune re-keys the slate, `finish()` → marks (best-effort) → `completeOnboardingFn` (must succeed) →
-    `router.invalidate()` → `/`. **Covers:** SEED-1/2/3/4/5, app-route + public-route guards. **Verified:** both
-    typecheck gates; `npm test` (5 pre-existing `"abandon"`-fixture smoke failures, unchanged); `npm run build`
-    (no server ids in the client bundle). *Two `> [FLAG]`s added to `spec/09`: LexTALE's research-use licensing
-    vs. a commercial product, and the non-partitioning CEFR cutoff table.*
-    *Still deferred: SEED-2's **second** LexTALE output (FSRS cold-start difficulty — `coldStartDifficulty`
-    still keys off the item's own CEFR), SEED-8 per-user FSRS optimization, and the counter's yesterday-delta.
-    (Slice 22 shipped the `/settings` "Retune" button `disabled`; slice 23 wired it.)*
+**Identity + the single persistence path.** Real BetterAuth email+password (STACK-4) with full route
+guards and per-user settings, plus the collapse to **one Drizzle-only** path — the three in-memory
+adapters and the dev judge are deleted, so every test runs on pglite. Non-obvious: better-auth 1.6
+**silently ignores** `generateId: "uuid"` — pass `generateId: () => randomUUID()`; the tanstack-start
+cookie plugin MUST be last in the plugin array; `user_id` is `uuid` across every app table.
+`currentUserId()` is async (session cookie → `user.id`, else a 401 `Response`) and is the ONLY auth-aware
+module. pglite's herd of per-test migrations is why `vite.config.ts` caps forks + sets a 30s timeout and
+`vitest.setup.ts` frees each WASM heap. The catalog then moved off the filesystem into a **global**
+(un-scoped) `lexical_items` table so nothing on the serverless request path touches `node:fs`:
+`DrizzleCatalog.hydrate(db)` does one `SELECT *` at instance load so `get` stays **sync** — NET-2's
+instant bounce and the prompt render must not await — while `DrizzleWordSource` stays live SQL
+(`WHERE cefr=? ORDER BY zipf_rank LIMIT`). `npm run db:seed:catalog:dev` at deploy is the only
+surviving catalog `fs` read.
 
-23. **Re-runnable placement — the `/placement` retune** (`wire/catalog-migration`). Slice 22 made placement a
-    **one-shot** decision: the band was set once during onboarding, `/onboarding` bounces anyone already
-    onboarded, and `/settings`' `Retune` shipped `disabled`. A learner whose words were consistently too hard
-    or easy had no correction path. domain: `coarseLevelForBand` (the inverse of `frontierBandForCoarseLevel`,
-    so the retune form pre-selects the current band; `null` for an unmappable band). application:
-    `recordCoarseLevel` now writes **`{ frontierBand, lextaleScore: null }`** — the scalar is only meaningful
-    as the SOURCE of the current band, so a self-report after an 87.5% run must not render "B1 — LexTALE 87.5%"
-    (a no-op in onboarding, where the coarse level is always recorded before LexTALE can run). presentation-server:
-    **extracted `server/placement.ts`** from `onboarding.ts` — the re-runnable placement surface
-    (`readPlacementProfileFn`, `submitLexTaleFn`, `placementSlateFn`, `recordPlacementMarksFn`) answers to a
-    different actor than the first-session-only trio (`seedFirstSessionFn`, `judgeFirstProductionFn`,
-    `completeOnboardingFn`) that stayed behind (SOLID-1/CMP-2); new **`setCoarseLevelFn`** (POST, `isCoarseLevel`
-    validator) is the **band-only** path — `seedFirstSessionFn` deliberately bundles `recordCoarseLevel` WITH
-    `seedIntroductions`, so reusing it for a retune would seed a fresh batch as a side effect of changing a
-    setting. presentation: `components/coarse-level-picker.tsx` (`COARSE_LEVEL_OPTIONS` + `CoarseLevelPicker`,
-    extracted from onboarding's `LevelStep` — two call sites, one reason to change, PRAG-3); new route
-    `_authenticated/_onboarded/placement.tsx` (`hub | lextale | result`, reusing `LexTaleTest` unchanged and
-    running it chromeless like `/review`); `settings.tsx`'s button becomes `<Button asChild><Link to="/placement">`.
-    Per-word marking is **not** re-offered — marks are additive-only in v1 (no un-mark), so a mistaken tap
-    outside onboarding would be permanent. The `Recommended` badge now appears **only** when
-    `lextaleScore === null`; a repeat visitor sees the retake caveat instead. **Covers:** SEED-2 (i), SEED-4.
-    **No migration** (`placement_profile` already had every column). **Verified:** both typecheck gates;
-    `npm test` (5 pre-existing `"abandon"`-fixture smoke failures, unchanged); `npm run build`; and a real
-    `npm run dev` + Neon drive-through. *A third `> [FLAG]` added to `spec/09`: a LexTALE **retake** violates the
-    instrument's naive-participant assumption and inflates the score — tolerable only because SEED-4 declares
-    placement low-stakes, and the UI says so instead of dressing the number up as a measurement.*
+**Placement.** The published **LexTALE** instrument sits verbatim in `domain/placement/lextale.ts` (60
+items, Lemhöfer & Broersma 2012 App. A; `scoreLexTale` = the averaged-%-correct yes-bias correction,
+throws on a partial run). Scoring is **server-side** — `submitLexTaleFn` posts answers, never a score —
+and `startSessionFn` reads the **persisted** band; it used to hardcode `"B2"`, which is what made a
+learner's level not stick. Guards are a **three-layout chain**: `_public` (signed-in → out) →
+`_authenticated` → `_onboarded` (`!onboarded` → `/onboarding`), with `/onboarding` outside `_onboarded`
+under the inverse guard. The **nesting**, not a `pathname` test, is what makes the redirects loop-free.
+Placement is re-runnable at `/placement`; `setCoarseLevelFn` exists as the band-only path because
+`seedFirstSessionFn` deliberately bundles `recordCoarseLevel` with `seedIntroductions` — reusing it for a
+retune would seed a fresh batch as a side effect of changing a setting. `recordCoarseLevel` writes
+`lextaleScore: null`: the scalar is only meaningful as the SOURCE of the current band, so a later
+self-report must not render "B1 — LexTALE 87.5%". Per-word marking is **not** re-offered outside
+onboarding — marks are additive-only in v1, so a mistaken tap would be permanent.
 
-24. **`/review` as a dictionary entry + green the smoke suite** (`wire/onboarding-placement`). Re-typesets all
-    four review tiers (recognition MCQ, cloze, cued, free) as one **dictionary-entry** artifact so the same word
-    read four ways looks like the same object. application: `resolveReviewPrompt` now carries **`pos:
-    ControlledPos` on every arm** (the entry masthead; not a leak — MCQ distractors are POS-homogeneous by
-    construction, `docs/GENERATION_RULES.md §1`) and **`intendedSense: string | null`** on the free arm (a real
-    Stage-B field, DM-2/DM-4), dropping the unused `cefr` and cued's `selfReferencePrompt`. presentation: four new
-    components — `entry-header.tsx` (`EntryHeader`/`HeadwordBlank`/`EntryDefinition`), `pos-label.tsx`,
-    `blank-input.tsx` (grow-with-text underlined input + `BlankAnswer`), `word-option-list.tsx` (Radix radio MCQ,
-    arrow/1–4 keys); `review.tsx` composes them per tier. tests: the **5 real-catalog smoke tests no longer
-    hardcode `lemma === "abandon"`** — new `smokeFixtureItem()` in `testStores.ts` picks the first fully-populated
-    **verb** and derives its sentences (pass/alt are constructed to embed the bare lemma without being a verbatim
-    copy of `model_sentence`, which RL-3 bounces as degenerate; absent case uses a fixed lemma-free sentence). A
-    catalog regeneration can no longer re-break them. **Covers:** DM-2, DM-4, TIER-1/2/5 render. **Verified:** both
-    typecheck gates; **`npm test` fully green (340)**; `npm run build` (no server ids in the client bundle).
-    *(Corrects the stale note below: `build/out/items.json` holds 100 items, not `[]`; the old 5 `"abandon"`
-    failures were fixture-word drift, now removed at the root.)*
+**Loop polish.** All four review tiers are typeset as one **dictionary entry**; `resolveReviewPrompt`
+carries `pos` on every arm (not a leak — MCQ distractors are POS-homogeneous by construction,
+`docs/GENERATION_RULES.md §1`) and `intendedSense` on the free arm. The day boundary (SM-5b/CNT-2) runs on
+the learner's own clock: pure `utcOffsetMinutesFor(ianaZone, at)` via `Intl` (DST-correct because it is
+computed per-instant; sign matches `judgedPassLedger.localDayKey`), converted at the **composition edge**
+so the read-models keep their tested `utcOffsetMinutes` input, and `updateSettings` rejects a junk zone —
+a bad one would silently corrupt every day-bucket. RAT-5's three signals
+(`retryCount`/`typoFixed`/`latencyMs`) are **persisted but not rated on**: their use is the v2 4-button
+mapping, and retrofitting later would lose historical signal, which is the whole point of the requirement.
+All three are **optional**, so an absent signal round-trips as `undefined` rather than a fabricated
+`0`/`false` (`latencyMs` is absent on a memo hit — no call was made, so there is no round-trip to time;
+`typoFixed` is omitted on MCQ, where tolerance cannot apply).
 
-25. **User-local timezone + dead-mock removal** (`wire/onboarding-placement`). Wires the "separate calendar
-    days" boundary (SM-5b/CNT-2) to the learner's own clock — previously the band was plumbed as
-    `utcOffsetMinutes` but never driven (defaulted to UTC) and the `/settings` timezone "Change" button was a
-    no-op. domain: `timezone.ts` — pure `utcOffsetMinutesFor(ianaZone, at)` (via `Intl.DateTimeFormat`, no I/O,
-    DST-correct because it's computed per-instant) + `isValidTimeZone` (a `try { Intl… }` probe); sign matches
-    `judgedPassLedger.localDayKey` (minutes to ADD to UTC, +east). application: `updateSettings` now rejects a
-    junk timezone (a bad zone would silently corrupt every day-bucket). presentation-server: `usableCounterFn` +
-    `dashboardSummaryFn` read the persisted `settings.timezone`, compute the offset for `now`, and pass
-    `utcOffsetMinutes` (the timezone→offset conversion stays at the composition edge; the application read-models
-    keep their tested `utcOffsetMinutes` input). presentation-UI: `settings.tsx`'s dead "Change" button becomes a
-    real `<select>` of every `Intl.supportedValuesOf("timeZone")` zone (UTC/device/current always present) + a
-    "use this device's time" shortcut. cleanup: **deleted** the design-time `mock/judge.ts` + `mock/catalog.ts`
-    (runtime exports were referenced nowhere live); the two type-only survivors moved to `types/verdict.ts`,
-    renamed off the `Mock*` prefix (`BounceKind`, `Replacement`), consumed by `bounce-callout`/`edited-sentence`/
-    `verdict-panel`. **Covers:** SM-5b, CNT-2. **No migration** (`settings.timezone` already existed).
-    **Verified:** both typecheck gates; `npm test` (346 green); `npm run build` (no server ids in the client bundle).
+**Structure.** `DIR-1..7` in `.claude/rules/09-structure.md` were extracted from this work and are the
+source of truth — read them there. What the rules do not record: the tree move was a pure `git mv` rename
+map with the test baseline captured first, and the three boundary rules were **proven to bite** by
+deliberately violating ARCH-1/ARCH-2/DIR-7 and watching each fail. `infrastructure/db/` needs no runtime
+alias support — its cross-layer imports are all `import type`, erased before drizzle-kit or tsx resolve
+them. ESLint is a **rule gate, not a formatter** (no Prettier, no style rules); tests are exempt from
+`import/no-restricted-paths` because ARCH-1 governs *source* dependencies, and a use-case test composing
+pglite + `FakeJudge` is the documented strategy.
 
-26. **RAT-5 review-log instrumentation** (`wire/onboarding-placement`). Persists the three richer per-review
-    signals RAT-5 mandates "from day one" — even though v1 does not yet **rate** on them (their use is the v2
-    4-button mapping; build persistence only, PRAG-1). Retrofitting later would lose historical signal, which
-    is the whole point of the requirement. domain: `ReviewLog` (`review.ts`) gains three **optional** fields
-    beside `scaffolded` — `retryCount?: number` (rule-layer bounces before this graded attempt, RL-6),
-    `typoFixed?: boolean` (typo-tolerance correction — always absent/false in v1 since cloze tolerance is
-    Deferred, spec/02), `latencyMs?: number` (graded-attempt latency; absent when unmeasured). All optional so
-    an absent signal round-trips as `undefined`, never a fabricated 0/false. infra: three **nullable** columns
-    on `review_logs` (`retry_count`/`typo_fixed`/`latency_ms`, migration `0006`, no backfill); the
-    row↔ReviewLog map omits a field on a NULL read (mirrors `scaffolded`); `cardRepositoryContract` gains two
-    round-trip asserts (present → values; absent → `undefined`). application: `submitFreeProduction` populates
-    `retryCount = priorBounces ?? 0` and times the judge round-trip into `latencyMs` (**undefined on a memo
-    hit** — no call was made, so there is no round-trip to time); `submitDeterministicReview` records
-    `typoFixed: false` on the **typed** tiers (cloze/cued) where tolerance would apply and **omits** it for
-    recognition (MCQ — not applicable). Every populated value is honest — measured or derived, never invented.
-    **Covers:** RAT-5. **Verified:** both typecheck gates; `npm test` (348 green — 2 new contract asserts);
-    `npm run build` (no server ids in the client bundle). `npm run db:migrate` applies `0006` against Neon
-    before the column is written.
+**The Python cut-over.** Four slices, one indivisible change — the pipeline could not move to Python
+without the runtime's NLP moving with it, or Stage C and the grader would validate against different
+engines (the coupling note under `### The Python service` is the full argument). Timing made it free:
+`items.json` was `[]`, so no wink-validated corpus had to be kept bug-compatible. `formsOf` was never a
+separate capability — it just flattens each token's `normal` + `lemma`, which `analyze` already returns,
+so behind ONE remote engine two ports would have meant **two RPCs for one sentence**. Hence
+`ports/lemmatizer.ts` is gone, `SentenceAnalyzer.analyze` is the single NLP port, and `formsOf` moved into
+`domain/review/grading.ts`. The async ripple reached `DeterministicReviewStrategy.grade`
+(`Promise<boolean> | boolean`) — the shared skeleton of recognition/cloze/cued.
+`docs/lexical-item.contract.json` is the DM-2 producer↔consumer field contract, asserted from **both**
+sides of the language boundary; it replaced a TS↔TS assignability check that could no longer span it.
+Two bugs found while porting, worth remembering: `_next_batch_index` counted files instead of taking
+**max+1** (deleting a batch overwrote a survivor), and two judge few-shots were internally inconsistent —
+hence `RUBRIC_VERSION = 2026-07-12`.
 
-27. **Subject grouping below the four layers — the `DIR` rule** (`wire/onboarding-placement`). `ARCH-2` fixed
-    the four layers but said nothing about what goes *inside* them, so every layer root had grown into a flat
-    pile (`domain/` 26 modules, `application/` 30, `infrastructure/` 40+) with `grading.ts` beside `timezone.ts`
-    and `drizzleSettings.ts` beside `tagalogLexicon.ts`. A `CMP-2` failure with no rule naming it. rules: new
-    **`.claude/rules/09-structure.md`** (`DIR-1..6`) — group by **subject, not kind** (`review/`, `mastery/`;
-    never `utils/`/`types/`/`services/`), with infrastructure carved out because there the **vendor seam IS the
-    subject** (`db/`, `judge/`, `nlp/`, `persistence/`); create a folder **on the third file** and nest **one**
-    level (`DIR-2`); **cross-subject modules stay at the layer root** (`DIR-3`); tests/doubles/contracts sit with
-    what they serve (`DIR-4`); **framework-owned paths are exempt** (`DIR-5`); **no `index.ts` barrels** (`DIR-6`
-    — a barrel re-exporting a server module is exactly how a Neon/DeepSeek id reaches the client bundle).
-    tree: `domain/{review,mastery,scheduling,placement}`; `application/{review,session,placement,progress}`;
-    `infrastructure/{persistence,judge,nlp,smoke}`; `presentation/components/review/`. **`application/ports/`
-    stays a by-kind folder** — it is the layer's published abstract surface (`CMP-6`) and `ports/cardRepository`
-    alone has **26 importers across six subjects**, so filing it under one would invent a false owner. `db/` and
-    `auth/` did not move (`drizzle.config.ts` + `db:seed:catalog` name `db/`, and `db/pglite.ts` resolves
-    `drizzle/` by its own depth). The 12 end-to-end smokes have no single impl — their unit under test is
-    `composition.ts`, so they sit one level below it in `smoke/`, the **one sanctioned kind-folder**. Three
-    corrections the rule forced against the plan: `entryState.ts` → `mastery/` (it returns a `MasteryState`;
-    its reason to change is the ladder, not seeding); no `components/shell/` (usage showed `mastery-chip` has
-    6 call sites and `wordmark` 3 subjects → both cross-subject, `DIR-3`); no `components/dashboard/` or
-    `components/placement/` (2 files each, under `DIR-2`'s threshold). **Pure move, zero behavior change** —
-    every import re-based by an exact `git mv` rename map, never a basename guess. **Verified:** both typecheck
-    gates; **`npm test` 348 green at every one of the four commits** (the baseline was captured first, so any
-    delta would have been the refactor's); `npm run build` + a grep of `dist/client` for `drizzle-orm`/`neon`/
-    `pglite`/`DEEPSEEK_API_KEY`/`BETTER_AUTH_SECRET`/`DATABASE_URL` (0 hits); and a real `npm run dev` + Neon
-    drive-through confirming the three-layout guard chain still 307s `/`, `/review`, `/words`, `/settings`,
-    `/onboarding`, `/placement` → `/signin` while `/signin`+`/signup` render 200.
+**The typed-cloze fit-set (`spec/13-cloze-fit-set.md`).** Binary cloze grading was falsely harsh on a valid
+same-sense synonym (*pay* for *owe*), but accepting near-misses naively would teach false equivalence
+(*lend* for *owe*). So the catalog carries a **classified** `cloze_fit_set` (`target |
+same_sense_near_miss | different_sense_fit`) plus a `bounce_gloss`, and the pure `resolveClozeLane`
+(`domain/review/clozeFitSet.ts`) decides: target → same-sense → different-sense → **typo** (restricted
+Damerau–Levenshtein ≤ `CLOZE_TYPO_MAX_DISTANCE`, FIT-9) → wrong; fit-set membership beats typo distance.
+A lane under `CLOZE_SOFT_BOUNCE_CAP` returns a **soft bounce** — no scheduler, no `ReviewLog`, card stays
+due. It is a **third class**, deliberately NOT an INV-2 bounce. `bounce_gloss` ships **only on the bounce
+response**, never pre-answer (`resolveReviewPrompt` is untouched). The client carries `priorSoftBounces`
+so the use-case stays stateless (the RL-6 pattern). `cloze_heal_queue` has **no `user_id`** — it describes
+catalog gaps, not learners — and `onConflictDoNothing` gives it both idempotency and its never-re-queue
+memory. `DrizzleHealQueue` has no shared contract file: the port is write-only with one impl, so its
+guarantees live in the SQL shape. Spec: `spec/13-cloze-fit-set.md` (`FIT-1..11`) + `docs/CLOZE_FIT_RUBRIC.md`.
+*(The lanes have never been driven live — they need a generated catalog with fit sets.)*
 
-28. **`~/*` cross-layer alias + ESLint as a rule gate** (`wire/onboarding-placement`). Slice 27's subject
-    folders pushed files deeper, so cross-layer specifiers started encoding the *importer's* depth
-    (`../../../../domain/constants.js` — 8 of them, plus 38 three-deep). paths: new **`DIR-7`** — cross-layer
-    imports use **`~/*`** (→ `src/*`), within-layer imports **stay relative** (a relative neighbour import is a
-    true statement about cohesion and *should* break if the target moves away). Inside presentation, non-sibling
-    imports use the existing shadcn **`@/*`**. Wired in `tsconfig.json` + `src/presentation/tsconfig.json`
-    `paths` and mirrored by `vite.config.ts` `resolve.alias`; `STACK-1` amended. **`infrastructure/db/` needed no
-    runtime alias support** — its cross-layer imports are all `import type`, erased before drizzle-kit/tsx ever
-    resolve them (checked before committing to the approach). Deep chains: 8×4-deep and 30×3-deep → **zero**;
-    the one remaining 2-deep is `domain/lexicalItem.test.ts` → `build/types.js`. Verified `~/…/schema.js` and
-    `./schema.js` resolve to **one** module instance (a dedup failure would have double-loaded the Drizzle
-    schema). lint: **ESLint 9 flat config** (`eslint.config.js`, `npm run lint` / `lint:fix`) — typescript-eslint
-    + `eslint-plugin-import` + `react-hooks`. Not a formatter (no Prettier, no style rules); it turns
-    `.claude/rules/` prose into **failing gates**: `import/no-restricted-paths` zones enforce **ARCH-1** on
-    *resolved* paths (so `~/*` can't smuggle a violation past it), `no-restricted-imports` bans frameworks/drivers
-    in `domain/` (**ARCH-3**), `index.ts` barrels (**DIR-6**), and relative layer escapes (**DIR-7**);
-    `import/no-cycle` covers **CMP-4**. Tests are exempt from `no-restricted-paths` — **ARCH-1 governs source
-    dependencies**, and a use-case test composing pglite/`FakeJudge` is the documented strategy. The 11 initial
-    errors were all fixed, not silenced: 2 real React findings (`counter-stat`'s `setState`-in-effect → derived
-    `display`; `review.tsx`'s `useMemo(…,[])` shuffle that lied about its deps → an honest lazy `useState`
-    initializer), a dead import, an over-wide `any` in `stageA.ts` (properly generic now), and one **justified**
-    single-line disable for `DrizzleDb`'s open generics. **Verified:** all four gates green (`typecheck`,
-    `typecheck:web`, `lint`, `npm test` 348) + `npm run build` with a clean client bundle; and the three
-    boundary rules were **proven to bite** by deliberately violating ARCH-1/ARCH-2/DIR-7 and watching each fail.
-    *(Not covered by tests: the two React behavior changes — no component test harness exists.)*
+**`docs/AMMENDMENT.md` is a scratch file — NEVER cite it.** Its content is replaced wholesale each time
+something new needs amending; it has already turned over once (typed-cloze fit-set → the Instrument
+design system), which left 28 citations pointing at `§Ax` anchors in a document about an unrelated
+subject. **Rule: when an amendment is adopted, migrate its content into the durable home** — `spec/` for
+behavior, `.claude/skills/` for design, `docs/BUILD.md` for the pipeline — including the *rationale*,
+then cite the stable ID (`FIT-6`, not `§A2`). The reasoning is the part that gets lost: it exists only
+in the scratch file until someone moves it, and the next paste deletes it.
 
-29–32. **The Python cut-over: pipeline + NLP/judge service, and the TS runtime onto it** (`wire/onboarding-placement`).
-    Four slices, one indivisible change — see the coupling note under `### The Python service` above: the
-    pipeline could not move to Python without the runtime's NLP moving with it, or Stage C and the grader
-    would have validated against different engines. **Timing made it free:** `build/out/items.json` was `[]`
-    (the multisense batch-0 reset), so there was no wink-validated corpus to stay bug-compatible with.
-    **29 — the engine.** New `python/` uv project (3.13; ruff / mypy --strict / pytest). `wikain/nlp/tokens.py`
-    (`NlpToken`, field-for-field the TS one) + `engine.py` — ONE cached `spacy.load("en_core_web_sm")`;
-    `analyze` maps `norm_`/`lemma_`/`pos_`/`is_stop`/`not (is_punct or is_space)` onto the four wink `its.*`
-    accessors the codebase actually used. **A real behavior change, taken deliberately:** wink Americanized
-    spelling (`aesthetic`→`esthetic`), which made those lemmas *impossible* to satisfy in Stage C's presence
-    assert — the documented "set `model_sentence: null` + `_flags`" workaround. spaCy does not, so **the
-    gotcha is gone**, and the guidance was deleted rather than ported.
-    **30 — the pipeline.** `wikain/pipeline/{constants,stage_a,stage_b,stage_c,generate,cli}.py`, a faithful
-    port; `build/*.ts` + the 6 npm scripts **deleted**. Every artifact keeps its filename/JSON shape/location,
-    so `seedCatalog.ts` is untouched. The new CSV forced three data changes: `sense_zipf`→`zipf` /
-    `global_zipf_rank`→`zipf_rank` mapped **at the Stage A read boundary** (carried field NAMES unchanged ⇒
-    `LexicalItem`, the `lexical_items` table and `seedCatalog.ts` all unchanged, **no migration**); the
-    `NO_SENSE_FOUND`/`NO_HINT_FOUND` sentinel rows are **quarantined** under a new reason (they would
-    otherwise have been shown to the generator as the sense to author — halt-don't-guess); and the
-    CEFR-collision dedup is now a dead-but-kept integrity guard (0 collisions in this data). Real run:
-    **5,745 rows → 7 quarantined → 5,738 in-scope** (A2 1016 / B1 1421 / B2 1680 / C1 1621). `feed`/`ingest`/
-    `validate`/`combine` had **zero tests** in TS; they have them now (TDD-1). Two bugs fixed in the port:
-    `_next_batch_index` counted files instead of taking **max+1** (deleting a batch overwrote a survivor), and
-    two judge few-shots were internally inconsistent (`nominal` carried a `find` that was not a substring of
-    its own sentence; `meticulous` changed `corrected_sentence` while claiming `replacements: []`) —
-    `RUBRIC_VERSION` bumped to `2026-07-12` accordingly.
-    **31 — the service.** `wikain/service/main.py`: `POST /analyze`, `POST /judge`, `GET /versions`,
-    `GET /healthz`, bearer `NLP_SERVICE_TOKEN`, spaCy warmed in the lifespan. The DeepSeek client
-    (`wikain/judge/`) is a port of `deepSeek{Judge,Rubric,Config}.ts` with `SYSTEM_PROMPT` +
-    `calibration_messages()` + `user_turn()` **byte-identical** (JDG-11 cache prefix), `json_object` (JDG-6),
-    `temperature: 0`, the single backed-off retry (NET-3), and the 429→`rate_limited` / 5xx→`transient` /
-    bad-body→`invalid_response` taxonomy. **The DeepSeek retry lives in Python only** — a second retry layer
-    in TS would double-spend a paid call, so `HttpJudge` retries nothing. `docker compose up nlp` for dev.
-    **32 — the TS cut-over.** `formsOf` was never a separate capability — it just flattens each token's
-    `normal` + `lemma`, which `analyze` already returns; behind ONE remote engine, two ports would have meant
-    **two RPCs for one sentence**. So `ports/lemmatizer.ts` is **deleted**, `SentenceAnalyzer.analyze` is the
-    single NLP port, and `formsOf` moved into the **domain** (`domain/review/grading.ts`, beside
-    `isLemmaMatch`) — which strengthens the "port supplies NLP forms, a pure domain rule decides" convention
-    instead of bending it. The async ripple: `checkFreeProductionRuleLayer` → `async` (and 3 NLP calls → 2,
-    via one `Promise.all`); `DeterministicReviewStrategy.grade` → `Promise<boolean> | boolean` with
-    `submitDeterministicReview` awaiting it (the one genuinely invasive change — it is the shared skeleton of
-    recognition/cloze/cued). infra: `nlp/httpNlp.ts` (bounded-LRU memo of `model_sentence` analyses, so a
-    steady-state rule check is **1 RPC**, not 3 parses; **throws** on a non-ok response — a silently empty
-    token list would report the target absent and fabricate an `Again`), `judge/httpJudge.ts` (503 → the four
-    existing `JudgeUnavailableReason`s; anything else → loud), `nlp/fakeAnalyzer.ts` (the new test double).
-    **Deleted:** `winkLemmatizer.ts`, `deepSeek{Judge,Rubric,Config}.ts`, `wink-nlp` + `wink-eng-lite-web-model`.
-    `JudgePort`/`JudgeVerdict`/`passesGate`/`resolveEdits`/`verdictMemo` are **all unchanged** — the port was
-    already async, so nothing above infrastructure moved. New `docs/lexical-item.contract.json` is the DM-2
-    producer↔consumer field contract, asserted from **both** sides (`domain/lexicalItem.test.ts` +
-    `pipeline/types_test.py`) — it replaced a TS↔TS assignability check that could no longer span the language
-    boundary, and immediately caught that the runtime type never declared `_flags` (modeled as `producerOnly`).
-    **Covers:** the whole of `spec/04` (RL-*), `spec/06` (JDG-*), `spec/08` (NET-*), DM-2. Two `> [FLAG]`s added
-    (`JDG-10`, `NET-7`): the judge is now reached via a **first-party service**, so "from the backend" is two
-    hops, and the DeepSeek key lives in one *fewer* process than the spec assumes. **Verified:** all four TS
-    gates (`typecheck`, `typecheck:web`, `lint`, `npm test` — **329 green**, run against a temporary 7-item
-    catalog since the real one is empty pending generation) + the three Python gates (ruff / mypy --strict /
-    **78 pytest**) + `npm run build` with a client bundle free of `drizzle-orm`/`neon`/`pglite`/
-    `DEEPSEEK_API_KEY`/`NLP_SERVICE_TOKEN`/`BETTER_AUTH_SECRET`; and the live service driven on `uvicorn`
-    (`/healthz` ok, 401 without the bearer, `/versions`, `/analyze` → `abandoned`→`abandon`/VERB, and a
-    deliberately bad DeepSeek key → **fail loud, no fabricated verdict**). *(Unverified: the **Docker image
-    build** — the daemon was not running. Slice 33, the Cloud Run deploy, is not done.)*
+**The Instrument design system (v2.1).** The brand moved from warm-editorial to a **cool field with one
+marigold signal** and three strictly-cast type voices (serif = the language in play, sans = the
+instrument speaking, mono = the instrument measuring — every count, tag, tally, R value). The two skills
+are the source of truth; do not restate values here. Non-obvious, and not recorded elsewhere:
+**IBM Plex Mono has no variable build**, so `styles.css` imports two static weights (400 tags, 500
+numerals) — a third weight needs a third import. `--radius` is a **flat 3-step scale** (tags 3 /
+controls 6 / panels 8), not a `calc()` ramp, because the three shapes are independent decisions.
+`shadcn add` re-introduces `shadow-*` and writes non-alias `src/presentation/...` imports — strip and
+fix both every time (`DIR-7`). `marigold-wash` and `--mastery-new` have no value in the source design
+and are **kept** because they are load-bearing in code; `marigold` is a signal tint, never a text color
+on paper (`marigold-deep` is the on-paper variant), which is why the *Recognized* chip tints from one
+and labels from the other.
 
 **Key design conventions (follow in later slices):**
 - **Cross-layer imports use `~/*`; within-layer stay relative** (`DIR-7`). `npm run lint` enforces it, along
@@ -469,7 +293,7 @@ code + `spec/` IDs for detail:
   follows the pattern: narrow application port → `Drizzle<X>` adapter + a shared `<x>Contract` run over
   pglite → thread through the composition root over the ONE shared Neon handle. Per-user tables are
   `user_id`-scoped; **global content** (`lexical_items`) is the one un-scoped table, seeded at deploy
-  (`db:seed:catalog`). A read-model consumed synchronously on a hot path (`Catalog.get`) may **hydrate
+  (`db:seed:catalog:dev`). A read-model consumed synchronously on a hot path (`Catalog.get`) may **hydrate
   once** per instance (`SELECT *` at load) instead of a per-call round trip; a set-selection read
   (`WordSource`) stays live SQL.
 - **The Python service is the one source of NLP + judge truth.** Anything that parses English or talks to
@@ -483,34 +307,25 @@ code + `spec/` IDs for detail:
 needs `@open-spaced-repetition/binding`); **SEED-2's second LexTALE output** — the scalar driving FSRS
 cold-start difficulty (`coldStartDifficulty` still keys off the item's own CEFR, and the spec gives no
 offset magnitude); the counter's **yesterday-delta** (needs a persisted daily snapshot); an **un-mark**
-path for `placement_marks` (its absence is why `/placement` does not re-offer per-word marking).
-*(BetterAuth (20), the verdict memo (18), the placement-marks store (19), the **LexTALE instrument**
-(SEED-4, slice 22), the `/settings` **"Retune"** entry point (slice 23), and the **user-local timezone**
-(SM-5b/CNT-2, slice 25) are wired — no longer deferred.)*
+path for `placement_marks` (its absence is why `/placement` does not re-offer per-word marking); the
+**offline heal-merge tooling** (slice 33 ships only the runtime write — `heal-feed`/`heal-ingest` pipeline
+commands, a `db:export:healqueue` script, and the heal-merge `fit_set_version` bump are the follow-up);
+**length-scaled typo distance + the Hard-rating mapping** (v1 ships flat DL ≤ 1 → `Good`, spec/13 Deferred).
 
-> **Status (2026-07-12):** backend slices 1–11 on **`master`**; UI slices 12 (design) + 13–26 (wiring) + 27
-> (the `DIR` tree refactor) + 28 (`~/*` + ESLint) + **29–32 (the Python cut-over)** land on
-> **`design/brand-ui-system`** and descendant wiring branches (currently `wire/onboarding-placement`
-> — `git log` to confirm). Since slice 27 every layer is grouped into **subject folders** — paths written in
-> older slice notes above (`src/domain/grading.ts`, `src/infrastructure/drizzleCatalog.ts`, …) are stale; the
-> module names are unchanged, only their folders. **The repo is now two codebases**: the TS app (`src/`) and
-> the Python pipeline + NLP/judge service (`python/`); `build/` holds only generated artifacts (`build/out/`),
-> its TypeScript is gone. **Every surface is wired and guarded**: `/`, `/review`, `/words`,
-> `/onboarding`, `/settings` run on real use-cases behind a real **BetterAuth** session (slice 20), and
-> since slice 22 the guard is a **three-layout chain** (`_public` → `_authenticated` → `_onboarded`) that
-> makes onboarding mandatory and bounces signed-in users off `/signin`/`/signup`; the
-> verdict memo (18) and placement-marks store (19) persist to Neon. The app is **multi-tenant and
-> secrets-required** — `DATABASE_URL` + `BETTER_AUTH_SECRET` + `NLP_SERVICE_URL` + `NLP_SERVICE_TOKEN` are
-> mandatory (**`DEEPSEEK_API_KEY` moved into the Python service**), there are **no in-memory fallbacks**, and
-> tests run against embedded pglite (`FakeJudge` + `FakeAnalyzer` are the two test-only doubles). TS gates =
-> `npm run typecheck` (NodeNext) + `npm run typecheck:web` + `npm run lint` (ARCH-1/ARCH-3/DIR-6/DIR-7 as
-> errors, slice 28) + `npm test`; Python gates = `uv run ruff check .` + `uv run mypy --strict src` +
-> `uv run pytest` (from `python/`); `npm run build` must keep server identifiers out of the client bundle.
-> Test counts move each slice — do not trust any number written here; run them.
-> **`build/out/items.json` is currently `[]`** (the multisense batch-0 reset), so every "real catalog" smoke
-> test fails until generation runs — that is expected, not a regression. Re-confirm state with `git log`, the
-> gates, and `npm run dev` (needs the 4 env vars **and** `docker compose up nlp`) at session start.
-> **Not done: slice 33** — the Cloud Run deploy + Vercel env wiring, and the Docker image build is unverified.
+> **Status (2026-07-17):** slices 33–34 are on **`design/instrument-system`**; 1–11 landed on `master`
+> and 12–32 on `design/brand-ui-system` + descendant wiring branches — confirm with `git log`, not with
+> this line. **Gates.** TS: `npm run typecheck` + `npm run typecheck:web` + `npm run lint` + `npm test`.
+> Python (from `python/`): `uv run ruff check .` + `uv run mypy --strict src` + `uv run pytest`. And
+> `npm run build` must keep server identifiers out of the client bundle. Test counts move every slice —
+> trust no number written anywhere; run them.
+> **`build/out/items.json` is populated again** (the batch-0 reset is over; generation has resumed), so
+> the "real catalog" smoke tests pass. Read `build/out/_done.json` for progress — and note it currently
+> outruns the committed `batch_*.json`, so run `combine` before trusting `items.json` as the whole of it.
+> Paths in the slice notes above predate the `DIR` refactor in places; module names are unchanged, only
+> their folders.
+> **Before boot:** `npm run db:migrate:dev` (through **`0007`**), `npm run db:seed:catalog:dev`, the 4
+> env vars, and `docker compose up nlp`. **Not done:** the Cloud Run deploy + Vercel env wiring; the
+> Docker image build is unverified.
 
 ## Build pipeline architecture (`python/src/wikain/pipeline/`, docs/BUILD.md)
 
@@ -572,14 +387,15 @@ Generation runs **25 items per CEFR level per feed** (4 × 25 = 100), **manually
 chats** (no API). **For current progress, read `build/out/_done.json`** (its length = items completed) — do
 not trust any count here.
 
-**Progress (as of the multisense switch, v4 — 2026-07-11):** the input moved to
-`data/oxford_multisense_catalog.csv` and **the build was reset to batch 0** — the previous 100 hand-authored
-items were keyed to the old single-sense scheme, so `build/out/{batch_*,_done,items,_generated_*}.json` were
-cleared (backed up under the session scratchpad) and generation restarts from the most-frequent senses.
-`items.json` is therefore `[]`, and **every "real catalog" smoke test fails until generation runs** — the
-tests themselves are catalog-content-*agnostic* (slice 24: `smokeFixtureItem()` picks any fully-populated
-verb), they just need a non-empty catalog. Re-run the manual loop below, then `uv run wikain-pipeline
-combine` to rebuild `items.json`.
+**Progress:** the input moved to `data/oxford_multisense_catalog.csv` and **the build was reset to batch
+0** (2026-07-11) — the previous 100 hand-authored items were keyed to the old single-sense scheme, so
+`build/out/{batch_*,_done,items,_generated_*}.json` were cleared (backed up under the session scratchpad)
+and generation restarted from the most-frequent senses. **That reset is over: generation has resumed and
+`items.json` is populated**, so the "real catalog" smoke tests pass again (they are
+catalog-content-*agnostic* — slice 24's `smokeFixtureItem()` picks any fully-populated verb; they only
+need a non-empty catalog). Read `_done.json` for the live count, and run `uv run wikain-pipeline combine`
+after each ingest round — `_done.json` currently outruns the committed `batch_*.json`, so `items.json` is
+a snapshot of what was combined, not of everything marked done.
 
 **How generation works (v3 — manual, no API; v5 — now Python):** `generate` (`pipeline/generate.py`) reads
 each `_pending_batch_<cefr>.json` and writes a markdown prompt `_prompt_<cefr>.md` whose content is
@@ -633,4 +449,4 @@ workaround forward, and do not expect those `_flags` to reappear.
 
 **Flag visibility:** `ingest` routes only Stage C `flags` (e.g. shared-stem) to `_review.json`. An
 item's own `_flags` live **inside the committed `batch_*.json`**, not `_review.json` — grep the batch files
-for `_flags` to find them. After the batch-0 reset `_review.json` is `[]`.
+for `_flags` to find them. `_review.json` is non-empty again — read it, don't assume a count.

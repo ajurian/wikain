@@ -32,13 +32,13 @@ describe("session start → queue → loop (smoke: real catalog + ts-fsrs)", () 
   });
 
   it("LOOP-1: every queued word is reviewable end-to-end via runReviewPass", async () => {
-    const { cards, marks, memo, catalog, wordSource, analyzer } = await makeTestStores();
+    const { cards, marks, memo, catalog, wordSource, analyzer, healQueue } = await makeTestStores();
     const sessionDeps = composeSession(cards, marks, catalog, wordSource);
     const { queue } = await startSession({ userId: USER_A, frontierBand: BAND, now }, sessionDeps);
 
     // Review pass shares the SAME repository the session seeded into.
     const judge = new FakeJudge();
-    const reviewDeps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer);
+    const reviewDeps: RunReviewPassDeps = composeReviewPass(judge, cards, memo, DEV_JUDGE_VERSIONS, catalog, analyzer, healQueue);
 
     for (const senseId of queue) {
       const word = sessionDeps.catalog.get(senseId)!.word;

@@ -1,46 +1,56 @@
 @import "tailwindcss";
-@import "@fontsource-variable/fraunces";
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/source-serif-4";
+@import "@fontsource-variable/ibm-plex-sans";
+/* Mono has no variable build — pull only the two weights the type scale uses (400 tags, 500 numerals). */
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Wikain brand tokens (warm editorial) — see .claude/skills/brand + design-system.
+ * Wikain brand tokens (instrument) — see .claude/skills/brand + design-system.
  * shadcn variables are kept and remapped so components/ui/* keep working (STACK-5).
  */
 :root {
-  --radius: 0.75rem;
+  /*
+   * Radius is a flat 3-step scale, not a calc() ramp off one base: the three shapes are
+   * independent design decisions (tags 3 / controls 6 / panels 8), not offsets of each other.
+   */
+  --radius: 8px;
 
-  /* paper & ink */
-  --paper: oklch(0.977 0.008 84);
-  --paper-raised: oklch(0.993 0.004 84);
-  --paper-sunken: oklch(0.955 0.01 84);
-  --ink: oklch(0.27 0.02 55);
-  --ink-soft: oklch(0.45 0.015 55);
-  --ink-faint: oklch(0.58 0.012 55);
-  --line: oklch(0.9 0.01 84);
+  /* field & ink — cool, near-neutral */
+  --paper: oklch(0.982 0.003 250);
+  --paper-raised: oklch(0.996 0.001 250);
+  --paper-sunken: oklch(0.957 0.005 250);
+  --ink: oklch(0.24 0.02 265);
+  --ink-soft: oklch(0.44 0.016 262);
+  --ink-faint: oklch(0.58 0.012 260);
+  --line: oklch(0.9 0.007 255);
+  --line-strong: oklch(0.8 0.007 255);
 
-  /* accents */
-  --amber: oklch(0.75 0.14 75);
-  --amber-deep: oklch(0.62 0.13 70);
-  --amber-wash: oklch(0.95 0.035 85);
-  --moss: oklch(0.58 0.1 145);
-  --moss-wash: oklch(0.95 0.03 145);
-  --terracotta: oklch(0.55 0.16 30);
-  --terracotta-wash: oklch(0.95 0.025 30);
+  /* signals — marigold leads, moss & terracotta judge */
+  --marigold: oklch(0.7 0.15 66);
+  --marigold-deep: oklch(0.56 0.13 64);
+  /* No wash is specified for marigold; kept (in live use) and re-hued to match the new signal. */
+  --marigold-wash: oklch(0.951 0.035 70);
+  --moss: oklch(0.57 0.1 150);
+  --moss-wash: oklch(0.946 0.03 150);
+  --terracotta: oklch(0.55 0.15 32);
+  --terra-wash: oklch(0.946 0.025 32);
+  --fluent-blue: oklch(0.44 0.08 210);
 
-  /* edit-reason colors (EDIT-7 / CNT-7) */
+  /* edit-reason colors (EDIT-7 / CNT-7 · priority sense > grammar > collocation > register) */
   --reason-sense: var(--terracotta);
   --reason-grammar: oklch(0.6 0.14 45);
-  --reason-collocation: var(--amber-deep);
+  --reason-collocation: var(--marigold-deep);
   --reason-register: oklch(0.55 0.06 320);
 
-  /* mastery ladder (SM-1) */
+  /* mastery ladder (SM-1) — tint deepens with growth; fluent is the only solid */
   --mastery-new: var(--ink-faint);
-  --mastery-seen: oklch(0.68 0.08 80);
-  --mastery-recognized: var(--amber-deep);
+  --mastery-seen: oklch(0.68 0.08 85);
+  --mastery-recognized: var(--marigold);
   --mastery-productive: var(--moss);
-  --mastery-fluent: oklch(0.45 0.08 195);
+  --mastery-fluent: var(--fluent-blue);
 
   /* shadcn remap */
   --background: var(--paper);
@@ -62,12 +72,15 @@
   --success: var(--moss);
   --border: var(--line);
   --input: var(--line);
-  --ring: var(--amber-deep);
+  --ring: var(--marigold-deep);
 }
 
 @theme inline {
-  --font-sans: "Inter Variable", system-ui, -apple-system, sans-serif;
-  --font-serif: "Fraunces Variable", Georgia, serif;
+  /* P1 — three voices, strictly cast: serif = the language in play, sans = the instrument
+   * speaking, mono = the instrument measuring (every count, tag, tally, R value). */
+  --font-sans: "IBM Plex Sans Variable", system-ui, -apple-system, sans-serif;
+  --font-serif: "Source Serif 4 Variable", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", monospace;
 
   --color-paper: var(--paper);
   --color-paper-raised: var(--paper-raised);
@@ -76,13 +89,15 @@
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
   --color-line: var(--line);
-  --color-amber: var(--amber);
-  --color-amber-deep: var(--amber-deep);
-  --color-amber-wash: var(--amber-wash);
+  --color-line-strong: var(--line-strong);
+  --color-marigold: var(--marigold);
+  --color-marigold-deep: var(--marigold-deep);
+  --color-marigold-wash: var(--marigold-wash);
   --color-moss: var(--moss);
   --color-moss-wash: var(--moss-wash);
   --color-terracotta: var(--terracotta);
-  --color-terracotta-wash: var(--terracotta-wash);
+  --color-terra-wash: var(--terra-wash);
+  --color-fluent-blue: var(--fluent-blue);
 
   --color-reason-sense: var(--reason-sense);
   --color-reason-grammar: var(--reason-grammar);
@@ -115,10 +130,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Crisp edges — nothing is a pill; chips read as printed tags. */
+  --radius-sm: 3px; /* chips & tags */
+  --radius-md: 6px; /* buttons & inputs */
+  --radius-lg: var(--radius); /* panels */
+  --radius-xl: var(--radius); /* panels — Card uses rounded-xl */
 }
 
 @layer base {

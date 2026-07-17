@@ -4,7 +4,8 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center justify-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+  // Tags on a form, not pills (design-system §03): 3px corners, never rounded-full.
+  "inline-flex w-fit shrink-0 items-center justify-center gap-1 rounded-sm border px-2 py-0.5 font-mono text-[10.5px] tracking-wide whitespace-nowrap",
   {
     variants: {
       variant: {

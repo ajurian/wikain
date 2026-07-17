@@ -28,6 +28,8 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+
+import { DURATION, EASE } from "@/lib/motion";
 import { ArrowRight, CircleCheck, CloudOff, Loader2 } from "lucide-react";
 
 import {
@@ -54,6 +56,7 @@ import { CoarseLevelPicker } from "@/components/coarse-level-picker";
 import { LexTaleTest } from "@/components/lextale-test";
 import { Wordmark } from "@/components/wordmark";
 import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -103,7 +106,7 @@ function Onboarding() {
               className={cn(
                 "size-1.5 rounded-full",
                 STEPS.indexOf(s) <= STEPS.indexOf(step)
-                  ? "bg-amber"
+                  ? "bg-marigold"
                   : "bg-paper-sunken",
               )}
             />
@@ -118,7 +121,7 @@ function Onboarding() {
             initial={reduced ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: DURATION.base, ease: EASE }}
           >
             {step === "welcome" ? (
               <Welcome onNext={() => setStep("level")} />
@@ -178,8 +181,8 @@ function Welcome({ onNext }: { onNext: () => void }) {
   return (
     <div className="space-y-6">
       <h1 className="font-serif text-3xl leading-snug font-semibold text-ink">
-        Grow the English you can actually{" "}
-        <em className="text-amber-deep">use</em> — one written sentence at a
+        {/* The emphasis is the italic, not a color: marigold never colors running text. */}
+        Grow the English you can actually <em>use</em> — one written sentence at a
         time.
       </h1>
       <p className="text-sm leading-relaxed text-ink-soft">
@@ -191,13 +194,13 @@ function Welcome({ onNext }: { onNext: () => void }) {
       </Button>
       <p className="text-center text-sm text-ink-faint">
         Not you?{" "}
-        <button
-          type="button"
+        <Button
+          variant="link"
           onClick={onSignOut}
-          className="font-medium text-ink underline-offset-4 hover:underline"
+          className="h-auto p-0 align-baseline text-sm font-medium text-ink"
         >
           Sign out
-        </button>
+        </Button>
       </p>
     </div>
   );
@@ -208,7 +211,7 @@ function LevelStep({ onNext }: { onNext: (level: CoarseLevel) => void }) {
   const [band, setBand] = useState<CoarseLevel | null>(null);
   return (
     <div className="space-y-6">
-      <h2 className="font-serif text-2xl font-semibold text-ink">
+      <h2 className="text-xl font-semibold text-ink">
         How does your English writing feel at work?
       </h2>
       <CoarseLevelPicker value={band} onChange={setBand} />
@@ -259,7 +262,7 @@ function SeedsStep({
 
   return (
     <div className="space-y-6">
-      <h2 className="font-serif text-2xl font-semibold text-ink">
+      <h2 className="text-xl font-semibold text-ink">
         Two words to start.
       </h2>
       <p className="text-sm leading-relaxed text-ink-soft">
@@ -271,10 +274,10 @@ function SeedsStep({
             key={item.senseId}
             className="rounded-xl border border-line bg-paper-raised p-5"
           >
-            <p className="font-serif text-2xl font-semibold text-ink">
+            <p className="text-xl font-semibold text-ink">
               {item.lemma}
             </p>
-            <p className="mt-0.5 text-xs tracking-wide text-ink-faint uppercase">
+            <p className="mt-0.5 font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
               {item.pos}
               {item.cefr ? ` · ${item.cefr}` : ""}
             </p>
@@ -383,14 +386,14 @@ function FirstWinStep({
 
   return (
     <div className="space-y-6">
-      <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+      <p className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
         your first sentence
       </p>
       <div>
         <h2 className="font-serif text-4xl font-semibold text-ink">
           {word.lemma}
         </h2>
-        <p className="mt-1 text-xs tracking-wide text-ink-faint uppercase">
+        <p className="mt-1 font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
           {word.pos}
           {word.cefr ? ` · ${word.cefr}` : ""}
         </p>
@@ -518,14 +521,6 @@ function TuneStep({
       setFinishError("Couldn’t finish setting up — please try again."),
   });
 
-  const toggle = (senseId: string) =>
-    setKnown((prev) => {
-      const next = new Set(prev);
-      if (next.has(senseId)) next.delete(senseId);
-      else next.add(senseId);
-      return next;
-    });
-
   if (view === "lextale") {
     return (
       <LexTaleTest
@@ -540,7 +535,7 @@ function TuneStep({
     return (
       <div className="space-y-6">
         <CircleCheck className="size-10 text-moss" strokeWidth={1.5} />
-        <h2 className="font-serif text-2xl font-semibold text-ink">
+        <h2 className="text-xl font-semibold text-ink">
           You scored{" "}
           <span className="tabular-nums">{Math.round(result.score)}%</span> —
           around {result.frontierBand}.
@@ -559,7 +554,7 @@ function TuneStep({
 
   return (
     <div className="space-y-6">
-      <h2 className="font-serif text-2xl font-semibold text-ink">
+      <h2 className="text-xl font-semibold text-ink">
         Tune your level — optional.
       </h2>
 
@@ -610,23 +605,30 @@ function TuneStep({
             No words to mark right now — skip ahead.
           </p>
         ) : (
-          <div className="mt-3 flex flex-wrap gap-2">
+          // A multi-select toggle group: marking words known is a set, and the primitive is what
+          // makes each chip announce its pressed state (a plain <button> announced nothing).
+          // The chips stay serif — these are the learner's language, not the instrument's labels.
+          <ToggleGroup
+            type="multiple"
+            value={[...known]}
+            onValueChange={(ids) => setKnown(new Set(ids))}
+            variant="outline"
+            // spacing > 0 keeps the items as separate tags; the default (0) joins them into a
+            // segmented control, which would read as one control rather than a set of words.
+            spacing={2}
+            className="mt-3 w-full flex-wrap"
+            aria-label="Words you already know"
+          >
             {slate.data.map((w) => (
-              <button
+              <ToggleGroupItem
                 key={w.senseId}
-                type="button"
-                onClick={() => toggle(w.senseId)}
-                className={cn(
-                  "rounded-full border px-3 py-1.5 font-serif text-base transition-colors duration-150",
-                  known.has(w.senseId)
-                    ? "border-amber-deep bg-amber-wash text-ink"
-                    : "border-line bg-paper text-ink-soft hover:border-ink-faint",
-                )}
+                value={w.senseId}
+                className="rounded-md px-3 py-1.5 font-serif text-base data-[state=on]:border-marigold-deep data-[state=on]:bg-marigold-wash data-[state=on]:text-ink"
               >
                 {w.lemma}
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
         )}
       </div>
 
