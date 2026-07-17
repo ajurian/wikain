@@ -74,5 +74,6 @@ thing they are reading before they read it.
   (EDIT-7).
 - **Use the shadcn primitive, never a styled `div`/`button`.** A hand-rolled control is a bug: the
   native `<select>` this system used to carry rendered its panel in OS chrome that ignored every
-  token. Two documented exceptions exist (`blank-input.tsx`, `word-option-list.tsx`) — both carry a
-  header comment saying why; don't "fix" them, and don't add a third without one.
+  token. Three documented exceptions exist (`blank-input.tsx`, `word-option-list.tsx`,
+  `edited-sentence.tsx`) — each carries a header comment saying why; don't "fix" them, and don't add a
+  fourth without one.

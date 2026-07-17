@@ -62,6 +62,15 @@ export function BlankInput({
         {...props}
         value={value}
         type="text"
+        /*
+         * `size={1}` is what makes the mirror above actually load-bearing. An input defaults to
+         * `size=20`, and during grid intrinsic sizing a percentage width (`w-full`) resolves as `auto`
+         * — so the column was sized by the input's ~20-character intrinsic width, not the mirror, and
+         * the blank rendered full width (clamped by `max-w-full`) whatever the learner had typed.
+         * At `size=1` the input asks for ~nothing and the mirror sizes the cell; `min-w-*` sets the
+         * empty-state floor.
+         */
+        size={1}
         autoComplete="off"
         autoCapitalize="off"
         autoCorrect="off"

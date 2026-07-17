@@ -69,8 +69,10 @@ class DeepSeekJudge:
         """JDG-6/JDG-10/JDG-11: JSON mode over the cacheable rubric prefix + few-shots + user turn."""
         return {
             "model": self._config.model,
-            "response_format": {"type": "json_object"},  # JDG-6: JSON mode, not GBNF
-            "temperature": 0,  # JDG-10: the gate must be stable
+            # JDG-6: JSON mode, not GBNF
+            "response_format": {"type": "json_object"},
+            "temperature": 0.15,  # JDG-10: the gate must be stable
+            "thinking": {"type": "enabled"},
             "messages": [
                 # JDG-11: byte-identical every call → prompt-cache hit on the whole prefix.
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -100,15 +102,19 @@ class DeepSeekJudge:
                 timeout=self._config.timeout_s,
             )
         except httpx.TimeoutException as err:
-            raise JudgeUnavailableError("transient", "judge request timed out") from err  # NET-3
+            raise JudgeUnavailableError(
+                "transient", "judge request timed out") from err  # NET-3
         except httpx.HTTPError as err:
-            raise JudgeUnavailableError("offline", f"judge request failed ({err})") from err  # NET-5
+            raise JudgeUnavailableError(
+                "offline", f"judge request failed ({err})") from err  # NET-5
 
         status = response.status_code
         if status == 429:
-            raise JudgeUnavailableError("rate_limited", "judge returned 429")  # NET-4
+            raise JudgeUnavailableError(
+                "rate_limited", "judge returned 429")  # NET-4
         if status >= 500:
-            raise JudgeUnavailableError("transient", f"judge returned {status}")  # NET-3
+            raise JudgeUnavailableError(
+                "transient", f"judge returned {status}")  # NET-3
         if not 200 <= status < 300:
             # Other 4xx (400/401/403/404) is a config/auth defect. A retry cannot fix a bad key, so
             # fail loud rather than swallow it as a soft "try again" the learner would keep hitting.
@@ -130,14 +136,18 @@ def _extract_content(payload: Any) -> Any:
     """Unwrap the OpenAI-compatible chat-completions envelope and parse the JSON the model returned."""
     choices = payload.get("choices") if isinstance(payload, dict) else None
     if not isinstance(choices, list) or not choices:
-        raise JudgeUnavailableError("invalid_response", "no message content in judge response")
+        raise JudgeUnavailableError(
+            "invalid_response", "no message content in judge response")
 
-    message = choices[0].get("message") if isinstance(choices[0], dict) else None
+    message = choices[0].get("message") if isinstance(
+        choices[0], dict) else None
     content = message.get("content") if isinstance(message, dict) else None
     if not isinstance(content, str):
-        raise JudgeUnavailableError("invalid_response", "no message content in judge response")
+        raise JudgeUnavailableError(
+            "invalid_response", "no message content in judge response")
 
     try:
         return json.loads(content)
     except ValueError as err:
-        raise JudgeUnavailableError("invalid_response", "verdict content was not valid JSON") from err
+        raise JudgeUnavailableError(
+            "invalid_response", "verdict content was not valid JSON") from err

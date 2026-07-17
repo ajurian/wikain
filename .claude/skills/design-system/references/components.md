@@ -42,6 +42,12 @@ composites live in `src/presentation/components/`. Rules per component:
   productive`, maintenance adds `/ maintenance`. `font-mono text-[10.5px] uppercase tracking-wide
   text-ink-faint`. *Currently rendered inline via `EntryHeader` + `pos-label`, not a standalone
   component.*
+- **ClozeSentence** `{clozedSentence}` — the TIER-5 cloze sentence, splitting on its single `_` around
+  the BlankInput. It is a native `<label>` wrapping the blank, so clicking anywhere in the sentence
+  focuses it with no JS and no `htmlFor` (an input inside its label is associated implicitly) — the
+  whole sentence really is the target, so the affordance is honest. Tints to a paper-sunken well on
+  hover/focus-within, `cursor-text`. The blank keeps its own `aria-label`, which wins over the label
+  text, so the field is not announced by reading the entire sentence back.
 - **BounceCallout** `{kind}` — neutral inline callout for RL-2/3/4 bounces: paper-sunken bg,
   ink-soft text, no icon color drama (info icon, ink-faint). Appears instantly (no spinner ever
   precedes it). Copy from brand voice.md.
@@ -85,9 +91,9 @@ feature slice (PRAG-1). Don't assume they exist:
 lucide-react, 1.5px stroke, `size-4`/`size-5`, ink-soft default. Icons support text, never replace
 it on outcome states.
 
-## The two sanctioned native-primitive exceptions
+## The three sanctioned native-primitive exceptions
 
-Both carry a header comment explaining themselves. Don't "fix" them, and don't add a third without
+Each carries a header comment explaining itself. Don't "fix" them, and don't add a fourth without
 the same justification:
 
 - **`blank-input.tsx`** — a native `<input>` sharing a CSS-grid cell with an invisible mirror span,
@@ -95,3 +101,7 @@ the same justification:
 - **`word-option-list.tsx`** — raw Radix `RadioGroup` rather than `ui/radio-group.tsx`, because
   `RadioGroupItem` hard-codes a `size-4 rounded-full` dot and the design needs the whole row as the
   target with the numeral as the affordance.
+- **`edited-sentence.tsx`** — each edit is a `span[role=button]`, because a `<button>` is
+  `inline-block` and cannot fragment across line boxes: a multi-word edit became one atomic centered
+  block (UA `text-align: center`, which the paragraph does not override) inside a left-aligned
+  paragraph. EDIT-7 renders on the learner's own sentence, so the edit must be a true inline box.

@@ -27,6 +27,7 @@ import type { WordSource } from "~/application/ports/wordSource.js";
 import type { MemoVersions, VerdictMemoPort } from "~/application/ports/verdictMemo.js";
 import type { SentenceAnalyzer } from "~/application/ports/sentenceAnalyzer.js";
 import type { HealQueuePort } from "~/application/ports/healQueue.js";
+import type { ReviewTier } from "~/domain/review/review.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { TAGALOG_LEXICON } from "./nlp/tagalogLexicon.js";
 
@@ -97,10 +98,12 @@ export function composeReviewPass(
   catalog: Catalog,
   analyzer: SentenceAnalyzer,
   healQueue: HealQueuePort,
+  tierOverride?: ReviewTier,
 ): RunReviewPassDeps {
   return {
     ...composeFreeProduction(judge, cards, memo, judgeVersions, catalog, analyzer),
     healQueue,
+    ...(tierOverride ? { tierOverride } : {}),
   };
 }
 
@@ -162,8 +165,9 @@ export function composeRecordPlacementMarks(
 export function composeResolvePrompt(
   cards: CardRepository,
   catalog: Catalog,
+  tierOverride?: ReviewTier,
 ): ResolveReviewPromptDeps {
-  return { catalog, cards };
+  return { catalog, cards, ...(tierOverride ? { tierOverride } : {}) };
 }
 
 /**

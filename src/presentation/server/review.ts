@@ -11,7 +11,12 @@ import type { RuleBounceReason } from "~/domain/review/ruleLayer.js";
 import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 import { readPlacementProfile } from "~/application/placement/readPlacementProfile.js";
 import { currentUserId } from "./currentUser.js";
-import { placementProfileDeps, promptDeps, reviewDeps, sessionDeps } from "./composition.js";
+import {
+  placementProfileDeps,
+  promptDeps,
+  reviewDeps,
+  sessionDeps,
+} from "./composition.js";
 
 /**
  * Begin a session for the current user: seed paced introductions and return the ordered queue of
@@ -22,12 +27,20 @@ import { placementProfileDeps, promptDeps, reviewDeps, sessionDeps } from "./com
  * silently discarded the level every learner had just chosen. An un-placed user still reads
  * `DEFAULT_FRONTIER_BAND` from the profile store's defaults, so the old behavior survives as the fallback.
  */
-export const startSessionFn = createServerFn({ method: "POST" }).handler(async () => {
-  const userId = await currentUserId();
-  const { frontierBand } = await readPlacementProfile({ userId }, placementProfileDeps());
-  const { queue } = await startSession({ userId, frontierBand }, sessionDeps());
-  return { queue };
-});
+export const startSessionFn = createServerFn({ method: "POST" }).handler(
+  async () => {
+    const userId = await currentUserId();
+    const { frontierBand } = await readPlacementProfile(
+      { userId },
+      placementProfileDeps(),
+    );
+    const { queue } = await startSession(
+      { userId, frontierBand },
+      sessionDeps(),
+    );
+    return { queue };
+  },
+);
 
 /** Resolve the render-time prompt for one queued word (the tier + the fields the UI shows). */
 export const resolvePromptFn = createServerFn({ method: "GET" })
@@ -38,7 +51,10 @@ export const resolvePromptFn = createServerFn({ method: "GET" })
     return senseId;
   })
   .handler(async ({ data }) =>
-    resolveReviewPrompt({ userId: await currentUserId(), senseId: data }, promptDeps()),
+    resolveReviewPrompt(
+      { userId: await currentUserId(), senseId: data },
+      promptDeps(),
+    ),
   );
 
 export interface RuleCheckInput {
@@ -80,7 +96,11 @@ export const ruleCheckFn = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<RuleCheckResult> => {
     const deps = reviewDeps();
     const check = await checkFreeProductionRuleLayer(
-      { senseId: data.senseId, response: data.response, priorBounces: data.priorBounces },
+      {
+        senseId: data.senseId,
+        response: data.response,
+        priorBounces: data.priorBounces,
+      },
       deps,
     );
     if (check.ok) return { ok: true };
@@ -110,7 +130,8 @@ const SOFT_BOUNCE_LANES: readonly ClozeSoftBounceLane[] = [
 
 function isSoftBounceLanes(v: unknown): v is ClozeSoftBounceLane[] {
   return (
-    Array.isArray(v) && v.every((lane) => SOFT_BOUNCE_LANES.includes(lane as ClozeSoftBounceLane))
+    Array.isArray(v) &&
+    v.every((lane) => SOFT_BOUNCE_LANES.includes(lane as ClozeSoftBounceLane))
   );
 }
 
@@ -123,13 +144,16 @@ export const submitReviewFn = createServerFn({ method: "POST" })
   .validator((input: unknown): SubmitReviewInput => {
     const o = input as Partial<SubmitReviewInput> | null;
     if (!o || typeof o.senseId !== "string" || typeof o.response !== "string") {
-      throw new Error("submitReviewFn: { senseId, response } (strings) required");
+      throw new Error(
+        "submitReviewFn: { senseId, response } (strings) required",
+      );
     }
     return {
       senseId: o.senseId,
       response: o.response,
       scaffolded: o.scaffolded === true,
-      priorSoftBounces: typeof o.priorSoftBounces === "number" ? o.priorSoftBounces : 0,
+      priorSoftBounces:
+        typeof o.priorSoftBounces === "number" ? o.priorSoftBounces : 0,
       priorSoftBounceLanes: isSoftBounceLanes(o.priorSoftBounceLanes)
         ? o.priorSoftBounceLanes
         : [],
@@ -138,7 +162,8 @@ export const submitReviewFn = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<ReviewOutcomeView> => {
     const deps = reviewDeps();
     const item = deps.catalog.get(data.senseId);
-    if (item === undefined) throw new Error(`submitReviewFn: unknown sense_id ${data.senseId}`);
+    if (item === undefined)
+      throw new Error(`submitReviewFn: unknown sense_id ${data.senseId}`);
     const result = await runReviewPass(
       {
         userId: await currentUserId(),

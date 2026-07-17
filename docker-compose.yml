@@ -27,6 +27,12 @@ services:
       - .env.development
     ports:
       - "8000:8000"
+    command: uvicorn wikain.service.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/src
+    develop:
+      watch:
+        - action: sync
+          path: ./python/src
+          target: /app/src
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/healthz')"]
       interval: 10s

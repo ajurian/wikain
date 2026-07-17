@@ -46,6 +46,7 @@ import { BounceCallout } from "@/components/review/bounce-callout";
 import { SoftBounceCallout } from "@/components/review/soft-bounce-callout";
 import { BlankAnswer, BlankInput } from "@/components/review/blank-input";
 import { CheckingIndicator } from "@/components/review/checking-indicator";
+import { ClozeSentence } from "@/components/review/cloze-sentence";
 import {
   EntryDefinition,
   EntryHeader,
@@ -118,9 +119,12 @@ function ReviewSession() {
   });
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-4 pb-8 relative">
-      {/* thin session chrome: close + progress only (focus mode) */}
-      <div className="mb-8 flex items-center gap-4">
+    <div className="relative mx-auto w-full max-w-md px-4">
+      {/*
+       * The chrome is taken OUT of flow so the card centers against the viewport rather than against
+       * the space left under the progress bar — in flow, the bar's height pushed the card ~50px low.
+       */}
+      <div className="absolute inset-x-4 top-4 flex items-center gap-4">
         <Link
           to="/"
           aria-label="End session"
@@ -139,7 +143,9 @@ function ReviewSession() {
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center">
+      {/* `py-20` clears the absolute chrome and stays symmetric — equal top/bottom padding is what
+          keeps the card centered once a tall card overflows and the page scrolls. */}
+      <div className="flex min-h-dvh flex-col justify-center py-20">
         {session.isPending ? (
           <CenteredSpinner label="Preparing your session…" />
         ) : session.isError ? (
@@ -481,10 +487,6 @@ function TypedCard({
   const move = result ? moveOf(result) : undefined;
   const bodyId = `body-${prompt.senseId}`;
 
-  /* `clozed_sentence` carries exactly one `_` (docs/BUILD.md §7.1) — the blank is where the input goes. */
-  const clozeParts =
-    prompt.tier === "cloze" ? prompt.clozedSentence.split("_") : null;
-
   /* The cued input is described by the gloss beside it; the cloze input SITS INSIDE its sentence, so an
    * `aria-describedby` back at that sentence would point a node at its own ancestor. */
   const answerBlank = (variant: "headword" | "inline", label: string) =>
@@ -550,13 +552,10 @@ function TypedCard({
           {headword}
         </EntryHeader>
 
-        {/* `leading-relaxed` is restated: tailwind-merge drops it when `text-xl` overrides `text-lg`. */}
         {prompt.tier === "cloze" ? (
-          <EntryDefinition id={bodyId} className="text-xl leading-relaxed">
-            {clozeParts?.[0]}
+          <ClozeSentence clozedSentence={prompt.clozedSentence}>
             {answerBlank("inline", "The missing word")}
-            {clozeParts?.[1]}
-          </EntryDefinition>
+          </ClozeSentence>
         ) : (
           <EntryDefinition id={bodyId}>{prompt.meaning}</EntryDefinition>
         )}

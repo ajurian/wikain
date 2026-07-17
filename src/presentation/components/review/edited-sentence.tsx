@@ -12,6 +12,14 @@ import { cn } from "@/lib/utils";
  * Tapping a span reveals that edit's one_line_feedback on demand (never the
  * primary surface). Span resolution reuses the pure domain resolver
  * (EDIT-3/4/5/6); on fallback the whole corrected_sentence is shown (EDIT-4).
+ *
+ * Each edit is a `span[role=button]`, NOT a `<button>` — the third sanctioned exception to
+ * "reach for the primitive first" (see `blank-input.tsx` / `word-option-list.tsx`). A `<button>`
+ * is `inline-block`, so it cannot fragment across line boxes: a multi-word edit became one atomic
+ * box that wrapped its own text internally, and the UA stylesheet's `text-align: center` — which
+ * the paragraph's alignment does not override — centered that text. The result was a centered,
+ * ragged block sitting inside a left-aligned paragraph. This must read as ONE paragraph that
+ * happens to carry color and strikes, so the interactive element has to be a true inline box.
  */
 
 const REASON_TEXT: Record<Replacement["reason"], string> = {
@@ -64,20 +72,40 @@ export function EditedSentence({
       segments.push(<span key={`t${i}`}>{rawSentence.slice(cursor, edit.start)}</span>);
     }
     const color = REASON_TEXT[edit.reason];
+    const toggle = () => setOpenEdit(openEdit === i ? null : i);
     segments.push(
-      <motion.button
+      <motion.span
         key={`e${i}`}
-        type="button"
+        role="button"
+        tabIndex={0}
         initial={reduced ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: DURATION.base, ease: EASE, delay: reduced ? 0 : i * EDIT_STAGGER }}
-        onClick={() => setOpenEdit(openEdit === i ? null : i)}
-        className={cn("cursor-pointer rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50", color)}
+        onClick={toggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault(); // Space would scroll the page out from under the sentence.
+            toggle();
+          }
+        }}
+        className={cn(
+          // `box-decoration-clone`: the ring/rounding are drawn on EACH line box an edit spans,
+          // rather than once around the whole run — an edit that wraps mid-phrase is normal here.
+          "cursor-pointer rounded-sm box-decoration-clone focus-visible:ring-2 focus-visible:ring-ring/50",
+          color,
+        )}
         aria-label={`Edit: ${edit.find} → ${edit.replace || "(remove)"}`}
       >
         <del className="decoration-2">{edit.find}</del>
-        {edit.replace ? <ins className="ml-1 font-medium no-underline">{edit.replace}</ins> : null}
-      </motion.button>,
+        {/* A real space, not `ml-1`: a margin is not a line-break opportunity, so a long edit could
+            not wrap between the deletion and the insertion. */}
+        {edit.replace ? (
+          <>
+            {" "}
+            <ins className="font-medium no-underline">{edit.replace}</ins>
+          </>
+        ) : null}
+      </motion.span>,
     );
     cursor = edit.end;
   });

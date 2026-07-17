@@ -53,7 +53,9 @@ function Dashboard() {
         <Card>
           <CardContent className="flex items-center justify-between gap-4 p-6">
             <CounterStat value={counter?.count ?? 0} />
-            <div className="flex w-32 shrink-0 flex-col items-stretch gap-1">
+            {/* w-36 matches GoalGauge's own `min-w-36`: at w-32 the min-width won and the gauge
+                overflowed its column into the Card's padding. */}
+            <div className="flex w-36 shrink-0 flex-col items-stretch gap-1">
               <GoalGauge done={sentencesToday} goal={dailyGoal} />
               {goalMet ? (
                 <p className="text-right text-xs font-medium text-moss">Goal met.</p>

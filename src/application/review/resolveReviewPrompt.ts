@@ -1,6 +1,7 @@
 import type { ControlledPos, LexicalItem } from "~/domain/lexicalItem.js";
 import type { MasteryState } from "~/domain/mastery/card.js";
 import { resolveReviewTier } from "~/domain/review/reviewRouting.js";
+import type { ReviewTier } from "~/domain/review/review.js";
 import type { Catalog } from "../ports/catalog.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 
@@ -12,6 +13,8 @@ export interface ResolveReviewPromptInput {
 export interface ResolveReviewPromptDeps {
   catalog: Catalog;
   cards: CardRepository;
+  /** DEV ONLY: see `RunReviewPassDeps.tierOverride` — the grading path takes the same injected value. */
+  tierOverride?: ReviewTier;
 }
 
 /**
@@ -93,8 +96,7 @@ export async function resolveReviewPrompt(
     card.mastery === "Seen"
       ? await deps.cards.logsForWord(userId, senseId)
       : [];
-  // const tier = resolveReviewTier(card.mastery, logs);
-  const tier = "cued";
+  const tier = deps.tierOverride ?? resolveReviewTier(card.mastery, logs);
 
   const mastery = card.mastery;
   const pos = item.part_of_speech;

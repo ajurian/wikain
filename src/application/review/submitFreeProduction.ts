@@ -1,7 +1,13 @@
-import { demoteOneRung, promoteOnJudgedPass } from "~/domain/mastery/mastery.js";
+import {
+  demoteOneRung,
+  promoteOnJudgedPass,
+} from "~/domain/mastery/mastery.js";
 import { passesGate, type JudgeVerdict } from "~/domain/review/verdict.js";
 import { deriveRating, type Rating } from "~/domain/review/rating.js";
-import { distinctPassDays, mostRecentPassScaffolded } from "~/domain/mastery/judgedPassLedger.js";
+import {
+  distinctPassDays,
+  mostRecentPassScaffolded,
+} from "~/domain/mastery/judgedPassLedger.js";
 import { qualifiesForFluent } from "~/domain/mastery/fluentGate.js";
 import type { Card, MasteryState } from "~/domain/mastery/card.js";
 import type { ReviewLog } from "~/domain/review/review.js";
@@ -9,7 +15,11 @@ import type { Catalog } from "../ports/catalog.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { Scheduler } from "../ports/scheduler.js";
 import type { SentenceAnalyzer } from "../ports/sentenceAnalyzer.js";
-import { JudgeUnavailableError, type JudgePort, type JudgeUnavailableReason } from "../ports/judge.js";
+import {
+  JudgeUnavailableError,
+  type JudgePort,
+  type JudgeUnavailableReason,
+} from "../ports/judge.js";
 import type { MemoVersions, VerdictMemoPort } from "../ports/verdictMemo.js";
 import { memoKey, normalizeSentence } from "~/domain/review/verdictMemo.js";
 import {
@@ -70,7 +80,8 @@ export interface UnavailableResult {
   reason: JudgeUnavailableReason;
 }
 
-export type SubmitFreeProductionResult = BounceResult | JudgedResult | UnavailableResult;
+export type SubmitFreeProductionResult =
+  BounceResult | JudgedResult | UnavailableResult;
 
 /**
  * The judged free-production review pass — the cloud-judge branch of the end-to-end loop
@@ -101,14 +112,20 @@ export async function submitFreeProduction(
 
   const card = await deps.cards.load(input.userId, input.senseId);
   if (card === undefined) {
-    throw new Error(`no card for user ${input.userId} / sense ${input.senseId}`);
+    throw new Error(
+      `no card for user ${input.userId} / sense ${input.senseId}`,
+    );
   }
 
   // RL-1..4 / RL-6: the shared rule-layer pre-screen (one source of truth with the presentation's
   // instant rule-check, NET-2). INV-2 / RAT-2: a bounce never derives a rating, never calls the
   // scheduler, never logs — the card is left untouched (stays due).
   const rule = await checkFreeProductionRuleLayer(
-    { senseId: input.senseId, response: input.response, priorBounces: input.priorBounces },
+    {
+      senseId: input.senseId,
+      response: input.response,
+      priorBounces: input.priorBounces,
+    },
     deps,
   );
   if (!rule.ok) return rule.bounce;
@@ -157,7 +174,11 @@ export async function submitFreeProduction(
   // INV-1 / RAT-1 / RAT-4: exactly one rating on this single verdict.
   const passed = passesGate(verdict);
   const rating = deriveRating(passed);
-  const { card: nextFsrs, log: fsrsLog } = deps.scheduler.next(card.fsrs, rating, now);
+  const { card: nextFsrs, log: fsrsLog } = deps.scheduler.next(
+    card.fsrs,
+    rating,
+    now,
+  );
 
   // RAT-8 / DM-6: the single ReviewLog for this rated review. RAT-5 richer signals instrumented from
   // day one (v1 does not rate on them): `scaffolded` (SM-9), `retryCount` = rule-layer bounces before
@@ -202,5 +223,12 @@ export async function submitFreeProduction(
   await deps.cards.save(updated);
   await deps.cards.appendReviewLog(reviewLog);
 
-  return { kind: "judged", passed, rating, verdict, mastery, due: nextFsrs.due };
+  return {
+    kind: "judged",
+    passed,
+    rating,
+    verdict,
+    mastery,
+    due: nextFsrs.due,
+  };
 }

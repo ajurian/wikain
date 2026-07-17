@@ -1,4 +1,5 @@
 import { resolveReviewTier } from "~/domain/review/reviewRouting.js";
+import type { ReviewTier } from "~/domain/review/review.js";
 import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 import type { HealQueuePort } from "../ports/healQueue.js";
 import {
@@ -6,7 +7,10 @@ import {
   type SubmitCuedReviewInput,
   type SubmitCuedReviewResult,
 } from "./submitCuedReview.js";
-import { submitRecognition, type SubmitRecognitionResult } from "./submitRecognition.js";
+import {
+  submitRecognition,
+  type SubmitRecognitionResult,
+} from "./submitRecognition.js";
 import { submitCloze, type SubmitClozeResult } from "./submitCloze.js";
 import {
   submitFreeProduction,
@@ -35,7 +39,15 @@ export interface RunReviewPassInput {
  * analyzer/judge/tagalogLexicon), so one dependency set forwards to every use-case; the cloze branch
  * alone adds the FIT-11 heal queue.
  */
-export type RunReviewPassDeps = SubmitFreeProductionDeps & { healQueue: HealQueuePort };
+export type RunReviewPassDeps = SubmitFreeProductionDeps & {
+  healQueue: HealQueuePort;
+  /**
+   * DEV ONLY: pins the tier every card grades at, bypassing `resolveReviewTier`. Injected (never read
+   * from env here — ARCH-1), and `resolveReviewPrompt` takes the SAME value from the same composition
+   * root: the two must agree, or the UI renders one tier's prompt while another tier grades the answer.
+   */
+  tierOverride?: ReviewTier;
+};
 
 import type { MasteryState } from "~/domain/mastery/card.js";
 
@@ -72,31 +84,47 @@ export async function runReviewPass(
 ): Promise<RunReviewPassResult> {
   const card = await deps.cards.load(input.userId, input.senseId);
   if (card === undefined) {
-    throw new Error(`no card for user ${input.userId} / sense ${input.senseId}`);
+    throw new Error(
+      `no card for user ${input.userId} / sense ${input.senseId}`,
+    );
   }
 
   // LOOP-1 step 2: which tier to grade at. `Seen` depends on the word's ReviewLog history (SM-3 +
   // RAT-7), so its logs are loaded; other states route on mastery alone (SM-1). One shared router
   // (`resolveReviewTier`) so this grading path and the prompt shown by `resolveReviewPrompt` agree.
   const logs =
-    card.mastery === "Seen" ? await deps.cards.logsForWord(input.userId, input.senseId) : [];
-  const tier = resolveReviewTier(card.mastery, logs);
+    card.mastery === "Seen"
+      ? await deps.cards.logsForWord(input.userId, input.senseId)
+      : [];
+  const tier = deps.tierOverride ?? resolveReviewTier(card.mastery, logs);
   const previousMastery = card.mastery;
 
   switch (tier) {
     // Deterministic branches — no judge/LLM is reached (LOOP-2).
     case "recognition":
-      return { tier, previousMastery, outcome: await submitRecognition(input, deps) };
+      return {
+        tier,
+        previousMastery,
+        outcome: await submitRecognition(input, deps),
+      };
     case "cloze":
       return { tier, previousMastery, outcome: await submitCloze(input, deps) };
     case "cued": {
       const cuedInput: SubmitCuedReviewInput = input;
-      return { tier, previousMastery, outcome: await submitCuedReview(cuedInput, deps) };
+      return {
+        tier,
+        previousMastery,
+        outcome: await submitCuedReview(cuedInput, deps),
+      };
     }
     // Judged branch (free production / Fluent maintenance) — LOOP-3.
     case "free": {
       const freeInput: SubmitFreeProductionInput = input;
-      return { tier, previousMastery, outcome: await submitFreeProduction(freeInput, deps) };
+      return {
+        tier,
+        previousMastery,
+        outcome: await submitFreeProduction(freeInput, deps),
+      };
     }
   }
 }
