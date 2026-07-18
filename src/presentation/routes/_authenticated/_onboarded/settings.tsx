@@ -9,16 +9,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 
 import { DURATION, EASE } from "@/lib/motion";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Monitor, Moon, Plus, Sun } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { signOut, useSession } from "@/lib/auth-client";
+import { useTheme } from "@/lib/theme";
 import { readSettingsFn, updateSettingsFn } from "@/server/settings";
 import { readPlacementProfileFn } from "@/server/placement";
 import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "~/domain/constants.js";
+import { type Theme, isValidTheme } from "~/domain/theme.js";
 import type { UserSettings } from "~/domain/settings.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Combobox,
   ComboboxContent,
@@ -43,6 +46,13 @@ const COMMON_TIMEZONES = [
   "Australia/Sydney",
 ];
 
+/** The three theme choices, each cast to a voice icon (sun = light, moon = dark, monitor = system). */
+const THEME_OPTIONS = [
+  { value: "light", label: "Light", Icon: Sun },
+  { value: "dark", label: "Dark", Icon: Moon },
+  { value: "system", label: "System", Icon: Monitor },
+] as const satisfies ReadonlyArray<{ value: Theme; label: string; Icon: typeof Sun }>;
+
 export const Route = createFileRoute("/_authenticated/_onboarded/settings")({
   component: SettingsPage,
 });
@@ -53,6 +63,7 @@ function SettingsPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
 
   const { data: settings } = useQuery({
     queryKey: ["settings"],
@@ -82,6 +93,12 @@ function SettingsPage() {
     const clamped = Math.max(DAILY_GOAL_MIN, Math.min(DAILY_GOAL_MAX, next));
     setPendingGoal(clamped);
     mutation.mutate({ dailyGoal: clamped });
+  }
+
+  // Apply instantly (ThemeProvider) and persist (DB) — the DB is the cross-device source of truth.
+  function chooseTheme(next: Theme) {
+    setTheme(next);
+    mutation.mutate({ theme: next });
   }
 
   // The day-boundary clock (SM-5b/CNT-2). Offer every IANA zone the runtime knows, with UTC, the
@@ -147,6 +164,41 @@ function SettingsPage() {
               </Button>
               <span className="text-sm text-ink-soft">sentences / day</span>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Appearance: theme is a device-facing preference persisted per user (light/dark/system). */}
+        <Card>
+          <CardContent className="space-y-3 p-5">
+            <div>
+              <p className="text-sm font-medium text-ink">Appearance</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-ink-faint">
+                System follows your device’s light or dark setting.
+              </p>
+            </div>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              value={theme}
+              onValueChange={(next) => {
+                // Radix emits "" when the active item is re-tapped; ignore it so a theme stays selected.
+                if (isValidTheme(next)) chooseTheme(next);
+              }}
+              disabled={mutation.isPending}
+              className="w-full"
+            >
+              {THEME_OPTIONS.map((opt) => (
+                <ToggleGroupItem
+                  key={opt.value}
+                  value={opt.value}
+                  aria-label={opt.label}
+                  className="flex-1 gap-2"
+                >
+                  <opt.Icon className="size-4" />
+                  <span className="text-sm font-medium">{opt.label}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </CardContent>
         </Card>
 

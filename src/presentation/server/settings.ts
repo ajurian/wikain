@@ -35,6 +35,11 @@ export const updateSettingsFn = createServerFn({ method: "POST" })
       if (typeof o.timezone !== "string") throw new Error("updateSettingsFn: timezone must be a string");
       patch.timezone = o.timezone;
     }
+    if (o.theme !== undefined) {
+      // Shape check only; the light|dark|system value guard lives in the use-case (isValidTheme).
+      if (typeof o.theme !== "string") throw new Error("updateSettingsFn: theme must be a string");
+      patch.theme = o.theme as UserSettings["theme"];
+    }
     return patch;
   })
   .handler(async ({ data }): Promise<void> => {

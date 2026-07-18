@@ -147,6 +147,8 @@ export const settings = pgTable("settings", {
   userId: uuid("user_id").primaryKey(),
   dailyGoal: integer("daily_goal").notNull(),
   timezone: text("timezone").notNull(),
+  // UI theme preference (light|dark|system). DB default backfills pre-existing rows to THEME_DEFAULT.
+  theme: text("theme").notNull().default("system"),
 });
 
 /**

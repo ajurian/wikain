@@ -1,4 +1,5 @@
-import { DAILY_GOAL_DEFAULT } from "./constants.js";
+import { DAILY_GOAL_DEFAULT, THEME_DEFAULT } from "./constants.js";
+import type { Theme } from "./theme.js";
 
 /**
  * A learner's per-user preferences (spec/10 CNT-8). A pure value object: the store persists it, the
@@ -14,6 +15,8 @@ export interface UserSettings {
   dailyGoal: number;
   /** IANA timezone; the "separate calendar days" logic (SM-5b/CNT-2) is anchored to this clock. */
   timezone: string;
+  /** UI theme preference; `system` follows the device's `prefers-color-scheme`. Presentation-only effect. */
+  theme: Theme;
 }
 
 /** The settings a user has before persisting any preference. `timezone` = UTC to match the day-boundary
@@ -21,4 +24,5 @@ export interface UserSettings {
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   dailyGoal: DAILY_GOAL_DEFAULT,
   timezone: "UTC",
+  theme: THEME_DEFAULT,
 };

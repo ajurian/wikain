@@ -4,6 +4,14 @@ Tailwind v4: raw values live on `:root`, semantic names are exposed via `@theme 
 classes exist for each. shadcn variables (`--background`, `--primary`, …) are kept and remapped to
 brand values so existing `components/ui/*` keep working.
 
+**Themes (light / dark / system).** A single `.dark {}` block redeclares **only the ~19 raw tokens**
+(the dark values + derivation rules live in `brand/references/palette.md → Dark theme`); the semantic,
+shadcn, and mastery names are `var()` aliases and re-resolve per element, so they are **never** restated
+in `.dark`. `color-scheme` is set per theme (`light` on `:root`, `dark` on `.dark`) so native controls
+follow. The `dark` variant is class-based (`@custom-variant dark (&:is(.dark *))`); a pre-paint inline
+script in `__root.tsx` toggles `.dark` on `<html>` before first paint (no flash), and the choice is a
+persisted user setting (`settings.theme`, `src/presentation/lib/theme.tsx`).
+
 ## Semantic → utility map
 
 | Token (CSS var) | Utility | Value (source: brand/references/palette.md) |

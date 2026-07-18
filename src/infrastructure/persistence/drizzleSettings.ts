@@ -10,6 +10,7 @@
 import { eq } from "drizzle-orm";
 import type { SettingsStore } from "~/application/ports/settings.js";
 import { DEFAULT_USER_SETTINGS, type UserSettings } from "~/domain/settings.js";
+import { isValidTheme } from "~/domain/theme.js";
 import type { DrizzleDb } from "./drizzleCardRepository.js";
 import { settings } from "../db/schema.js";
 
@@ -20,7 +21,10 @@ export class DrizzleSettings implements SettingsStore {
     const rows = await this.db.select().from(settings).where(eq(settings.userId, userId));
     const row = rows[0];
     if (row === undefined) return { ...DEFAULT_USER_SETTINGS };
-    return { dailyGoal: row.dailyGoal, timezone: row.timezone };
+    // `theme` is a plain text column; guard the read so a legacy/unknown value resolves the default
+    // rather than leaking a non-`Theme` string past the port's typed contract.
+    const theme = isValidTheme(row.theme) ? row.theme : DEFAULT_USER_SETTINGS.theme;
+    return { dailyGoal: row.dailyGoal, timezone: row.timezone, theme };
   }
 
   async write(userId: string, patch: Partial<UserSettings>): Promise<void> {

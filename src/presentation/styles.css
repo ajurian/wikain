@@ -18,6 +18,9 @@
    */
   --radius: 8px;
 
+  /* Native form controls / scrollbars follow the active theme. */
+  color-scheme: light;
+
   /* field & ink — cool, near-neutral */
   --paper: oklch(0.982 0.003 250);
   --paper-raised: oklch(0.996 0.001 250);
@@ -73,6 +76,44 @@
   --border: var(--line);
   --input: var(--line);
   --ring: var(--marigold-deep);
+}
+
+/*
+ * Dark theme — see .claude/skills/brand/references/palette.md (dark palette). Only the ~19 RAW tokens
+ * are redeclared: every semantic/shadcn/mastery token (--background, --reason-sense,
+ * --mastery-recognized, …) is a var() alias that re-resolves per element, so it inherits these
+ * overrides automatically. Derivation: lightness inverts (dark field / light ink), hue + the "cool
+ * field, one warm marigold signal" intent are preserved, and the -deep/-wash roles flip sign — on a
+ * dark field the readable-as-text marigold is *lighter* (--marigold-deep), and washes become dark
+ * low-chroma tints. Elevation is still paper-steps + 1px lines, never shadow.
+ */
+.dark {
+  color-scheme: dark;
+
+  /* field & ink — dark field, light ink; raised is one step lighter (elevated), sunken one step darker */
+  --paper: oklch(0.17 0.008 265);
+  --paper-raised: oklch(0.215 0.01 265);
+  --paper-sunken: oklch(0.14 0.006 265);
+  --ink: oklch(0.93 0.008 260);
+  --ink-soft: oklch(0.72 0.012 260);
+  --ink-faint: oklch(0.56 0.012 260);
+  --line: oklch(0.3 0.008 260);
+  --line-strong: oklch(0.42 0.01 260);
+
+  /* signals — marigold stays the scarce warm lead; -deep is the readable-on-field variant (lighter here) */
+  --marigold: oklch(0.78 0.148 74);
+  --marigold-deep: oklch(0.82 0.13 74);
+  --marigold-wash: oklch(0.3 0.045 72);
+  --moss: oklch(0.7 0.11 150);
+  --moss-wash: oklch(0.3 0.045 150);
+  --terracotta: oklch(0.68 0.15 34);
+  --terra-wash: oklch(0.32 0.06 34);
+  --fluent-blue: oklch(0.72 0.1 215);
+
+  /* raw edit-reason + mastery tokens (the rest are var() aliases and re-resolve) */
+  --reason-grammar: oklch(0.72 0.14 48);
+  --reason-register: oklch(0.74 0.07 320);
+  --mastery-seen: oklch(0.76 0.09 85);
 }
 
 @theme inline {

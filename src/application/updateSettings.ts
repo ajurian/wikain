@@ -1,6 +1,7 @@
 import { DAILY_GOAL_MAX, DAILY_GOAL_MIN } from "~/domain/constants.js";
 import type { UserSettings } from "~/domain/settings.js";
 import { isValidTimeZone } from "~/domain/timezone.js";
+import { isValidTheme } from "~/domain/theme.js";
 import type { SettingsStore } from "./ports/settings.js";
 
 export interface UpdateSettingsInput {
@@ -19,13 +20,13 @@ export interface UpdateSettingsDeps {
  * bounds the `/settings` stepper clamps to, so a hand-crafted request can't persist an out-of-range
  * goal that the UI would then be unable to represent. `timezone`, when present, must be a real IANA
  * zone (SM-5b/CNT-2 anchor the calendar-day boundary to it — a junk zone would silently corrupt every
- * day-bucket) — see `isValidTimeZone`.
+ * day-bucket) — see `isValidTimeZone`. `theme`, when present, must be one of light|dark|system.
  */
 export async function updateSettings(
   input: UpdateSettingsInput,
   deps: UpdateSettingsDeps,
 ): Promise<void> {
-  const { dailyGoal, timezone } = input.patch;
+  const { dailyGoal, timezone, theme } = input.patch;
   if (
     dailyGoal !== undefined &&
     (!Number.isInteger(dailyGoal) || dailyGoal < DAILY_GOAL_MIN || dailyGoal > DAILY_GOAL_MAX)
@@ -36,6 +37,9 @@ export async function updateSettings(
   }
   if (timezone !== undefined && !isValidTimeZone(timezone)) {
     throw new RangeError(`timezone must be a valid IANA zone (got ${JSON.stringify(timezone)})`);
+  }
+  if (theme !== undefined && !isValidTheme(theme)) {
+    throw new RangeError(`theme must be one of light|dark|system (got ${JSON.stringify(theme)})`);
   }
   await deps.settings.write(input.userId, input.patch);
 }

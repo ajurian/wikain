@@ -5,6 +5,16 @@
  */
 
 import type { ReviewTier } from "./review/review.js";
+import type { Theme } from "./theme.js";
+
+// --- Appearance ---
+
+/**
+ * The default theme for a learner who has not chosen one — `system` follows the device's
+ * `prefers-color-scheme`. The single source shared by `DEFAULT_USER_SETTINGS`, the DB column default,
+ * and the `/settings` control's fallback.
+ */
+export const THEME_DEFAULT: Theme = "system";
 
 // --- Card tiers (spec/03, `TIER`) ---
 

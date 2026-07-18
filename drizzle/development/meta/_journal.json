@@ -78,6 +78,13 @@
       "when": 1784388000000,
       "tag": "0010_seeding_rate_rail",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784401528636,
+      "tag": "0011_add_theme_to_settings",
+      "breakpoints": true
     }
   ]
 }

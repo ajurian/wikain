@@ -59,4 +59,21 @@ describe("updateSettings (CNT-8)", () => {
       DEFAULT_USER_SETTINGS.timezone,
     );
   });
+
+  it("persists a valid theme choice", async () => {
+    const settings = fakeStore();
+    await updateSettings({ userId: USER, patch: { theme: "dark" } }, { settings });
+    expect((await readSettings({ userId: USER }, { settings })).theme).toBe("dark");
+  });
+
+  it("rejects an unknown theme (no write)", async () => {
+    const settings = fakeStore();
+    await expect(
+      // A value outside light|dark|system must not persist — cast past the compile-time type to test it.
+      updateSettings({ userId: USER, patch: { theme: "midnight" as never } }, { settings }),
+    ).rejects.toThrow(RangeError);
+    expect((await readSettings({ userId: USER }, { settings })).theme).toBe(
+      DEFAULT_USER_SETTINGS.theme,
+    );
+  });
 });

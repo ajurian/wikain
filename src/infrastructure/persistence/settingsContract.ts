@@ -21,8 +21,12 @@ export function describeSettingsContract(
 
     it("CNT-8: a written setting round-trips", async () => {
       const store = await makeStore();
-      await store.write(USER_A, { dailyGoal: 12, timezone: "Asia/Manila" });
-      expect(await store.read(USER_A)).toEqual({ dailyGoal: 12, timezone: "Asia/Manila" });
+      await store.write(USER_A, { dailyGoal: 12, timezone: "Asia/Manila", theme: "dark" });
+      expect(await store.read(USER_A)).toEqual({
+        dailyGoal: 12,
+        timezone: "Asia/Manila",
+        theme: "dark",
+      });
     });
 
     it("CNT-8: a partial patch merges — unset fields keep their prior value", async () => {
@@ -32,6 +36,14 @@ export function describeSettingsContract(
       const s = await store.read(USER_A);
       expect(s.dailyGoal).toBe(8); // retained across the second (partial) write
       expect(s.timezone).toBe("Europe/Berlin");
+    });
+
+    it("CNT-8: a theme-only patch merges and keeps the prior goal/zone", async () => {
+      const store = await makeStore();
+      await store.write(USER_A, { dailyGoal: 9, timezone: "Asia/Tokyo" });
+      await store.write(USER_A, { theme: "light" });
+      const s = await store.read(USER_A);
+      expect(s).toEqual({ dailyGoal: 9, timezone: "Asia/Tokyo", theme: "light" });
     });
 
     it("multi-tenant: user B never sees user A's settings", async () => {

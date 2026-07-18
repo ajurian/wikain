@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
 import icon from "../favicon.ico?url";
 import { getSessionFn } from "@/server/session";
+import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -32,13 +33,19 @@ function RootComponent() {
   // One QueryClient per request on the server, stable across renders on the client (STACK-2).
   const [queryClient] = useState(() => new QueryClient());
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the pre-paint script below sets `class`/`color-scheme` on <html> before
+    // hydration, so the client tree intentionally differs from the server-rendered bare <html>.
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Flash-free theme: resolve + apply the theme class before the body paints (incl. signed-out). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body className="bg-background text-foreground antialiased">
         <QueryClientProvider client={queryClient}>
-          <Outlet />
+          <ThemeProvider>
+            <Outlet />
+          </ThemeProvider>
         </QueryClientProvider>
         <Scripts />
       </body>
