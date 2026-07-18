@@ -26,6 +26,8 @@ export interface SubmitClozeInput {
   priorSoftBounces?: number;
   /** FIT-10: the lanes those bounces took, in order — recorded on the final graded ReviewLog. */
   priorSoftBounceLanes?: ClozeSoftBounceLane[];
+  /** BAT-15: client-measured card-shown → submit span; recorded on graded lanes, never rated on. */
+  durationMs?: number;
   /** Defaults to `new Date()`; injectable for deterministic tests. */
   now?: Date;
 }

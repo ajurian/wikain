@@ -41,6 +41,8 @@ export interface SubmitFreeProductionInput {
    * presentation owns per-presentation retry state and passes it in. Defaults to 0.
    */
   priorBounces?: number;
+  /** BAT-15: client-measured card-shown → submit span; the judge wait is added server-side. */
+  durationMs?: number;
   /** Defaults to `new Date()`; injectable for deterministic tests. */
   now?: Date;
 }
@@ -193,6 +195,12 @@ export async function submitFreeProduction(
     scaffolded: input.scaffolded ?? false,
     retryCount: input.priorBounces ?? 0,
     ...(latencyMs === undefined ? {} : { latencyMs }),
+    // BAT-15: the learner's experienced span = client-measured card-shown → submit plus the judge
+    // wait measured here (0 on a memo hit — there was no wait to experience). Absent when the client
+    // measured nothing: a fabricated server-only value would understate every real duration.
+    ...(input.durationMs === undefined
+      ? {}
+      : { durationMs: input.durationMs + (latencyMs ?? 0) }),
     fsrs: fsrsLog,
   };
 

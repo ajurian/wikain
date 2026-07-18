@@ -70,13 +70,13 @@ function Dashboard() {
             <div className="flex items-baseline justify-between">
               <h2 className="text-xl font-semibold text-ink">Today</h2>
               <p className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
-                {dueReviews} due · up to {newIntroductions} new
+                {dueReviews} due · {newIntroductions} new
               </p>
             </div>
             <p className="text-sm leading-relaxed text-ink-soft">
               {dueReviews === 0 && newIntroductions === 0
                 ? "You're all caught up. Nothing is due right now."
-                : `${dueReviews} ${dueReviews === 1 ? "word is" : "words are"} due for review, with up to ${newIntroductions} new woven in. One sentence at a time.`}
+                : `${dueReviews} ${dueReviews === 1 ? "word is" : "words are"} due for review, with ${newIntroductions} new woven in. One sentence at a time.`}
             </p>
             <Button asChild size="lg" className="w-full sm:w-auto">
               <Link to="/review">

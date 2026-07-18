@@ -32,6 +32,7 @@ import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 import type { Rating } from "~/domain/review/rating.js";
 import type { JudgeVerdict } from "~/domain/review/verdict.js";
 import type { ClozeFitEntry, ControlledPos } from "~/domain/lexicalItem.js";
+import type { BatchQueueEntry } from "~/domain/scheduling/batch.js";
 
 // BetterAuth core tables (user/session/account/verification). Re-exported so drizzle-kit + the pglite
 // migrator + the drizzleAdapter all see one schema. `user.id` is `uuid` — the app-table `user_id`
@@ -77,6 +78,9 @@ export const reviewLogs = pgTable("review_logs", {
   retryCount: integer("retry_count"),
   typoFixed: boolean("typo_fixed"),
   latencyMs: integer("latency_ms"),
+  // BAT-15: card-shown → gradeable outcome incl. judge wait — feeds the Deferred effort-weight
+  // recompute (spec/14). Distinct from latency_ms (submit → outcome).
+  durationMs: integer("duration_ms"),
   // FIT-10: the typed-cloze soft-bounce history of the presentation this grade closed. Nullable —
   // only the cloze tier measures them (0/[] there is an honest measurement, not a fabrication).
   softBounceCount: integer("soft_bounce_count"),
@@ -232,4 +236,79 @@ export const clozeHealQueue = pgTable(
     processedAt: timestamp("processed_at", { withTimezone: true, mode: "date" }),
   },
   (t) => [primaryKey({ columns: [t.senseId, t.typedLemma] })],
+);
+
+/**
+ * The active mini-session batch, one row per user (spec/14 BAT-11). Pure PRESENTATION state —
+ * discardable by design (BAT-13 replaces it wholesale, Done deletes it); ratings/FSRS never live
+ * here (BAT-1). `entries` is jsonb: `BatchQueueEntry` carries no Dates, so a blob is lossless (cf.
+ * the FSRS-state note above) and the whole-row upsert stays one statement.
+ */
+export const sessionState = pgTable("session_state", {
+  userId: uuid("user_id").primaryKey(),
+  batchId: uuid("batch_id").notNull(),
+  batchNumber: integer("batch_number").notNull(),
+  entries: jsonb("entries").$type<BatchQueueEntry[]>().notNull(),
+  progressIndex: integer("progress_index").notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true, mode: "date" }).notNull(),
+  lastInteractionAt: timestamp("last_interaction_at", { withTimezone: true, mode: "date" }).notNull(),
+});
+
+/**
+ * The seeding ledger (spec/09 SEED-10/11, refining BAT-14): the absolute instant introduction seeding
+ * last ran for this user. Stored as a timestamp, NOT a day key (SEED-11), so the rail can answer BOTH
+ * the calendar-day boundary and the min-gap (SEED_MIN_GAP_HOURS) comparisons off the one value. Its own
+ * table, NOT a `session_state` column, because it must survive the BAT-13 replacement and the
+ * Done-clear — a pacing ledger fact, not presentation state.
+ */
+export const seedLedger = pgTable("seed_ledger", {
+  userId: uuid("user_id").primaryKey(),
+  lastSeedAt: timestamp("last_seed_at", { withTimezone: true, mode: "date" }).notNull(),
+});
+
+/**
+ * Seeding-rail instrumentation (spec/09 SEED-14), written by the runtime and read offline to tune
+ * `SEED_MIN_GAP_HOURS` and confirm the rail rarely binds. Append-only; `outcome` distinguishes a
+ * grant (carries `count` + `had_backlog`) from a denial (carries `failing_clause`). A
+ * `failing_clause = 'min_gap'` row is exactly a boundary-burst the new gap clause caught.
+ */
+export const seedEvents = pgTable(
+  "seed_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    at: timestamp("at", { withTimezone: true, mode: "date" }).notNull(),
+    outcome: text("outcome").$type<"granted" | "denied">().notNull(),
+    count: integer("count"),
+    hadBacklog: boolean("had_backlog"),
+    failingClause: text("failing_clause").$type<"calendar_day" | "min_gap">(),
+  },
+  (t) => [index("seed_events_user_idx").on(t.userId)],
+);
+
+/**
+ * Per-batch instrumentation (spec/14 BAT-16), written by the runtime and read offline for the
+ * amendment's hypothesis tests. `outcome` null = still open (a never-returning abandoner's row is
+ * finalized at the next return; analytics treat open-and-stale as abandoned). The finalize is
+ * guarded `WHERE outcome IS NULL` in the adapter, which is the whole idempotence mechanism.
+ */
+export const reviewBatches = pgTable(
+  "review_batches",
+  {
+    batchId: uuid("batch_id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    batchNumber: integer("batch_number").notNull(),
+    plannedTierCounts: jsonb("planned_tier_counts").$type<Record<ReviewTier, number>>().notNull(),
+    plannedUnits: integer("planned_units").notNull(),
+    plannedCards: integer("planned_cards").notNull(),
+    builtAt: timestamp("built_at", { withTimezone: true, mode: "date" }).notNull(),
+    finalizedAt: timestamp("finalized_at", { withTimezone: true, mode: "date" }),
+    outcome: text("outcome").$type<"completed" | "abandoned">(),
+    completedCount: integer("completed_count"),
+    abandonedAtPosition: integer("abandoned_at_position"),
+    abandonedAtTier: text("abandoned_at_tier").$type<ReviewTier>(),
+    wallClockMs: integer("wall_clock_ms"),
+    continueChosen: boolean("continue_chosen"),
+  },
+  (t) => [index("review_batches_user_idx").on(t.userId)],
 );

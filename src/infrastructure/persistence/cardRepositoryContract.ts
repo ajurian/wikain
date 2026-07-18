@@ -168,6 +168,15 @@ export function describeCardRepositoryContract(
       expect(logs[0]!.latencyMs).toBe(4200);
     });
 
+    it("BAT-15: round-trips durationMs, and its absence round-trips as undefined", async () => {
+      const repo = await makeRepo();
+      await repo.appendReviewLog(reviewLog({ durationMs: 18000 }));
+      await repo.appendReviewLog(reviewLog()); // unmeasured — must stay absent, never 0
+      const logs = await repo.logsForWord(USER_A, "abandon_verb_01");
+      expect(logs[0]!.durationMs).toBe(18000);
+      expect(logs[1]!.durationMs).toBeUndefined();
+    });
+
     it("RAT-5: absent richer signals round-trip as undefined (not persisted, not fabricated)", async () => {
       const repo = await makeRepo();
       await repo.appendReviewLog(reviewLog()); // no retryCount/typoFixed/latencyMs set

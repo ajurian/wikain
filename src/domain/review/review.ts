@@ -69,6 +69,13 @@ export interface ReviewLog {
    * measured it. Absent when not measured. For v2 hesitation signals; v1 does not read it.
    */
   latencyMs?: number;
+  /**
+   * BAT-15: card-shown → gradeable outcome in milliseconds, INCLUDING the judge wait on the free
+   * tier (the learner experiences it). Feeds the Deferred effort-weight recompute (spec/14); v1
+   * does not rate or batch on it. Distinct from `latencyMs` (submit → outcome). Absent when the
+   * caller measured nothing (never a fabricated 0); a resumed card restarts the clock.
+   */
+  durationMs?: number;
   /** The raw FSRS scheduling log (RAT-8). */
   fsrs: FsrsReviewLog;
 }

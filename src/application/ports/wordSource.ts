@@ -1,5 +1,5 @@
 /**
- * SEED-2/5: the frequency-ordered list stack (NGSL → NAWL → Oxford 5000). One of the three SEPARATE
+ * SEED-2/5: the frequency-ordered Oxford multisense catalog (CEFR-banded + zipf-ordered). One of the three SEPARATE
  * placement mechanisms — it SELECTS the words to introduce next (the LexTALE scalar only sets *where*
  * the frontier is; per-word marks only decide skip-`Seen`). Declared by the application (ARCH-3);
  * implemented in infrastructure over the built catalog. Narrow by intent (SOLID-4): selection only.

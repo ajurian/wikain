@@ -39,18 +39,28 @@ export function SoftBounceCallout({
       role="status"
       className="flex items-start gap-2.5 rounded-lg bg-paper-sunken px-3.5 py-3"
     >
-      <Info className="mt-0.5 size-4 shrink-0 text-ink-faint" strokeWidth={1.5} />
+      <Info
+        className="mt-0.5 size-4 shrink-0 text-ink-faint"
+        strokeWidth={1.5}
+      />
       <p className="text-sm leading-relaxed text-ink-soft">
         {lane === "same_sense_near_miss" ? (
           <>
-            Close — we’re after a more precise word for this exact meaning: {hint}
+            Close — we’re after a more precise word for this exact meaning:{" "}
+            {hint}
           </>
         ) : (
           <>
             That’s a real sentence — but{" "}
             <span className="font-serif italic">{typed}</span> means something
             different here.{" "}
-            {gloss ? <>This word means {gloss}: {hint}</> : <>Try the word that fits this meaning: {hint}</>}
+            {gloss ? (
+              <>
+                This word means {gloss}: {hint}
+              </>
+            ) : (
+              <>Try the word that fits this meaning: {hint}</>
+            )}
           </>
         )}
       </p>

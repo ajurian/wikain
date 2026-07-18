@@ -76,6 +76,7 @@ function toLogRow(l: ReviewLog): LogInsert {
     retryCount: l.retryCount ?? null,
     typoFixed: l.typoFixed ?? null,
     latencyMs: l.latencyMs ?? null,
+    durationMs: l.durationMs ?? null,
     softBounceCount: l.softBounceCount ?? null,
     softBounceLanes: l.softBounceLanes ?? null,
     fsrsRating: l.fsrs.rating,
@@ -101,6 +102,7 @@ function fromLogRow(r: LogRow): ReviewLog {
     ...(r.retryCount === null ? {} : { retryCount: r.retryCount }),
     ...(r.typoFixed === null ? {} : { typoFixed: r.typoFixed }),
     ...(r.latencyMs === null ? {} : { latencyMs: r.latencyMs }),
+    ...(r.durationMs === null ? {} : { durationMs: r.durationMs }),
     ...(r.softBounceCount === null
       ? {}
       : { softBounceCount: r.softBounceCount }),

@@ -4,6 +4,8 @@
  * literals (INV §1.3). Grouped by the owning spec file.
  */
 
+import type { ReviewTier } from "./review/review.js";
+
 // --- Card tiers (spec/03, `TIER`) ---
 
 /** TIER-2: the recognition MCQ presents this many word options (1 target + 3 distractors). */
@@ -42,6 +44,36 @@ export const CLOZE_SOFT_BOUNCE_CAP = 3;
  * typo-fix path (Good, `typoFixed` recorded). The length-scaled variant is Deferred (spec/02).
  */
 export const CLOZE_TYPO_MAX_DISTANCE = 1;
+
+// --- Mini-session batching (spec/14, `BAT`) ---
+
+/**
+ * BAT-2: per-tier effort weights, 1 unit ≈ 10 s median engaged time. Time/burden only — difficulty
+ * is FSRS's job and never leaks into weights (cued = cloze despite harder retrieval). Global, not
+ * per-user. The recompute from logged `duration_ms` medians is Deferred (spec/14).
+ */
+export const TIER_EFFORT_UNITS: Record<ReviewTier, number> = {
+  recognition: 1,
+  cloze: 2,
+  cued: 2,
+  free: 10,
+};
+
+/** BAT-3: a batch closes when adding a card would exceed this many effort units (~3–4 min engaged). */
+export const BATCH_UNIT_BUDGET = 20;
+
+/** BAT-3: hard card count per batch — guards light-card monotony (20 rapid MCQs is fatiguing). */
+export const BATCH_CARD_CAP = 10;
+
+/** BAT-3: free productions per batch — excess FPs defer in place to later batches (BAT-5). */
+export const BATCH_FP_CAP = 2;
+
+/**
+ * BAT-11..13: the absence window, measured from last user interaction. A return within it resumes
+ * the active batch at true progress; past it, the queue is rebuilt ("Welcome back"). Decoupled from
+ * connectivity by definition (network no-ratings never ticked the bar).
+ */
+export const BATCH_ABSENCE_T_MINUTES = 20;
 
 // --- Mastery state machine (spec/01, `SM`) ---
 
@@ -117,3 +149,12 @@ export const NEW_FRACTION_UNDER_BACKLOG = 0.3;
  * ~PER_USER_OPT_REVIEW_THRESHOLD reviews is [v2] (deferred, PRAG-1) — v1 uses defaults below that.
  */
 export const REQUEST_RETENTION = 0.9;
+
+/**
+ * SEED-10: minimum hours between two steady-state seed batches — the debounce clause of the seeding
+ * rail. A seed is granted only on a NEW learner-local calendar day AND at least this many hours after
+ * `last_seed_at`; the gap clause is what blocks the 11:50pm→12:00am boundary-burst that the calendar-day
+ * clause alone permits (two calendar days, ten minutes apart → 2× the intended acquisition rate).
+ * Amendment v4.2 `[DEFAULT]` = 5h (acceptable range 4–6); tune from the SEED-14 grant/deny log.
+ */
+export const SEED_MIN_GAP_HOURS = 5;

@@ -27,6 +27,12 @@ import type { WordSource } from "~/application/ports/wordSource.js";
 import type { MemoVersions, VerdictMemoPort } from "~/application/ports/verdictMemo.js";
 import type { SentenceAnalyzer } from "~/application/ports/sentenceAnalyzer.js";
 import type { HealQueuePort } from "~/application/ports/healQueue.js";
+import type { SessionStateStore } from "~/application/ports/sessionState.js";
+import type { SeedLedgerStore } from "~/application/ports/seedLedger.js";
+import type { SeedInstrumentationStore } from "~/application/ports/seedInstrumentation.js";
+import type { BatchInstrumentationStore } from "~/application/ports/batchInstrumentation.js";
+import type { GetOrResumeSessionDeps } from "~/application/session/getOrResumeSession.js";
+import type { AdvanceActiveBatchDeps } from "~/application/session/advanceActiveBatch.js";
 import type { ReviewTier } from "~/domain/review/review.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
 import { TAGALOG_LEXICON } from "./nlp/tagalogLexicon.js";
@@ -141,6 +147,46 @@ export function composeSession(
 }
 
 /**
+ * Wiring for the mini-session flow (spec/14 BAT-11..14): the two-branch get-or-resume, the seam
+ * choice, and the shared batch builder behind both. Extends the seeding wiring (the day-guarded
+ * build seeds through it) with the three batch stores. `tierOverride` is the SAME `WIKAIN_DEV_TIER`
+ * pin `composeReviewPass`/`composeResolvePrompt` receive — the batcher weighs entries by tier, so
+ * it must see what the grader will grade.
+ */
+export function composeSessionFlow(
+  cards: CardRepository,
+  marks: PlacementMarksStore,
+  catalog: Catalog,
+  wordSource: WordSource,
+  sessionState: SessionStateStore,
+  seedLedger: SeedLedgerStore,
+  seedInstrumentation: SeedInstrumentationStore,
+  batches: BatchInstrumentationStore,
+  tierOverride?: ReviewTier,
+): GetOrResumeSessionDeps {
+  return {
+    ...composeSeeding(cards, marks, catalog, wordSource),
+    sessionState,
+    seedLedger,
+    seedInstrumentation,
+    batches,
+    ...(tierOverride ? { tierOverride } : {}),
+  };
+}
+
+/**
+ * Wiring for the per-interaction batch progress writes (spec/14 BAT-7/8): the advance after each
+ * review submit and the terminal-skip shrink. Deliberately narrower than the session flow — these
+ * run on the hot review path and need no seeding/catalog dependencies.
+ */
+export function composeBatchProgress(
+  sessionState: SessionStateStore,
+  batches: BatchInstrumentationStore,
+): AdvanceActiveBatchDeps {
+  return { sessionState, batches };
+}
+
+/**
  * Wiring for the onboarding placement-marking step (spec/09 SEED-2). The slate read reuses the same
  * list-stack word source + catalog the seeder selects from.
  */
@@ -188,8 +234,10 @@ export function composeUsableCounter(
 export function composeDashboardSummary(
   cards: CardRepository,
   settings: SettingsStore,
+  wordSource: WordSource,
+  seedLedger: SeedLedgerStore,
 ): ReadDashboardSummaryDeps {
-  return { cards, settings };
+  return { cards, settings, wordSource, seedLedger };
 }
 
 /**

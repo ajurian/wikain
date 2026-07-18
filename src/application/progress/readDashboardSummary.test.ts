@@ -5,6 +5,8 @@ import type { FsrsReviewLog, ReviewLog, ReviewTier } from "~/domain/review/revie
 import type { Rating } from "~/domain/review/rating.js";
 import type { CardRepository } from "../ports/cardRepository.js";
 import type { SettingsStore } from "../ports/settings.js";
+import type { WordSource } from "../ports/wordSource.js";
+import type { SeedLedgerStore } from "../ports/seedLedger.js";
 import { DEFAULT_USER_SETTINGS } from "~/domain/settings.js";
 import {
   DAILY_GOAL_DEFAULT,
@@ -14,6 +16,7 @@ import {
 
 const NOW = new Date("2026-06-30T12:00:00Z");
 const USER = "u1";
+const BAND = "B2";
 
 const FSRS_STUB: FsrsReviewLog = {
   rating: 3,
@@ -55,10 +58,28 @@ function settingsStub(dailyGoal = DAILY_GOAL_DEFAULT): SettingsStore {
   };
 }
 
+/** A frontier with `available` un-carded words; returns min(count, available), like a live band. */
+function wordSourceStub(available = 50): WordSource {
+  return {
+    nextFrontierWords: async (_band, _exclude, count) =>
+      Array.from({ length: Math.min(count, available) }, (_, i) => `new-${i}`),
+  };
+}
+
+/** The seed ledger; `undefined` (default) is a first-ever seed → the rail grants. */
+function seedLedgerStub(lastSeedAt?: Date): SeedLedgerStore {
+  return {
+    lastSeedAt: async () => lastSeedAt,
+    recordSeedAt: async () => {},
+  };
+}
+
 function makeDeps(
   cards: Card[],
   logsBySense: Record<string, ReviewLog[]> = {},
   settings: SettingsStore = settingsStub(),
+  wordSource: WordSource = wordSourceStub(),
+  seedLedger: SeedLedgerStore = seedLedgerStub(),
 ): ReadDashboardSummaryDeps {
   const repo: CardRepository = {
     load: async () => undefined,
@@ -67,7 +88,7 @@ function makeDeps(
     logsForWord: async (_u, senseId) => logsBySense[senseId] ?? [],
     listCards: async () => cards,
   };
-  return { cards: repo, settings };
+  return { cards: repo, settings, wordSource, seedLedger };
 }
 
 const PAST = new Date("2026-06-29T00:00:00Z"); // due (<= now)
@@ -83,7 +104,7 @@ describe("readDashboardSummary", () => {
       card("e", "Fluent", FUTURE),
     ]);
 
-    const res = await readDashboardSummary({ userId: USER, now: NOW }, deps);
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, deps);
 
     expect(res.ladder).toEqual([
       { state: "Seen", count: 1 },
@@ -100,13 +121,13 @@ describe("readDashboardSummary", () => {
       card("c", "Fluent", FUTURE),
     ]);
 
-    const res = await readDashboardSummary({ userId: USER, now: NOW }, deps);
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, deps);
 
     expect(res.dueReviews).toBe(2);
   });
 
   it("SEED-1: an empty card set is the first session — seeds FIRST_SESSION_SEED_WORDS new", async () => {
-    const res = await readDashboardSummary({ userId: USER, now: NOW }, makeDeps([]));
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, makeDeps([]));
 
     expect(res.newIntroductions).toBe(FIRST_SESSION_SEED_WORDS);
     expect(res.dueReviews).toBe(0);
@@ -116,9 +137,70 @@ describe("readDashboardSummary", () => {
     // All existing cards scheduled in the future → no backlog → NEW_PER_DAY.
     const deps = makeDeps([card("a", "Fluent", FUTURE), card("b", "Fluent", FUTURE)]);
 
-    const res = await readDashboardSummary({ userId: USER, now: NOW }, deps);
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, deps);
 
     expect(res.newIntroductions).toBe(NEW_PER_DAY);
+  });
+
+  it("SEED-5: new introductions are capped at the frontier's actual supply, not the pacing ceiling", async () => {
+    // No backlog → the pace would allow NEW_PER_DAY, but only 2 un-carded frontier words remain.
+    const deps = makeDeps(
+      [card("a", "Fluent", FUTURE)],
+      {},
+      settingsStub(),
+      wordSourceStub(2),
+    );
+
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, deps);
+
+    expect(res.newIntroductions).toBe(2);
+  });
+
+  it("SEED-5: an exhausted frontier band reports 0 new even when the pace allows some", async () => {
+    const deps = makeDeps(
+      [card("a", "Fluent", FUTURE)],
+      {},
+      settingsStub(),
+      wordSourceStub(0),
+    );
+
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, deps);
+
+    expect(res.newIntroductions).toBe(0);
+  });
+
+  it("SEED-10: reports 0 new when the learner already seeded today (the reported 'up to 5 new' bug)", async () => {
+    // Seeded earlier THIS learner-local day → the seed rail denies → the next /review introduces
+    // nothing, so the dashboard must not advertise the daily pace even with 0 due.
+    const lastSeedAt = new Date("2026-06-30T08:00:00Z"); // same UTC day as NOW
+    const deps = makeDeps(
+      [card("a", "Fluent", FUTURE)],
+      {},
+      settingsStub(),
+      wordSourceStub(50),
+      seedLedgerStub(lastSeedAt),
+    );
+
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, deps);
+
+    expect(res.dueReviews).toBe(0);
+    expect(res.newIntroductions).toBe(0);
+  });
+
+  it("BAT-14: a new calendar day still within the min gap reports 0 new", async () => {
+    const now = new Date("2026-07-01T00:30:00Z");
+    const lastSeedAt = new Date("2026-06-30T23:45:00Z"); // new day, but < SEED_MIN_GAP_HOURS elapsed
+    const deps = makeDeps(
+      [card("a", "Fluent", FUTURE)],
+      {},
+      settingsStub(),
+      wordSourceStub(50),
+      seedLedgerStub(lastSeedAt),
+    );
+
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now }, deps);
+
+    expect(res.newIntroductions).toBe(0);
   });
 
   it("CNT-8: sentencesToday sums today's free judged passes (uses), across words", async () => {
@@ -138,19 +220,19 @@ describe("readDashboardSummary", () => {
       },
     );
 
-    const res = await readDashboardSummary({ userId: USER, now: NOW }, deps);
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, deps);
 
     expect(res.sentencesToday).toBe(3);
   });
 
   it("CNT-8: exposes the default daily goal when the learner has no persisted setting", async () => {
-    const res = await readDashboardSummary({ userId: USER, now: NOW }, makeDeps([]));
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, makeDeps([]));
     expect(res.dailyGoal).toBe(DAILY_GOAL_DEFAULT);
   });
 
   it("CNT-8: reflects the learner's persisted daily goal", async () => {
     const res = await readDashboardSummary(
-      { userId: USER, now: NOW },
+      { userId: USER, frontierBand: BAND, now: NOW },
       makeDeps([], {}, settingsStub(12)),
     );
     expect(res.dailyGoal).toBe(12);

@@ -4,9 +4,10 @@ import {
   type ReadDashboardSummaryResult,
 } from "~/application/progress/readDashboardSummary.js";
 import { readSettings } from "~/application/readSettings.js";
+import { readPlacementProfile } from "~/application/placement/readPlacementProfile.js";
 import { utcOffsetMinutesFor } from "~/domain/timezone.js";
 import { currentUserId } from "./currentUser.js";
-import { dashboardDeps, settingsDeps } from "./composition.js";
+import { dashboardDeps, placementProfileDeps, settingsDeps } from "./composition.js";
 
 /**
  * The dashboard read-model for the current (dev) user (spec/01 SM-1 ladder, spec/10 CNT-8 goal, SEED-6
@@ -20,8 +21,11 @@ export const dashboardSummaryFn = createServerFn({ method: "GET" }).handler(
     const userId = await currentUserId();
     const now = new Date();
     const { timezone } = await readSettings({ userId }, settingsDeps());
+    // SEED-2: the band the next build would seed at — the "new" count is computed against it (same
+    // frontier band the review path resolves in `sessionContext`).
+    const { frontierBand } = await readPlacementProfile({ userId }, placementProfileDeps());
     return readDashboardSummary(
-      { userId, now, utcOffsetMinutes: utcOffsetMinutesFor(timezone, now) },
+      { userId, frontierBand, now, utcOffsetMinutes: utcOffsetMinutesFor(timezone, now) },
       dashboardDeps(),
     );
   },

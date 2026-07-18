@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { runReviewPass, type RunReviewPassDeps } from "./runReviewPass.js";
+import {
+  reviewWasRated,
+  runReviewPass,
+  type RunReviewPassDeps,
+  type RunReviewPassResult,
+} from "./runReviewPass.js";
 import type { Card, FsrsCardState, MasteryState } from "~/domain/mastery/card.js";
 import type { LexicalItem } from "~/domain/lexicalItem.js";
 import type { NlpToken } from "~/domain/review/ruleLayer.js";
@@ -372,5 +377,61 @@ describe("runReviewPass — judged branch (LOOP-1, LOOP-3, LOOP-4, LOOP-5)", () 
       expect(res.outcome.mastery).toBe("Productive");
     }
     expect(stored().mastery).toBe("Productive");
+  });
+});
+
+describe("reviewWasRated (BAT-7)", () => {
+  it("BAT-7: true for a rated deterministic pass — and a ReviewLog was indeed written", async () => {
+    const { d, logs } = deps(card("Recognized"));
+    const res = await runReviewPass(
+      { userId: "u1", senseId: SENSE, response: "negotiate", now: NOW },
+      d,
+    );
+    expect(reviewWasRated(res)).toBe(true);
+    expect(logs).toHaveLength(1);
+  });
+
+  it("BAT-7: true for a judged verdict — one log written", async () => {
+    const { d, logs } = deps(card("Productive"));
+    const res = await runReviewPass(
+      { userId: "u1", senseId: SENSE, response: PASS_RESPONSE, now: NOW },
+      d,
+    );
+    expect(reviewWasRated(res)).toBe(true);
+    expect(logs).toHaveLength(1);
+  });
+
+  it("BAT-7: false for a rule-layer bounce — no log written (INV-2)", async () => {
+    const { d, logs } = deps(card("Productive"));
+    const res = await runReviewPass(
+      { userId: "u1", senseId: SENSE, response: ABSENT_RESPONSE, now: NOW },
+      d,
+    );
+    expect(reviewWasRated(res)).toBe(false);
+    expect(logs).toHaveLength(0);
+  });
+
+  it("BAT-7: false for the cloze soft bounce; true for a graded cloze lane", () => {
+    const soft = {
+      tier: "cloze",
+      previousMastery: "Seen",
+      outcome: { kind: "softBounce" },
+    } as unknown as RunReviewPassResult;
+    const graded = {
+      tier: "cloze",
+      previousMastery: "Seen",
+      outcome: { kind: "graded" },
+    } as unknown as RunReviewPassResult;
+    expect(reviewWasRated(soft)).toBe(false);
+    expect(reviewWasRated(graded)).toBe(true);
+  });
+
+  it("BAT-7: false for a judge-unavailable outcome — no log written (NET-3)", () => {
+    const unavailable = {
+      tier: "free",
+      previousMastery: "Productive",
+      outcome: { kind: "unavailable", reason: "transient" },
+    } as unknown as RunReviewPassResult;
+    expect(reviewWasRated(unavailable)).toBe(false);
   });
 });

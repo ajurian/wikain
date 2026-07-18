@@ -160,6 +160,116 @@ And no parameters are pooled from other users
 `Seen`. On day one there are zero production-eligible words, so the use-goal cannot be met by new
 introductions.
 
+### SEED-10 — Steady-state seed rail: calendar-day boundary AND minimum inter-seed gap
+**Trace:** PRD §8; Amendment v4.2. Refines `BAT-14` (spec/14).
+**Requirement:** In steady state, a seed batch MUST be granted **iff both**: (a) `last_seed_at` is a
+**different** learner-local calendar day than now (the `CNT` day-boundary convention), **and** (b) at
+least `SEED_MIN_GAP_HOURS` (=5) have elapsed since `last_seed_at`. If **either** clause fails, no seed
+runs on this request — no card creation, no rating, nothing else changes (seeding is unrelated to
+review grading). A first-ever seed (no ledger fact) trivially satisfies both. The quantity being
+bounded is **cumulative introductions per period**, NOT instantaneous inter-card spacing — a learner
+taking all ~5 new cards in one sitting is the desired §10.1 pattern; the harm is a *count* overshoot
+that doubles the future review-and-judge tail.
+
+**Scenario: the midnight double is blocked by the gap clause**
+```
+Given a seed batch ran at 11:50pm learner-local
+When a rebuild runs at 12:00am (a new calendar day, ten minutes later)
+Then clause (a) passes but clause (b) fails (< SEED_MIN_GAP_HOURS)
+And no second seed batch fires
+```
+
+**Scenario: a same-local-day rebuild seeds nothing**
+```
+Given a seed batch ran earlier today learner-local
+When any same-day rebuild runs (seam, T-expiry, reload)
+Then clause (a) fails
+And no seed batch fires (existing cards are ordered only)
+```
+
+**Notes / rationale (migrated from Amendment v4.2):**
+- This rail is a **safety net, not the primary throttle.** The primary acquisition throttle stays the
+  §8 backlog-pressure gate (`SEED-6`, ≤ `NEW_FRACTION_UNDER_BACKLOG` new when a backlog exists), which
+  load-balances acquisition against real review debt. The rail only binds on a **caught-up, no-backlog
+  day** — exactly when the backlog gate is silent and the boundary burst could slip through. Do not
+  build heavier rate-limiter machinery (buckets, refill accounting) around it.
+- **Cold-start (`SEED-1`/`SEED-8`) sits *above* the rail** and is not suppressed by it; this rail
+  governs only the steady-state guard.
+- **Rejected alternatives.** *Leaky bucket* — its even drip (~1 card/4.8h) starves the once-a-day
+  single-session learner and fragments §10.1 sessions; smoothing a bursty-by-design stream is the wrong
+  goal. *Token bucket* — its bound (rate×window + burst) permits ~2×/day (pull 5, then the ~5 that
+  refill), the exact burst this rail kills, leaked back in spread form; it cannot express a hard
+  per-window cap. *Pure rolling-24h count* — hard-caps correctly but **starves the consistent daily
+  learner whose session drifts earlier** (Mon 8:30 → Tue 8:15 is only 23h45m, so the prior 5 are still
+  in-window → 5,0,5,0…), and it redefines "day" as rolling-T, inconsistent with the calendar-day
+  semantics the §9 counter and §3.2 `Fluent` gate use. Calendar-day + debounce gives the same burst
+  protection while keeping one calendar-day meaning app-wide (see `SEED-13`).
+
+### SEED-11 — A seed is atomic and stored as an absolute instant
+**Trace:** PRD §8; Amendment v4.2.
+**Requirement:** A seed MUST be an **atomic batch** of the `SEED-6` pace, stamped at **one** timestamp
+`last_seed_at`; cards MUST NOT be introduced one-at-a-time across the session (no per-card seeding
+clock, so no mid-session self-tripping). The ledger MUST persist `last_seed_at` as an **absolute
+instant**, not a "day-seeded" boolean or day key — the instant is what answers **both** the
+calendar-day (a) and elapsed-gap (b) comparisons of `SEED-10`; a boolean/day-key cannot answer (b). The
+grant MUST stamp `last_seed_at` even when the pacing math admitted **0** introductions (the pass ran).
+
+**Scenario: the ledger holds the seeding instant**
+```
+Given a seed batch is granted at instant T
+When the ledger records it
+Then last_seed_at = T (an absolute instant)
+And the next request evaluates both SEED-10 clauses against T
+```
+
+### SEED-12 — Returning after an absence yields one bounded batch, no back-fill
+**Trace:** PRD §8; Amendment v4.2.
+**Requirement:** A learner returning after ≥ 1 idle day passes both `SEED-10` clauses (new calendar
+day; gap ≫ `SEED_MIN_GAP_HOURS`) and MUST receive **one** full seed batch — a bounded, benign
+catch-up. The rail MUST NOT accumulate or back-fill missed days (that would reintroduce the
+token-bucket 2× overshoot). One return = at most one batch.
+
+**Scenario: a three-day absence seeds one batch, not three**
+```
+Given a learner last seeded three days ago
+When they return today
+Then exactly one seed batch is granted (the SEED-6 pace)
+And no back-fill for the two skipped days occurs
+```
+
+### SEED-13 — Timezone coherence
+**Trace:** PRD §8, §9; Amendment v4.2.
+**Requirement:** "Calendar day" MUST be **user-local**, matching §8/§9 and `BAT-14`. `last_seed_at` is
+an absolute instant; clause (a) MUST evaluate the calendar-day boundary in the learner's timezone,
+clause (b) MUST evaluate the elapsed gap against the stored instant. `[VALIDATE]` Normal DST shifts and
+timezone changes MUST NOT defeat either clause (a genuine local-day change and a ≫ gap both still hold);
+low-risk, confirm if travel/DST edge reports appear.
+
+**Scenario: a daily learner drifting earlier is not starved**
+```
+Given a learner seeds at 8:30am Monday learner-local
+When they return at 8:15am Tuesday (≈ 23h45m later)
+Then clause (a) passes (new local day) and clause (b) passes (≥ SEED_MIN_GAP_HOURS)
+And a full batch is granted (no rolling-window starvation)
+```
+
+### SEED-14 — Instrument every granted and denied seed
+**Trace:** PRD §8; Amendment v4.2.
+**Requirement:** Every **granted** seed MUST be logged (`last_seed_at`, count, backlog state at grant)
+and every **denied** seed request MUST be logged **with the failing clause**. The failing clause MUST
+follow this precedence: `calendar_day` whenever clause (a) failed (the ordinary same-day denial), and
+`min_gap` **only** when the day rolled but the gap had not elapsed — so a `min_gap` record is exactly a
+boundary-burst the new clause caught. Purposes: (i) tune `SEED_MIN_GAP_HOURS`; (ii) confirm the rail
+**rarely binds** — frequent binding points at the backlog gate or the §8 pace, not this rail.
+
+**Scenario: a denied midnight-double is attributed to the gap clause**
+```
+Given a seed ran at 11:50pm and a rebuild runs at 12:00am
+When the seed is denied (SEED-10 clause b)
+Then a denial event is logged with failing_clause = min_gap
+And no grant event is logged
+```
+
 ---
 
 ## Open / to-validate (non-normative)
@@ -170,6 +280,11 @@ introductions.
   share-alike if redistributing a derived list).
 - **"Professional" vocabulary** has no clean open list — treat as a v2 enrichment band.
 - Numeric sign-offs (retention 0.90, pacing). PRD §11.
+- `[DEFAULT]`/sign-off **`SEED_MIN_GAP_HOURS`** (`SEED-10`, default 5h, range 4–6) — tune from the
+  `SEED-14` grant/deny log.
+- `[VALIDATE]` **Rail bind-rate** (`SEED-14`) — confirm the rail rarely binds; frequent binding points
+  at the backlog gate / §8 pace, not this rail.
+- `[VALIDATE]` **Timezone / DST edges** (`SEED-13`).
 
 ## Deferred (non-normative — [v2] / enable-later)
 

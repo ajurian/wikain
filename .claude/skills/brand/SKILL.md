@@ -42,8 +42,15 @@ copy frames retry as staying in the flow ("let's keep this one in English"), nev
 
 Lowercase **`wikain`** set in Source Serif 4 (the display serif), ink color, with the terminal
 **period in marigold** — `wikain.` — the period as "something said." It takes `marigold-deep`, the
-contrast-safe on-paper tint, because it renders as a text glyph. Favicon/avatar: marigold square,
-ink `w.`. No other logo. Don't outline, gradient, or animate the wordmark.
+contrast-safe on-paper tint, because it renders as a text glyph. The name is the whole identity, so
+the text always carries the accessible label — never ship the mark without it.
+
+**Lockup.** The wordmark is the **icon mark + name** on one baseline row (`src/presentation/icon.svg`
+via the `Wordmark` component): a rounded ink field, a single-stroke `w`-checkmark drawn as one
+continuous line, terminating in the **marigold dot** — the same "counted / something said" signal as
+the period. The mark is sized in `em` so it tracks the name's font size at every call site; the name
+stays the accessible label (mark is `alt=""`, decorative). Favicon/avatar: the mark alone (marigold
+dot on ink field). Don't outline, gradient, or animate either the mark or the name.
 
 ## Core palette (summary — full values + usage rules in `references/palette.md`)
 

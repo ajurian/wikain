@@ -30,6 +30,8 @@ export interface RunReviewPassInput {
   /** FIT-7/FIT-8: per-presentation soft-bounce state; only the cloze branch reads it. Defaults to 0/[]. */
   priorSoftBounces?: number;
   priorSoftBounceLanes?: ClozeSoftBounceLane[];
+  /** BAT-15: client-measured card-shown → submit span; every branch records it, none rates on it. */
+  durationMs?: number;
   /** Defaults to `new Date()`; injectable for deterministic tests. */
   now?: Date;
 }
@@ -62,6 +64,25 @@ export type RunReviewPassResult = { previousMastery: MasteryState } & (
   | { tier: "cued"; outcome: SubmitCuedReviewResult }
   | { tier: "free"; outcome: SubmitFreeProductionResult }
 );
+
+/**
+ * BAT-7: whether this pass persisted a ReviewLog — the single predicate batch progress keys off,
+ * derived from the SAME discriminants the use-cases return (never a parallel bookkeeping flag).
+ * Recognition/cued always rate (their core has no no-rating path); cloze rates only its graded
+ * lanes (a FIT-7 soft bounce logs nothing); free rates only a judged verdict (an INV-2 bounce and
+ * a NET-3 unavailable log nothing).
+ */
+export function reviewWasRated(result: RunReviewPassResult): boolean {
+  switch (result.tier) {
+    case "recognition":
+    case "cued":
+      return true;
+    case "cloze":
+      return result.outcome.kind === "graded";
+    case "free":
+      return result.outcome.kind === "judged";
+  }
+}
 
 /**
  * The end-to-end loop, one pass (spec/11-end-to-end-loop.md). This is the single entry point the

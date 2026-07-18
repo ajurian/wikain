@@ -93,7 +93,7 @@ describe("retuning the frontier band (SEED-2 mechanism i)", () => {
     const b1 = await recordCoarseLevel({ userId: USER_A, level: "b1" }, { profile });
     expect(b1).toBe("B1");
 
-    // A later session reads the persisted band (as `startSessionFn` does) and seeds there.
+    // A later session reads the persisted band (as `getReviewSessionFn` does) and seeds there.
     const { frontierBand } = await readPlacementProfile({ userId: USER_A }, { profile });
     const secondBatch = await seedIntroductions({ userId: USER_A, frontierBand }, seedDeps);
 

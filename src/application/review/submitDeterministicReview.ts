@@ -9,6 +9,8 @@ import type { Scheduler } from "../ports/scheduler.js";
 export interface DeterministicReviewInput {
   userId: string;
   senseId: string;
+  /** BAT-15: client-measured card-shown → submit span; recorded, never rated on. */
+  durationMs?: number;
   /** Defaults to `new Date()`; injectable for deterministic tests. */
   now?: Date;
 }
@@ -97,6 +99,8 @@ export async function submitDeterministicReview(
     rating,
     reviewedAt: now,
     ...(strategy.logExtras ?? {}),
+    // BAT-15: absent when the caller measured nothing — never a fabricated 0.
+    ...(input.durationMs === undefined ? {} : { durationMs: input.durationMs }),
     fsrs: fsrsLog,
   });
 

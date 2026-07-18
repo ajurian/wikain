@@ -172,10 +172,16 @@ application, not magic literals. Each is **owned** by one spec; this table is th
 | `NEW_PER_DAY` | ~5 | `SEED` | §8 |
 | `NEW_FRACTION_UNDER_BACKLOG` | 0.30 | `SEED` | §8 |
 | `FIRST_SESSION_SEED_WORDS` | ~2 | `SEED` | §8 |
+| `SEED_MIN_GAP_HOURS` | 5 (range 4–6) | `SEED` | §8; Amendment v4.2 (`SEED-10`) |
 | `DAILY_GOAL_DEFAULT` | 5 | `CNT` | §9 |
 | `CLOUD_RETRY_COUNT` | 1 | `NET` | §7 |
 | `CLOZE_SOFT_BOUNCE_CAP` | 3 | `FIT` | `13` (`FIT-8`) |
 | `CLOZE_TYPO_MAX_DISTANCE` | 1 | `FIT` | §3.6; `13` (`FIT-9`) |
+| `TIER_EFFORT_UNITS` | map: MCQ 1 / cloze 2 / cued 2 / free 10 | `BAT` | Amendment §12.2 (`BAT-2`) |
+| `BATCH_UNIT_BUDGET` | 20 | `BAT` | Amendment §12.3 (`BAT-3`) |
+| `BATCH_CARD_CAP` | 10 | `BAT` | Amendment §12.3 (`BAT-3`) |
+| `BATCH_FP_CAP` | 2 | `BAT` | Amendment §12.3 (`BAT-3`) |
+| `BATCH_ABSENCE_T_MINUTES` | 20 | `BAT` | Amendment §12.6 (`BAT-11..13`) |
 
 > All values are tunable from review data (PRD §11 "sign-offs"). None is load-bearing enough to
 > agonize over pre-build; the spec fixes the **wiring**, not the number.
@@ -200,6 +206,7 @@ application, not magic literals. Each is **owned** by one spec; this table is th
 | `11-end-to-end-loop.md` | `LOOP` | the §10 one-pass orchestration |
 | `12-data-model.md` | `DM` | lexical item / FSRS card / review entities (bridges BUILD.md) |
 | `13-cloze-fit-set.md` | `FIT` | classified cloze fit-set, three-lane grading, soft bounces, typo lane, heal queue |
+| `14-mini-sessions.md` | `BAT` | effort-unit batches, batch lifecycle, completion seam, absence handling, batch instrumentation |
 
 ---
 
@@ -252,12 +259,14 @@ Every PRD section maps to ≥1 spec file. Reverse map (requirement → PRD §) l
 | §5.8 | not used | `06` (notes) |
 | §6 | when the model runs / does not run; maintenance every rep | `04`, `06`, `11` |
 | §7 | online inference, "checking…", failure path, key handling | `08` |
-| §8 | first-session seeding, placement, pacing, FSRS defaults | `09` |
+| §8 | first-session seeding, placement, pacing, FSRS defaults, the steady-state seed rail | `09` (`SEED-1..14`) |
 | §9 | gamification: counter, retrievability gate, daily goal, inline feedback | `10`, `07` |
 | §10 | end-to-end loop (one pass) | `11` |
 | §11 | consolidated decisions (P1–P11, items 1–14) | distributed; index here |
 | Risks v4 | false-rejection unrecoverable; drift feed; network dep; cost/abuse | `01`, `06`, `08`; backend out-of-scope |
 | §11 item 15 | typed-cloze fit-set & soft bounce (patches §3.6/§4/§4.1/§5.8; `13` is its normative home) | `13` (`FIT-1..11`); `02`, `03`, `12` cross-refs |
+| Amendment v4.1 §12–§13 | mini-sessions: effort-unit batching, seam, absence, instrumentation (`14` is its normative home) | `14` (`BAT-1..16`); `02`, `04`, `08`, `09`, `10`, `13` cross-refs |
+| Amendment v4.2 | new-card seeding rate rail: calendar-day + min-gap debounce, atomic instant ledger, instrumentation (`09` is its normative home) | `09` (`SEED-10..14`); `14` (`BAT-14` refined) |
 
 > §11 decision tables are not a separate spec; each decision is realized as a requirement in its
 > owning file and cited above. The "Risks introduced by v4" items 1–3 are encoded as normative
@@ -281,3 +290,5 @@ Indexed here; detailed in each owning file's Deferred section.
 - **Exam-prep mode / register-gating** — `06`. v1 is single clean-English mode.
 - **High-proficiency `Seen`-skip efficiency** — `09`.
 - **Collocation-production tier** — `03`. v1 keeps collocation advisory in the judge + enrichment.
+- **Effort-weight recompute from logged durations**; **absence-T retuning**; **per-day cumulative
+  introduction ledger** — `14`.

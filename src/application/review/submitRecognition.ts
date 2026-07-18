@@ -10,6 +10,8 @@ export interface SubmitRecognitionInput {
   senseId: string;
   /** The word the learner picked from the MCQ options (TIER-2). Graded by identity to the target. */
   response: string;
+  /** BAT-15: client-measured card-shown → submit span; recorded, never rated on. */
+  durationMs?: number;
   /** Defaults to `new Date()`; injectable for deterministic tests. */
   now?: Date;
 }

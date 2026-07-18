@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
+import icon from "../favicon.ico?url";
 import { getSessionFn } from "@/server/session";
 
 export const Route = createRootRoute({
@@ -16,7 +17,10 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Wikain" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/x-icon", href: icon },
+    ],
   }),
   // Resolve the session ONCE at the root (STACK-4): the `_authenticated` layout reads it to guard the
   // app routes, and the app-shell chrome reads the same value. One fetch shared down the tree.

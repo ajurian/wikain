@@ -150,6 +150,19 @@ describe("submitCuedReview", () => {
     expect(calls).toEqual(["Good"]);
   });
 
+  it("BAT-15: a measured duration is recorded on the log; an unmeasured one stays absent", async () => {
+    const measured = deps(recognizedCard());
+    await submitCuedReview(
+      { userId: "u1", senseId: SENSE, response: "negotiate", durationMs: 18000, now: NOW },
+      measured.d,
+    );
+    expect(measured.logs[0]!.durationMs).toBe(18000);
+
+    const unmeasured = deps(recognizedCard());
+    await submitCuedReview({ userId: "u1", senseId: SENSE, response: "negotiate", now: NOW }, unmeasured.d);
+    expect(unmeasured.logs[0]!.durationMs).toBeUndefined();
+  });
+
   it("SM-4: a cued pass promotes Recognized → Productive", async () => {
     const { d, stored } = deps(recognizedCard());
     const res = await submitCuedReview(

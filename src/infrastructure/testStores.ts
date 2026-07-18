@@ -20,6 +20,10 @@ import { DrizzleSettings } from "./persistence/drizzleSettings.js";
 import { DrizzleCatalog } from "./persistence/drizzleCatalog.js";
 import { DrizzleWordSource } from "./persistence/drizzleWordSource.js";
 import { DrizzleHealQueue } from "./persistence/drizzleHealQueue.js";
+import { DrizzleSessionState } from "./persistence/drizzleSessionState.js";
+import { DrizzleSeedLedger } from "./persistence/drizzleSeedLedger.js";
+import { DrizzleSeedInstrumentation } from "./persistence/drizzleSeedInstrumentation.js";
+import { DrizzleBatchInstrumentation } from "./persistence/drizzleBatchInstrumentation.js";
 import { FakeAnalyzer } from "./nlp/fakeAnalyzer.js";
 import { seedLexicalItems } from "./db/seedCatalog.js";
 import { makePgliteDb } from "./db/pglite.js";
@@ -117,6 +121,11 @@ export async function makeTestStores() {
     catalog: await DrizzleCatalog.hydrate(db),
     wordSource: new DrizzleWordSource(db),
     healQueue: new DrizzleHealQueue(db),
+    // spec/14: the mini-session stores (BAT-11/14/16), same shared pglite handle.
+    sessionState: new DrizzleSessionState(db),
+    seedLedger: new DrizzleSeedLedger(db),
+    seedInstrumentation: new DrizzleSeedInstrumentation(db),
+    batches: new DrizzleBatchInstrumentation(db),
     /**
      * The NLP port's test double. spaCy is out-of-process now, so a test that reached it would be an
      * integration test of the container rather than of the use-case under test — the same reason

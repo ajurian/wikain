@@ -1,4 +1,4 @@
-# Wikain — System Flow (Product Requirements Document) — **v4 (multi-user / web / cloud judge / online)**
+# Wikain — System Flow (Product Requirements Document) — **v4.1 (multi-user / web / cloud judge / online)**
 
 > **Status legend**
 >
@@ -52,7 +52,7 @@ shared across accounts):
 | Per-adjudicator cache invalidation / write-back | obsolete with the cross-user cache gone |
 | Population-level FSRS optimization | per-user optimization only (§8); no pooled population model |
 | Batch API | the core loop is interactive/synchronous; batch is for non-interactive fleets |
-| LanguageTool (JVM) / runtime spaCy (Python) | replaced by in-process wink-nlp + the LLM's corrected output |
+| LanguageTool (JVM) | no standalone grammar tool — the corrected sentence comes from the LLM. *(Runtime spaCy, by contrast, **did** return in v4.1 — as an out-of-process NLP service for lemma/POS; see the v4.1 amendment.)* |
 
 **Removed in v4 (with the reason each existed and why it's gone):**
 
@@ -75,6 +75,50 @@ shared across accounts):
 - **Verdict memo** (§5.3). In v3 a latency convenience. In v4 it again has **cost value**
   (skips a billable call on an identical resubmission), though still low-value at per-user scale —
   the memo is **per-user, never shared** across accounts (the cross-user cache stays deleted).
+
+---
+
+## v4.1 amendment — codebase-alignment updates (2026-07-17)
+
+v4.1 records four changes made while building the v4 runtime; each has a **normative home** in
+`spec/` or the build pipeline, and this section is a pointer. Where the v4 prose below still carries
+the old framing, the cited spec ID (or this block) wins. The two `spec/` files here supersede the
+retired `docs/AMMENDMENT.md` scratch amendment — cite the stable IDs (`FIT-n`, `BAT-n`), never the
+scratch file.
+
+1. **NLP moved out-of-process to a Python spaCy service.** The in-process **wink-nlp** layer is
+   **gone**. All lemma/POS analysis runs in one FastAPI container (`POST /analyze`, spaCy
+   `en_core_web_sm`), reached over HTTPS from the backend. The load-bearing reason: the build-time
+   content pipeline (Stage C) and the runtime grader MUST validate against the **same** engine, or
+   an item could pass the build gate and still be bounced "word absent" at review — a fabricated
+   `Again` that corrupts FSRS (I2). Timing bonus: wink Americanized spelling
+   (`aesthetic→esthetic`) and could not represent those lemmas; spaCy does not Americanize. There is
+   now **one** NLP port (`SentenceAnalyzer.analyze`); the separate `Lemmatizer` port was deleted (a
+   second port would mean a second RPC for one sentence). *(Replaces the §5.2 / §5.6 / §5.8 / P4
+   wink-nlp text.)*
+
+2. **Content source collapsed to one multisense catalog.** The three-CSV frequency stack
+   (**NGSL → NAWL → Oxford 5000**) is **retired**. Selection now runs over a single Oxford-derived
+   **multisense catalog** (`data/oxford_multisense_catalog.csv`: word, POS, CEFR, sense_id,
+   sense_hint, sense_zipf, global_zipf_rank), CEFR-banded and zipf-ordered
+   (`WordSource.nextFrontierWords`). **Sense granularity changed with it:** each WordNet sense is its
+   **own** lexical item (`{lemma}_{pos}_NN`, `_01` = most frequent sense), not "one item per
+   (headword, POS)." *(Replaces the §8 list-stack table + the §4.1 sense-granularity default.)*
+
+3. **Typed cloze gained a classified fit-set and soft bounces** — `spec/13` (`FIT-1..11`). Cloze is
+   no longer a bare binary lemma-match. Each item carries a `cloze_fit_set` classifying plausible
+   fills as `target | same_sense_near_miss | different_sense_fit`; a non-target-but-valid fill
+   produces a **soft bounce** — no rating, no scheduler call, no `ReviewLog`, card stays due
+   (`FIT-7`). This is a **third class**, deliberately NOT an I2 rule-layer bounce (the input is
+   well-formed). The typo-fix lane (Damerau–Levenshtein ≤ 1 → `Good`) is v1-live; cloze stays
+   deterministic (no LLM, no extra network beyond the one analyze call). *(Refines §3.6, §4, §4.1,
+   §5.8.)*
+
+4. **Review sessions present as mini-session batches** — `spec/14` (`BAT-1..16`). The per-pass loop
+   (§10) is unchanged; cards are now delivered in **effort-unit batches** (time-anchored per-tier
+   weights, a three-way cap) with a **Continue / Done** completion seam, a server-authoritative
+   active batch, and a T-expiry "Welcome back" rebuild. Batching is **presentation-only pacing**: it
+   owns no ratings, buffers nothing, and preserves I1–I4 (`BAT-1`). *(Adds §10.1.)*
 
 ---
 
@@ -243,6 +287,9 @@ self-reported, so `Hard`/`Easy` would be synthesized from thin signal.
   produces the one rating.
 - **A scaffolded pass = `Good`** in v1 (flag recorded; still gates the mastery ladder).
 - **A typo-fixed cloze = `Good`** in v1 (flag recorded).
+- **A typed-cloze soft bounce derives no rating** (v4.1 — `spec/13` `FIT-7`): a same-sense or
+  different-sense fit-set fill makes no scheduler call and persists no `ReviewLog`, like an I2 bounce
+  but for *well-formed* input. It caps (`CLOZE_SOFT_BOUNCE_CAP`), then reveals + `Again`.
 - **Latency is not used** to manufacture a rating in v1.
 - All richer signals (scaffolding, retry count, typo-fix, latency) are **instrumented from day
   one** so the 4-button mapping can be enabled later if data shows it helps.
@@ -298,6 +345,14 @@ tolerance (Damerau–Levenshtein ≤1 for ≤6 chars, ≤2 longer) → `Hard`.
   by the same lemma-match logic as cloze. Cued and cloze differ only in cue richness (bare meaning
   vs. sentence-with-a-blank). Two tiers for the difficulty ramp; collapse only if data shows them
   redundant.
+- **Typed cloze is graded against a classified fit-set, not a bare lemma match (v4.1 —
+  `spec/13`, `FIT-1..11`).** Each item carries a `cloze_fit_set` classifying plausible fills as
+  `target | same_sense_near_miss | different_sense_fit`. The target passes (`Good`); a
+  non-target-but-valid fill produces a **soft bounce** — no rating, no scheduler call, no
+  `ReviewLog`, card stays due — a class distinct from an I2 rule-layer bounce (the input is
+  well-formed). A typo (Damerau–Levenshtein ≤ 1 of the target) still rates `Good`. The tier stays
+  **deterministic**: no LLM, only the one existing NLP analyze call. Cued does **not** inherit the
+  fit-set (it is enumerated against the cloze frame, which cued has no equivalent of).
 - **Ladder ordering is a scaffolding/difficulty curve, NOT a productive-value ordering.** The
   climb recognition → cloze → cued → free orders tiers by _scaffolding_ (most-supported →
   least-supported on-ramp). This **inverts** the research's _productive-value_ ranking (which
@@ -321,8 +376,8 @@ tolerance (Damerau–Levenshtein ≤1 for ≤6 chars, ≤2 longer) → `Hard`.
 
 ### 4.1 From word list to cards (content vs scheduling)
 
-A word list (e.g. American Oxford 3000/5000) is a **catalog**, not a set of cards. Conversion
-spans three layers:
+A word list (the Oxford-derived **multisense catalog**, `data/oxford_multisense_catalog.csv`) is a
+**catalog**, not a set of cards. Conversion spans three layers:
 
 | Layer | Scope | Holds |
 | --- | --- | --- |
@@ -330,8 +385,9 @@ spans three layers:
 | **FSRS card** | one per word | the scheduling entity (§2); tiers are _views_, not separate FSRS objects |
 | **Review** | one graded interaction | one rating (§3.6) |
 
-**Oxford row → lexical item.** The row gives headword + POS + CEFR + US spelling — enough to
-_select and sequence_, not to _render_. Each item additionally carries **generated** content:
+**Catalog row → lexical item.** A row of the multisense catalog gives headword + POS + CEFR +
+sense_id + a source sense hint + frequency rank — enough to _select and sequence_ (and to key the
+sense), not to _render_. Each item additionally carries **generated** content:
 recognition distractors (candidate _words_ for the meaning→word MCQ), a cloze sentence, a cued
 prompt, a self-reference prompt + a **model sentence** (for the §5.2 "not a verbatim copy"
 heuristic and as the judge's in-context sense reference, §5/§5.5), the **target lemma**, and the
@@ -345,17 +401,21 @@ not). Build-time may use a larger cloud model; the runtime ships only the genera
   earlier single-user "personal use" risk relief **no longer applies** — a multi-user web app is
   distribution — so generating your own content is now the **primary** safeguard, not a bonus.
   `[VALIDATE]` Oxford 3000/5000 terms for a distributed app — see §8.)
-- `[DEFAULT]` **Sense granularity:** one item per (headword, POS) at its dominant CEFR-band sense
-  for v1; split by sense only if data shows valid-but-off-sense sentences being wrongly rejected.
-  (This is a live risk now that the override is gone — see §5.7 and "Risks introduced by v4.")
+- `[DEFAULT]` **Sense granularity — multisense (v4.1).** The catalog is multisense: **each WordNet
+  sense is its own lexical item** (`sense_id = {lemma}_{pos}_NN`, `_01` = most frequent), so a
+  polysemous headword yields several items, each carrying its own intended sense, cloze frame, and
+  fit-set (§4.1 cloze, `spec/13`). *(This supersedes the v4 "one item per (headword, POS)" default —
+  the per-sense split it deferred is now the shipped shape, which also narrows the
+  valid-but-off-sense rejection risk of §5.7.)*
 
 **Lexical item → FSRS card (lazy).** Create the FSRS card **when the seeder introduces the word**
 (§8), not for the whole list. A new card is **due immediately**, so instantiating the whole catalog
 would make thousands of cards "due now." The list is the catalog; §8 paces introduction.
 
-- **American edition:** set the JS NLP layer, distractor/cloze generation, and the target-word
-  presence check to `en-US` and accept American forms — otherwise "color"/"organize" sentences get
-  bounced as word-absent (which, per I2, would silently distort scheduling).
+- **American edition:** the NLP engine (spaCy `en_core_web_sm`, v4.1), distractor/cloze generation,
+  and the target-word presence check accept American forms — otherwise "color"/"organize" sentences
+  get bounced as word-absent (which, per I2, would silently distort scheduling). *(spaCy does not
+  Americanize spelling, so — unlike the old wink layer — no target lemma is unrepresentable.)*
 
 `[DECIDED]` **Scheduler library: ts-fsrs** (`npm i ts-fsrs`, Node ≥ 20) — runs **server-side in the
 backend**, per user, no separate scheduling service. `fsrs(params)` + `createEmptyCard()`; apply the
@@ -375,15 +435,17 @@ The judge runs **only** on a **free**-production attempt (including maintenance,
 free production) that has already **passed the rule layer** (§5.2). Recognition, cloze, and cued
 production never reach it.
 
-### 5.2 Stage A — rule layer (free, deterministic, in-process JS)
+### 5.2 Stage A — rule layer (free, deterministic; pure JS over NLP-service tokens)
 
-Runs first, instantly, in-process. Its reason for existing in v4 is **cost + latency** — every
-cloud judge call is billable, and you do not make the learner wait on a network round-trip to be
-told they forgot to type the target word. A deterministic check answers that in ~1 ms and spends
-nothing. `[DECIDED]` Implemented in **JavaScript with wink-nlp** (lemma/POS, pure JS, in-process) —
-no Python/JVM sidecar.
+Runs first, before any billable judge call. Its reason for existing in v4 is **cost + latency** —
+every cloud judge call is billable, and you do not make the learner wait on the *judge* round-trip
+to be told they forgot to type the target word. `[DECIDED]` The rules themselves are **pure
+in-process JavaScript** (presence, degeneracy, Tagalog-lexicon match) run over **lemma/POS tokens
+from the Python spaCy service** (`POST /analyze` — the same engine the pipeline validates with;
+v4.1). That analyze call is free (unbilled) and fast — it is the *judge* call, not the analyze call,
+that the pre-screen exists to avoid spending. *(v3's in-process wink-nlp is gone — v4.1.)*
 
-1. **Target word present?** — wink-nlp lemmatizer, **lemma match only (inflection-agnostic)**. Any
+1. **Target word present?** — spaCy lemmatizer, **lemma match only (inflection-agnostic)**. Any
    inflected form of the target lemma counts as present.
    - Truly absent → **retry** (bounce, no penalty, no rating, no LLM; I2).
    - Present but mis-inflected → **not a bounce.** Proceeds as normal production; any inflection
@@ -391,7 +453,7 @@ no Python/JVM sidecar.
      inject the phantom lapse I2 forbids.
 2. **Non-trivial, real sentence?** — heuristic.
    - `[DEFAULT]` Degenerate = fewer than **4 content tokens excluding the target**, OR no finite
-     verb (wink-nlp POS), OR normalized similarity to the model sentence **≥ 0.90**
+     verb (spaCy POS), OR normalized similarity to the model sentence **≥ 0.90**
      (verbatim-copy heuristic). Degenerate → **retry** (no penalty, no LLM).
 3. **Language / code-switching check** `[DECIDED]` — v1 expects **clean English**.
    - A sentence containing **Tagalog words/clauses (code-switching / Taglish)** is **not accepted
@@ -540,8 +602,8 @@ to change (something it already does well) and **deterministic code** computes t
    whole-sentence fallback for step 3 — it is not the primary display.
 
 > Short learner sentences (10–20 words) make multi-match ambiguity rare, so the fallback rarely
-> fires. wink-nlp (already shipped) can also map a resolved span to token boundaries for clean
-> word-level highlighting.
+> fires. The NLP service's tokens (spaCy, v4.1) can also map a resolved span to token boundaries for
+> clean word-level highlighting.
 
 ### 5.7 Judge configuration
 
@@ -576,7 +638,9 @@ to change (something it already does well) and **deterministic code** computes t
 
 - **Embedding-similarity as a sense-match proxy** (brittle; worse than the LLM at the one job
   needed).
-- **LanguageTool / spaCy** (replaced by wink-nlp + the LLM's corrected sentence — §5.2).
+- **LanguageTool** (no standalone grammar tool — the corrected sentence comes from the judge, §5.2).
+  *(spaCy is **not** in this "not used" list any more: it is the out-of-process NLP engine as of
+  v4.1 — see the v4.1 amendment.)*
 - **Local inference host (node-llama-cpp / Ollama), GBNF decoding, model warming** (replaced by the
   cloud model + native structured output — §5.4/§5.6/§7).
 - **Batch API, cross-user cache, stronger-cloud appeal validator, one-tap override, rejudge** (no
@@ -660,12 +724,12 @@ checkmark.** Every judgment is synchronous within the session, contingent on con
   | --- | --- | --- |
   | **LexTALE scalar** (yes/no test) | **one number** — vocab-size/level estimate | (i) initial **frequency-band frontier**; (ii) FSRS **cold-start** difficulty (band × frequency) |
   | **Per-word placement marking** (adaptive items + the placement-known catalog flag) | **per-word known/unknown flags** | which specific words **skip `Seen`** and enter at `Recognized` (§3.1) |
-  | **Frequency-ordered list stack** (NGSL → NAWL → Oxford 5000) | the ordered catalog | which words are **selected and scheduled next**, positioned by the band |
+  | **Frequency-ordered catalog** (the Oxford multisense catalog, CEFR-banded + zipf-ordered; v4.1) | the ordered catalog | which words are **selected and scheduled next**, positioned by the band |
 
   - **LexTALE does NOT mark individual words known** (it is one scalar) — skip-`Seen` keys off the
     **per-word flags**, never the LexTALE score.
-  - **LexTALE does NOT select words** — it sets _where_ the frontier is; the **list stack** picks
-    the actual words at that frontier.
+  - **LexTALE does NOT select words** — it sets _where_ the frontier is; the **catalog** (band +
+    zipf order) picks the actual words at that frontier.
   - For precision (or to report a CEFR level), use the **published LexTALE English instrument** with
     its **validated nonwords** — do not author your own nonwords.
   - **Placement is low-stakes:** FSRS empirically re-estimates per-item difficulty within a few
@@ -675,14 +739,16 @@ checkmark.** Every judgment is synchronous within the session, contingent on con
 
 - **Word selection is the real job of seeding.** Start at the coverage frontier — the
   highest-frequency words just above what's already known.
-  - `[DEFAULT]` **List stack:** NGSL (high-frequency floor) → **NAWL + Oxford 5000 (B2–C1)** as the
-    productive target zone. Because PH receptive proficiency is high, set the **default starting
-    frontier at ~B2 + NAWL**, not the NGSL core. The LexTALE level (if taken) nudges the band.
-  - `[VALIDATE]` **Licensing:** a multi-user web app **is distribution**, so confirm Oxford 3000/5000
-    terms — the prior single-user "personal use" exemption no longer applies. Using the lists only as
-    a frequency/CEFR _ordering_ and **generating your own content** (§4.1) keeps this low-risk;
-    NGSL/NAWL/AWL are the cleaner-licensed core regardless (NGSL is CC BY-SA 4.0 — mind share-alike
-    if you redistribute a derived list).
+  - `[DEFAULT]` **Catalog (v4.1):** a single Oxford-derived **multisense catalog**
+    (`data/oxford_multisense_catalog.csv`), CEFR-banded (A2–C1) and zipf-ordered; the frontier
+    `band` + zipf rank pick the next words (`WordSource.nextFrontierWords`). Because PH receptive
+    proficiency is high, set the **default starting frontier at ~B2**. The LexTALE level (if taken)
+    nudges the band. *(This retires the v4 NGSL → NAWL → Oxford 5000 three-CSV list stack; v2
+    collapsed the multi-list stack, v4.1's runtime selects wholly from the one catalog.)*
+  - `[VALIDATE]` **Licensing:** a multi-user web app **is distribution**, so confirm Oxford
+    3000/5000 terms — the prior single-user "personal use" exemption no longer applies. Using the
+    list only as a frequency/CEFR _ordering_ and **generating your own content** (§4.1) keeps this
+    low-risk.
   - **"Professional" vocabulary** has no clean open list; treat domain sublists as a **v2**
     enrichment, not a v1 band.
 
@@ -784,6 +850,26 @@ Attaches to the loop; adds no separate progression system.
    `ReviewLog`** (§8 optimizer). Rule-layer bounces (step 4) are skipped here — they produced no
    rating. _(End of pass; loop repeats.)_
 
+### 10.1 Session presentation — mini-session batches (v4.1)
+
+The per-pass loop above is unchanged; **how passes are grouped into a session** is specified in
+`spec/14` (`BAT-1..16`). A review session is delivered as consecutive small **batches** sized by
+time-anchored effort units (per-tier weights — recognition cheapest, free production most expensive,
+because it prices in the judge round-trip and reading the verdict), closed by a three-way cap, each
+followed by a **Continue / Done** completion seam showing a batch summary and the daily-goal progress
+(§9). This solves the "50-card wall": a large due queue shown as one block offers no reward until the
+very end; the batch seam provides an early one.
+
+Batching is **presentation-only pacing** and preserves I1–I4 (`BAT-1`): it adds no evaluator, rates
+no bounce, defers no rating — every rating still hits FSRS immediately per review (step 8 above).
+Progress ticks **iff a `ReviewLog` was persisted** (`BAT-7`), so cloze soft bounces (§4 / `FIT-7`),
+rule-layer bounces (I2, step 4), and network no-ratings (§7) consume time but never advance the bar —
+the bar and FSRS ground truth stay in lockstep. The active batch is **server-authoritative**: a
+return within `BATCH_ABSENCE_T_MINUTES` resumes at true progress; a longer absence discards the stale
+batch's *presentation* state (logged ratings untouched), rebuilds from current due state, and presents
+a fresh **"Welcome back — 0/M"** rather than rendering a bar going backwards (`BAT-11..13`).
+Introduction seeding runs at most once per learner-local day across rebuilds (`BAT-14`).
+
 ---
 
 ## 11. Consolidated decisions
@@ -799,13 +885,15 @@ Attaches to the loop; adds no separate progression system.
 | 5 | Taglish (§5.2.3/§5.6) | Clean English; code-switching nudged to English; L1-interference _within English_ corrected-and-passed. | `[DECIDED]` |
 | 6 | Grammatical gate (§5.4/§5.5/§5.6) | Gate = sense AND grammatical; grammatical fails only on meaning-obscuring errors; surface/L1 corrected-and-passed; **corrections delivered as a precise `replacements` find/replace array, rendered inline**. | `[DECIDED]` |
 | 7 | Mode (§5.7) | Single everyday clean-English mode; exam-prep = possible future product line. | `[DECIDED]` |
-| 8 | Calibration (§8) | First win before any long test; ~15–20 adaptive items optional; published LexTALE for precision; scalar ≠ per-word marking ≠ list-stack selection. | `[DEFAULT]` |
-| 9 | Lists / bands (§8) | NGSL floor + NAWL + Oxford 5000 (B2–C1); default frontier ~B2 + NAWL. | `[DEFAULT]` |
+| 8 | Calibration (§8) | First win before any long test; ~15–20 adaptive items optional; published LexTALE for precision; scalar ≠ per-word marking ≠ catalog selection. | `[DEFAULT]` |
+| 9 | Catalog / bands (§8) | Single Oxford **multisense** catalog, CEFR-banded (A2–C1) + zipf-ordered; default frontier ~B2. *(v4.1 — three-CSV NGSL/NAWL/Oxford stack retired.)* | `[DEFAULT]` |
 | 10 | FSRS retention (§8) | 0.90 (tunable); per-user optimize at ~1,000 reviews. | `[DEFAULT]` |
 | 11 | Counter + daily goal (§9) | Counter = ≥2 spaced free judged productions, retrievability-gated (distinct from `Fluent`); daily goal default 5 productive uses, learner-set, independent of §8 intro pace. | `[DECIDED]` (split) + `[DEFAULT]` (values) |
 | 12 | FSRS rating scheme (§3.6) | Binary `Again`/`Good` for v1; scaffolded pass = `Good`; typo-fixed cloze = `Good`; flags recorded; scaffolding still gates the mastery ladder; 4-button table `[v2 / enable-later]`; rule-layer bounces produce no rating. | `[DEFAULT]` |
 | 13 | State machine details (§3) | `Recognized` is demotion floor; placement-known enters at `Recognized`; `Seen` two-step (MCQ → cloze), cloze-fail drops back to MCQ once. | `[DECIDED]` |
 | 14 | Word-list → cards (§4.1) | Three layers; one FSRS card per word, lazy at introduction; generate own content; `en-US`; ts-fsrs; log review logs from day one. | `[DECIDED]` |
+| 15 | Typed-cloze fit-set (§3.6/§4/`spec/13`) | Classified `cloze_fit_set` (target / same-sense near-miss / different-sense fit) + no-rating **soft bounces** (a class distinct from an I2 bounce); typo-fix (DL ≤ 1) → `Good`; deterministic, no LLM. | `[DECIDED]` (v4.1) |
+| 16 | Mini-session batching (§10.1/`spec/14`) | Sessions presented as effort-unit **batches** with a Continue/Done seam and server-authoritative resume/rebuild; presentation-only pacing, I1–I4 preserved. | `[DECIDED]` (v4.1) |
 
 ### v4 platform pivot (new / changed)
 
@@ -814,7 +902,7 @@ Attaches to the loop; adds no separate progression system.
 | P1 | Platform | **Web app, multi-user (multi-tenant)** with accounts/auth, **backend** fronting the loop, **internet required** (offline-first **dropped**). *(Electron desktop / single-user dropped.)* | `[DECIDED]` |
 | P2 | Judge model | **DeepSeek V4 Flash** (`deepseek-v4-flash`), native structured output, 2–3 few-shots, low thinking level if exposed. Build-time content gen may use a stronger cloud model. | `[DECIDED]` |
 | P3 | Inference host | **Cloud HTTPS from the backend** (key server-side; never client-exposed). *(node-llama-cpp / Ollama deleted.)* | `[DECIDED]` |
-| P4 | Deterministic layer | **wink-nlp (JS, in-process)** for lemma/POS + the find/replace span resolver (§5.6); shipped Tagalog lexicon for code-switch. spaCy/LanguageTool removed. | `[DECIDED]` |
+| P4 | Deterministic layer | Pure-JS rules (presence/degeneracy/Tagalog-lexicon) + the find/replace span resolver (§5.6), over lemma/POS **tokens from the Python spaCy service** (`POST /analyze`, v4.1 — in-process wink-nlp removed); shipped Tagalog lexicon for code-switch. LanguageTool stays removed. | `[DECIDED]` |
 | P5 | Grammar tool | LanguageTool stays removed; corrected sentence + `replacements` + meaning-obscuring gate come from DeepSeek (§5.2.4/§5.6). | `[DECIDED]` |
 | P6 | Maintenance evaluation | Full cloud judge **every rep**; rationale changed from "free" to "cheap + infrequent" — re-confirm (§6). | `[DECIDED]` — re-confirm |
 | P7 | Appeal / override / rejudge | **All removed in v1.** No override, no rejudge, no re-rate. *(See "Risks introduced by v4.")* | `[DECIDED]` |

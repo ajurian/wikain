@@ -11,6 +11,8 @@ export interface SubmitCuedReviewInput {
   userId: string;
   senseId: string;
   response: string;
+  /** BAT-15: client-measured card-shown → submit span; recorded, never rated on. */
+  durationMs?: number;
   /** Defaults to `new Date()`; injectable for deterministic tests. */
   now?: Date;
 }

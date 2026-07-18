@@ -281,6 +281,24 @@ and are **kept** because they are load-bearing in code; `marigold` is a signal t
 on paper (`marigold-deep` is the on-paper variant), which is why the *Recognized* chip tints from one
 and labels from the other.
 
+**Mini-sessions (spec/14, `BAT-1..16`).** Review sessions now present as effort-unit batches with a
+server-authoritative active batch (`session_state`), a Continue/Done seam, T-expiry "Welcome back"
+rebuilds, and per-batch instrumentation (`review_batches`) — the spec file holds the behavior and the
+migrated amendment rationale; do not restate it here. Non-obvious, and not recorded elsewhere:
+**`WIKAIN_DEV_TIER` now threads into a THIRD place** — `buildSessionBatch` — because the batcher weighs
+entries by tier; pinning the grader/prompt but not the batcher would budget recognition-weight batches
+full of free-production cards. The **`seed_ledger` day-guard (`BAT-14`) also fixed a live bug**:
+`startSession` seeded per-invocation, so every `/review` reload minted new intro cards — seeding now
+runs at most once per learner-local day, and `startSessionFn` is gone (`getReviewSessionFn` is the
+entry point; the `startSession` use-case survives untouched for the smoke tests). Batch progress keys
+off `reviewWasRated` — the outcome discriminants, never a parallel flag — so the bar and FSRS ground
+truth cannot drift (`BAT-7`). The **SEED-10 seed-rail gate is a pure `domain/scheduling/seedRail.ts`
+(`evaluateSeedRail`) shared by `buildSessionBatch` AND `readDashboardSummary`** — so the dashboard's
+"new" count is a read-only dry run of the seeder (SEED-6 pace ∩ real frontier supply, **gated by the
+rail**), i.e. the exact number the next `/review` will introduce, `0` when the rail is closed for today
+or the band is exhausted — never the bare `newIntroductionsAllowed` ceiling (which reads `NEW_PER_DAY`
+even when nothing would seed). The two must not diverge, which is why the gate is one function, not two.
+
 **Key design conventions (follow in later slices):**
 - **Cross-layer imports use `~/*`; within-layer stay relative** (`DIR-7`). `npm run lint` enforces it, along
   with the ARCH-1 dependency rule — run it before committing; it is a gate, not a style pass.

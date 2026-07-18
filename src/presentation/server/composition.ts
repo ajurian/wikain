@@ -6,12 +6,17 @@ import { DrizzleSettings } from "~/infrastructure/persistence/drizzleSettings.js
 import { DrizzleCatalog } from "~/infrastructure/persistence/drizzleCatalog.js";
 import { DrizzleWordSource } from "~/infrastructure/persistence/drizzleWordSource.js";
 import { DrizzleHealQueue } from "~/infrastructure/persistence/drizzleHealQueue.js";
+import { DrizzleSessionState } from "~/infrastructure/persistence/drizzleSessionState.js";
+import { DrizzleSeedLedger } from "~/infrastructure/persistence/drizzleSeedLedger.js";
+import { DrizzleSeedInstrumentation } from "~/infrastructure/persistence/drizzleSeedInstrumentation.js";
+import { DrizzleBatchInstrumentation } from "~/infrastructure/persistence/drizzleBatchInstrumentation.js";
 import { dbFromEnv } from "~/infrastructure/db/postgres.js";
 import { makeAuth, type Auth } from "~/infrastructure/auth/auth.js";
 import {
   composeReviewPass,
   composeResolvePrompt,
-  composeSession,
+  composeSessionFlow,
+  composeBatchProgress,
   composeSeeding,
   composeUsableCounter,
   composeDashboardSummary,
@@ -33,7 +38,8 @@ import type {
 import type { PlacementMarksStore } from "~/application/ports/placementMarks.js";
 import type { PlacementProfileStore } from "~/application/ports/placementProfile.js";
 import type { SettingsStore } from "~/application/ports/settings.js";
-import type { StartSessionDeps } from "~/application/session/startSession.js";
+import type { GetOrResumeSessionDeps } from "~/application/session/getOrResumeSession.js";
+import type { AdvanceActiveBatchDeps } from "~/application/session/advanceActiveBatch.js";
 import type { SeedIntroductionsDeps } from "~/application/session/seedIntroductions.js";
 import type { RunReviewPassDeps } from "~/application/review/runReviewPass.js";
 import type { ResolveReviewPromptDeps } from "~/application/review/resolveReviewPrompt.js";
@@ -131,6 +137,13 @@ const profile: PlacementProfileStore = new DrizzlePlacementProfile(db);
 const settings: SettingsStore = new DrizzleSettings(db);
 // FIT-11: the typed-cloze heal queue — anonymous, global (no user_id), written by the review pass only.
 const healQueue = new DrizzleHealQueue(db);
+// spec/14: the mini-session stores — batch state (BAT-11), the seeding day-ledger (BAT-14), and the
+// per-batch instrumentation rows (BAT-16) — all over the ONE shared handle.
+const sessionStateStore = new DrizzleSessionState(db);
+const seedLedgerStore = new DrizzleSeedLedger(db);
+// SEED-14: the seeding-rail grant/deny log — write-only, read offline to tune SEED_MIN_GAP_HOURS.
+const seedInstrumentationStore = new DrizzleSeedInstrumentation(db);
+const batchStore = new DrizzleBatchInstrumentation(db);
 
 /**
  * The catalog + frontier word source (spec/12 DM-2, SEED-5). The catalog is GLOBAL, immutable content —
@@ -167,8 +180,26 @@ const analyzer = new HttpNlp(languageService);
 const judge: JudgePort = new HttpJudge(languageService);
 const judgeVersions: MemoVersions = await fetchJudgeVersions(languageService);
 
-export function sessionDeps(): StartSessionDeps {
-  return composeSession(cards, marks, catalog, wordSource);
+/** Deps for the mini-session flow (spec/14 BAT-11..14): get-or-resume, seam choice, batch builds.
+ * Shares the seeding stores AND the same `DEV_TIER` pin the grader/prompt receive, so a pinned dev
+ * run batches, renders, and grades the same tier. */
+export function sessionFlowDeps(): GetOrResumeSessionDeps {
+  return composeSessionFlow(
+    cards,
+    marks,
+    catalog,
+    wordSource,
+    sessionStateStore,
+    seedLedgerStore,
+    seedInstrumentationStore,
+    batchStore,
+    DEV_TIER,
+  );
+}
+
+/** Deps for the per-interaction batch progress writes (spec/14 BAT-7/8) on the hot review path. */
+export function batchProgressDeps(): AdvanceActiveBatchDeps {
+  return composeBatchProgress(sessionStateStore, batchStore);
 }
 
 /** Deps for first-session seeding (spec/09 SEED-1). Shares the same card store so onboarding-seeded
@@ -214,9 +245,11 @@ export function counterDeps(): ReadUsableCounterDeps {
 }
 
 /** Deps for the dashboard read-model (spec/01 SM-1, spec/10 CNT-8, SEED-6). Shares the same card store
- * the review pass writes; `settings` supplies the learner's adjustable daily goal (CNT-8). */
+ * the review pass writes; `settings` supplies the learner's adjustable daily goal (CNT-8); `wordSource`
+ * + `seedLedger` let the "new" count be the EXACT number the next build would seed (SEED-10/BAT-14), not
+ * the pacing ceiling — the same two singletons the session flow seeds through. */
 export function dashboardDeps(): ReadDashboardSummaryDeps {
-  return composeDashboardSummary(cards, settings);
+  return composeDashboardSummary(cards, settings, wordSource, seedLedgerStore);
 }
 
 /** Deps for the per-word read-models (spec/10 CNT-1/2/3). Shares the same store + a real scheduler, so

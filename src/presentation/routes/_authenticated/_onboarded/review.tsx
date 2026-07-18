@@ -1,19 +1,24 @@
 /*
  * /review — the session screen (chromeless focus mode), WIRED to the real backend.
  *
- * Server-driven (STACK-2): `startSessionFn` seeds + orders the queue (LOOP-1), `resolvePromptFn`
- * resolves each word's tier + render fields (the correct answer is withheld for MCQ/cloze/cued —
- * grading is server-side), and grading runs through `runReviewPass` behind `submitReviewFn`
- * (deterministic) / `ruleCheckFn` + `submitReviewFn` (judged). The judged tier is two-phase so the
- * "checking…" indicator never precedes a bounce (NET-2): the instant rule-check decides bounces with
- * no judge round-trip, then a rule-pass shows the indicator while the judge runs.
+ * Server-driven (STACK-2): `getReviewSessionFn` resolves the mini-session through the BAT-11/12/13
+ * two-branch check (resume ≤ T / "Welcome back" rebuild after) and returns the ACTIVE BATCH the
+ * client walks (spec/14); `resolvePromptFn` resolves each word's tier + render fields (the correct
+ * answer is withheld for MCQ/cloze/cued — grading is server-side), and grading runs through
+ * `runReviewPass` behind `submitReviewFn` (deterministic) / `ruleCheckFn` + `submitReviewFn`
+ * (judged). The judged tier is two-phase so the "checking…" indicator never precedes a bounce
+ * (NET-2): the instant rule-check decides bounces with no judge round-trip, then a rule-pass shows
+ * the indicator while the judge runs.
  *
- * All four tiers are typeset as one dictionary entry — `EntryHeader` (headword slot + italic pos + the
- * hairline rule) over `EntryDefinition` — so the same word read four ways looks like the same artifact.
- * Answering is never submitting: every tier selects or types, then confirms with `CheckButton`.
+ * Batch progress is SERVER truth (BAT-7): the bar ticks only when a submit's response says a rating
+ * was logged; bounces and soft bounces keep the card and the bar exactly where they were. Terminal
+ * skips (`skipCardFn`, BAT-8) shrink the denominator instead. At N/N the `BatchSeam` renders the
+ * completion beat + the explicit Continue/Done choice (BAT-9).
  *
- * The New→Seen "intro" card is intentionally dropped (seeded words start at Seen; their first review is
- * the recognition MCQ) — that surfacing is a deferred seeding concern.
+ * All four tiers are typeset as one dictionary entry — `EntryHeader` (headword slot + italic pos +
+ * the hairline rule) over `EntryDefinition` — so the same word read four ways looks like the same
+ * artifact. Answering is never submitting: every tier selects or types, then confirms with
+ * `CheckButton`.
  */
 import { useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
@@ -32,16 +37,21 @@ import {
 } from "lucide-react";
 
 import {
-  startSessionFn,
+  getReviewSessionFn,
   resolvePromptFn,
   ruleCheckFn,
+  seamChoiceFn,
+  skipCardFn,
   submitReviewFn,
+  type SessionView,
 } from "@/server/review";
 import type { ReviewPrompt } from "~/application/review/resolveReviewPrompt.js";
 import type { ReviewOutcomeView } from "~/application/review/presentReviewOutcome.js";
+import type { BatchProgress } from "~/application/session/advanceActiveBatch.js";
 import type { MasteryState } from "~/domain/mastery/card.js";
 import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 
+import { BatchSeam } from "@/components/review/batch-seam";
 import { BounceCallout } from "@/components/review/bounce-callout";
 import { SoftBounceCallout } from "@/components/review/soft-bounce-callout";
 import { BlankAnswer, BlankInput } from "@/components/review/blank-input";
@@ -79,7 +89,7 @@ function shuffle<T>(items: readonly T[]): T[] {
 
 /**
  * A stable random shuffle computed once per mount (real MCQ shuffle-on-render, TIER-2).
- * `StepCard` is keyed by queue index, so every question remounts and re-shuffles.
+ * `StepCard` is keyed per batch card, so every question remounts and re-shuffles.
  *
  * A lazy `useState` initializer, not `useMemo(…, [])`: the memo would have to claim it depends on
  * nothing while actually reading `items`. State says what is true — seed once from the first items.
@@ -91,30 +101,140 @@ function useShuffled<T>(items: readonly T[]): T[] {
 
 /* ------------------------------------------------------------------ shell */
 
+/** The client's mirror of the active batch (server truth arrives via SessionView + BatchProgress). */
+interface BatchView {
+  batchId: string;
+  batchNumber: number;
+  framing: "fresh" | "resumed" | "welcomeBack";
+  queue: string[];
+  completed: number;
+  total: number;
+}
+
+type Stage =
+  | { kind: "loading" }
+  | { kind: "batch"; batch: BatchView }
+  /** `total` keeps the chrome bar honest at N/N while the seam is shown. */
+  | { kind: "seam"; total: number }
+  | { kind: "empty" }
+  /** Terminal client-side: Done was chosen (or the queue ran out) — stay on the summary. */
+  | { kind: "done" };
+
+function stageFromView(view: SessionView): Stage {
+  switch (view.kind) {
+    case "batch":
+      return {
+        kind: "batch",
+        batch: {
+          batchId: view.batchId,
+          batchNumber: view.batchNumber,
+          framing: view.framing,
+          queue: view.senseIds,
+          completed: view.completed,
+          total: view.total,
+        },
+      };
+    case "seam":
+      return { kind: "seam", total: view.total };
+    case "empty":
+      return { kind: "empty" };
+    case "done":
+      return { kind: "done" };
+  }
+}
+
 function ReviewSession() {
   const session = useQuery({
     queryKey: ["review-session"],
-    queryFn: () => startSessionFn(),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
+    queryFn: () => getReviewSessionFn(),
+    // BAT-11: a long-idle tab re-runs the SAME two-branch check on return — resume within T, or a
+    // rebuilt "Welcome back" batch past it. No third code path.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
-  const [index, setIndex] = useState(0);
-  const [results, setResults] = useState<StepOutcome[]>([]);
+  const [stage, setStage] = useState<Stage>({ kind: "loading" });
+  const [batchResults, setBatchResults] = useState<StepOutcome[]>([]);
+  const [allResults, setAllResults] = useState<StepOutcome[]>([]);
+  const [seamBusy, setSeamBusy] = useState(false);
 
-  const queue = session.data?.queue ?? [];
-  const total = queue.length;
-  const senseId = queue[index];
+  // Server truth → client stage, synced during render (the "adjust state when props change"
+  // pattern — no effect, no cascading re-render). `done` is terminal here: after Done the server
+  // holds no session, so a later refetch would happily build a new batch — the summary must not be
+  // yanked away. A refetch that lands a NEW batch (fresh or welcome-back) starts its own summary.
+  const [synced, setSynced] = useState<SessionView | null>(null);
+  if (session.data !== undefined && session.data !== synced) {
+    setSynced(session.data);
+    if (stage.kind !== "done") {
+      if (
+        session.data.kind === "batch" &&
+        (stage.kind !== "batch" || stage.batch.batchId !== session.data.batchId)
+      ) {
+        setBatchResults([]);
+      }
+      setStage(stageFromView(session.data));
+    }
+  }
 
-  const handleDone = (outcome: StepOutcome) => {
-    setResults((r) => [...r, outcome]);
-    setIndex((i) => i + 1);
+  const adoptProgress = (progress: BatchProgress | null) => {
+    setStage((prev) => {
+      if (prev.kind !== "batch") return prev;
+      const completed = progress?.completed ?? prev.batch.completed + 1;
+      const total = progress?.total ?? prev.batch.total;
+      if (completed >= total) return { kind: "seam", total };
+      return { kind: "batch", batch: { ...prev.batch, completed, total } };
+    });
   };
+
+  /** A rated card was acknowledged (Next): record it and advance to the server-reported progress. */
+  const handleDone = (outcome: StepOutcome, progress: BatchProgress | null) => {
+    setBatchResults((r) => [...r, outcome]);
+    setAllResults((r) => [...r, outcome]);
+    adoptProgress(progress);
+  };
+
+  /** BAT-8: a terminal no-rating skip — shrink the batch server-side, then mirror it locally. */
+  const handleSkip = async (outcome: StepOutcome) => {
+    if (stage.kind !== "batch") return;
+    const senseId = stage.batch.queue[stage.batch.completed];
+    const progress = senseId === undefined ? null : await skipCardFn({ data: senseId });
+    setBatchResults((r) => [...r, outcome]);
+    setAllResults((r) => [...r, outcome]);
+    setStage((prev) => {
+      if (prev.kind !== "batch") return prev;
+      const queue = prev.batch.queue.filter((s) => s !== senseId);
+      const completed = progress?.completed ?? prev.batch.completed;
+      const total = progress?.total ?? queue.length;
+      if (completed >= total) return { kind: "seam", total };
+      return { kind: "batch", batch: { ...prev.batch, queue, completed, total } };
+    });
+  };
+
+  /** BAT-9: the explicit seam choice. Continue → next batch; Done (or exhaustion) → summary. */
+  const chooseAtSeam = async (choice: "continue" | "done") => {
+    setSeamBusy(true);
+    try {
+      const view = await seamChoiceFn({ data: { choice } });
+      if (view.kind === "batch") {
+        setBatchResults([]);
+        setStage(stageFromView(view));
+      } else {
+        setStage({ kind: "done" });
+      }
+    } finally {
+      setSeamBusy(false);
+    }
+  };
+
+  const batch = stage.kind === "batch" ? stage.batch : null;
+  const senseId = batch?.queue[batch.completed];
+  const total = stage.kind === "seam" ? stage.total : (batch?.total ?? 0);
+  const completed = stage.kind === "seam" ? total : (batch?.completed ?? 0);
 
   /** Prefetch the next prompt to improve performance */
   usePrefetchQuery({
-    queryKey: ["review-prompt", queue[index + 1]],
-    queryFn: () => resolvePromptFn({ data: queue[index + 1] }),
+    queryKey: ["review-prompt", batch?.queue[batch.completed + 1]],
+    queryFn: () => resolvePromptFn({ data: batch?.queue[batch.completed + 1] }),
     staleTime: Infinity,
   });
 
@@ -132,34 +252,69 @@ function ReviewSession() {
         >
           <X className="size-5" strokeWidth={1.75} />
         </Link>
+        {/* BAT-6: max is the ACTIVE batch's true size — a remainder batch gets a short, honest bar. */}
         <Progress
-          aria-label="Session progress"
-          value={Math.min(index, total)}
+          aria-label="Batch progress"
+          value={Math.min(completed, total)}
           max={Math.max(total, 1)}
           className="h-1.5"
         />
         <span className="font-mono text-xs text-ink-faint tabular-nums">
-          {total === 0 ? "0/0" : `${Math.min(index + 1, total)}/${total}`}
+          {total === 0
+            ? "0/0"
+            : stage.kind === "seam"
+              ? `${total}/${total}`
+              : `${Math.min(completed + 1, total)}/${total}`}
         </span>
       </div>
 
       {/* `py-20` clears the absolute chrome and stays symmetric — equal top/bottom padding is what
           keeps the card centered once a tall card overflows and the page scrolls. */}
       <div className="flex min-h-dvh flex-col justify-center py-20">
-        {session.isPending ? (
+        {session.isPending && stage.kind === "loading" ? (
           <CenteredSpinner label="Preparing your session…" />
-        ) : session.isError ? (
+        ) : session.isError && stage.kind === "loading" ? (
           <p className="text-center text-sm text-terracotta">
             Couldn’t start your session. Please try again.
           </p>
         ) : (
-          <AnimatePresence mode="wait">
-            {senseId === undefined ? (
-              <SessionSummary key="summary" results={results} />
-            ) : (
-              <StepCard key={index} senseId={senseId} onDone={handleDone} />
-            )}
-          </AnimatePresence>
+          <>
+            {/* BAT-13: the welcome-back framing — a fresh 0/M, never a bar rendered backwards. */}
+            {batch !== null &&
+            batch.framing === "welcomeBack" &&
+            batch.completed === 0 &&
+            batchResults.length === 0 ? (
+              <p className="mb-6 text-center text-sm text-ink-soft">
+                Welcome back — here’s your next set.
+              </p>
+            ) : null}
+            <AnimatePresence mode="wait">
+              {stage.kind === "seam" ? (
+                <BatchSeam
+                  key="seam"
+                  results={batchResults}
+                  total={stage.total}
+                  busy={seamBusy}
+                  onChoose={chooseAtSeam}
+                />
+              ) : stage.kind === "done" ? (
+                <SessionSummary key="summary" results={allResults} />
+              ) : stage.kind === "empty" ? (
+                allResults.length > 0 ? (
+                  <SessionSummary key="summary" results={allResults} />
+                ) : (
+                  <NothingDue key="nothing-due" />
+                )
+              ) : batch !== null && senseId !== undefined ? (
+                <StepCard
+                  key={`${batch.batchId}-${senseId}`}
+                  senseId={senseId}
+                  onDone={handleDone}
+                  onSkip={handleSkip}
+                />
+              ) : null}
+            </AnimatePresence>
+          </>
         )}
       </div>
     </div>
@@ -175,13 +330,37 @@ function CenteredSpinner({ label }: { label: string }) {
   );
 }
 
+function NothingDue() {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      initial={reduced ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: DURATION.base, ease: EASE }}
+      className="w-full space-y-6 text-center"
+    >
+      <div>
+        <h1 className="text-xl font-semibold text-ink">Nothing due right now.</h1>
+        <p className="mt-1 text-sm text-ink-soft">
+          Your words are resting — come back when the next review is due.
+        </p>
+      </div>
+      <Button asChild size="lg">
+        <Link to="/">Back home</Link>
+      </Button>
+    </motion.div>
+  );
+}
+
 /** Fetches the prompt for one queued word and routes to the matching tier card. */
 function StepCard({
   senseId,
   onDone,
+  onSkip,
 }: {
   senseId: string;
-  onDone: (o: StepOutcome) => void;
+  onDone: (o: StepOutcome, progress: BatchProgress | null) => void;
+  onSkip: (o: StepOutcome) => void;
 }) {
   const reduced = useReducedMotion();
   const prompt = useQuery({
@@ -206,7 +385,7 @@ function StepCard({
           Couldn’t load this one.
         </p>
       ) : (
-        <PromptCard prompt={prompt.data} onDone={onDone} />
+        <PromptCard prompt={prompt.data} onDone={onDone} onSkip={onSkip} />
       )}
     </motion.div>
   );
@@ -215,9 +394,11 @@ function StepCard({
 function PromptCard({
   prompt,
   onDone,
+  onSkip,
 }: {
   prompt: ReviewPrompt;
-  onDone: (o: StepOutcome) => void;
+  onDone: (o: StepOutcome, progress: BatchProgress | null) => void;
+  onSkip: (o: StepOutcome) => void;
 }) {
   switch (prompt.tier) {
     case "recognition":
@@ -226,7 +407,7 @@ function PromptCard({
     case "cued":
       return <TypedCard prompt={prompt} onDone={onDone} />;
     case "free":
-      return <FreeProductionCard prompt={prompt} onDone={onDone} />;
+      return <FreeProductionCard prompt={prompt} onDone={onDone} onSkip={onSkip} />;
   }
 }
 
@@ -344,14 +525,17 @@ function RecognitionCard({
   onDone,
 }: {
   prompt: Extract<ReviewPrompt, { tier: "recognition" }>;
-  onDone: (o: StepOutcome) => void;
+  onDone: (o: StepOutcome, progress: BatchProgress | null) => void;
 }) {
   const options = useShuffled(prompt.options);
+  // BAT-15: card-shown timestamp — StepCard remounts per presentation, so seeding once is exact.
+  const [shownAt] = useState(() => Date.now());
   const [chosen, setChosen] = useState<string | null>(null);
   const [result, setResult] = useState<Extract<
     ReviewOutcomeView,
     { kind: "deterministic" }
   > | null>(null);
+  const [progress, setProgress] = useState<BatchProgress | null>(null);
   const [busy, setBusy] = useState(false);
 
   const target = result?.lemma ?? null;
@@ -361,10 +545,18 @@ function RecognitionCard({
     if (chosen === null || result !== null || busy) return;
     setBusy(true);
     try {
-      const view = await submitReviewFn({
-        data: { senseId: prompt.senseId, response: chosen, scaffolded: false },
+      const res = await submitReviewFn({
+        data: {
+          senseId: prompt.senseId,
+          response: chosen,
+          scaffolded: false,
+          durationMs: Date.now() - shownAt,
+        },
       });
-      if (view.kind === "deterministic") setResult(view);
+      if (res.view.kind === "deterministic") {
+        setResult(res.view);
+        setProgress(res.progress);
+      }
     } finally {
       setBusy(false);
     }
@@ -408,11 +600,14 @@ function RecognitionCard({
           {/* MCQ pass alone never promotes (SM-3) — no ladder movement here. */}
           <NextButton
             onClick={() =>
-              onDone({
-                lemma: result.lemma,
-                tier: "recognition",
-                outcome: result.passed ? "pass" : "fail",
-              })
+              onDone(
+                {
+                  lemma: result.lemma,
+                  tier: "recognition",
+                  outcome: result.passed ? "pass" : "fail",
+                },
+                progress,
+              )
             }
           />
         </div>
@@ -438,17 +633,21 @@ function TypedCard({
   onDone,
 }: {
   prompt: Extract<ReviewPrompt, { tier: "cloze" | "cued" }>;
-  onDone: (o: StepOutcome) => void;
+  onDone: (o: StepOutcome, progress: BatchProgress | null) => void;
 }) {
+  // BAT-15: card-shown timestamp (see RecognitionCard). A soft bounce keeps the card live and the
+  // clock running — the whole presentation is one duration.
+  const [shownAt] = useState(() => Date.now());
   const [value, setValue] = useState("");
   const [result, setResult] = useState<Extract<
     ReviewOutcomeView,
     { kind: "deterministic" }
   > | null>(null);
+  const [progress, setProgress] = useState<BatchProgress | null>(null);
   const [busy, setBusy] = useState(false);
   // FIT-7/FIT-8: per-presentation soft-bounce state (the RL-6 `bounceCount` pattern) — the
   // use-case is stateless, so the client carries the count + lanes into each submit. Reset on
-  // advance is free: StepCard remounts per queue index.
+  // advance is free: StepCard remounts per batch card.
   const [softBounce, setSoftBounce] = useState<SoftBounceView | null>(null);
   const [softBounces, setSoftBounces] = useState(0);
   const [softLanes, setSoftLanes] = useState<ClozeSoftBounceLane[]>([]);
@@ -456,20 +655,24 @@ function TypedCard({
   const grade = async () => {
     setBusy(true);
     try {
-      const view = await submitReviewFn({
+      const res = await submitReviewFn({
         data: {
           senseId: prompt.senseId,
           response: value,
           scaffolded: false,
           priorSoftBounces: softBounces,
           priorSoftBounceLanes: softLanes,
+          durationMs: Date.now() - shownAt,
         },
       });
-      if (view.kind === "deterministic") {
+      if (res.view.kind === "deterministic") {
         setSoftBounce(null);
-        setResult(view);
-      } else if (view.kind === "clozeSoftBounce") {
+        setResult(res.view);
+        setProgress(res.progress);
+      } else if (res.view.kind === "clozeSoftBounce") {
         // No rating happened (FIT-7): stay on the card, show the lane's cue, keep the input live.
+        // BAT-7: the bar did not tick — the server only stamped the interaction.
+        const view = res.view;
         setSoftBounces(view.bounces);
         setSoftLanes((lanes) => [...lanes, view.lane]);
         setSoftBounce({
@@ -591,12 +794,15 @@ function TypedCard({
           ) : null}
           <NextButton
             onClick={() =>
-              onDone({
-                lemma: result.lemma,
-                tier: prompt.tier,
-                outcome: result.passed ? "pass" : "fail",
-                ...(move ? { moved: move } : {}),
-              })
+              onDone(
+                {
+                  lemma: result.lemma,
+                  tier: prompt.tier,
+                  outcome: result.passed ? "pass" : "fail",
+                  ...(move ? { moved: move } : {}),
+                },
+                progress,
+              )
             }
           />
         </div>
@@ -620,16 +826,21 @@ type FreeState =
 function FreeProductionCard({
   prompt,
   onDone,
+  onSkip,
 }: {
   prompt: Extract<ReviewPrompt, { tier: "free" }>;
-  onDone: (o: StepOutcome) => void;
+  onDone: (o: StepOutcome, progress: BatchProgress | null) => void;
+  onSkip: (o: StepOutcome) => void;
 }) {
   const { senseId, lemma, mastery } = prompt;
   const maintenance = mastery === "Fluent";
   const tier: StepOutcome["tier"] = maintenance ? "maintenance" : "free";
 
+  // BAT-15: card-shown timestamp; the server adds the judge wait to this client-measured span.
+  const [shownAt] = useState(() => Date.now());
   const [text, setText] = useState("");
   const [state, setState] = useState<FreeState>({ phase: "writing" });
+  const [progress, setProgress] = useState<BatchProgress | null>(null);
   const [bounce, setBounce] = useState<
     Extract<ReviewOutcomeView, { kind: "bounce" }>["reason"] | null
   >(null);
@@ -665,24 +876,33 @@ function FreeProductionCard({
 
     // Phase 2 — the judge round-trip (show "checking…" while it runs).
     setState({ phase: "checking" });
-    const view = await submitReviewFn({
-      data: { senseId, response: text, scaffolded: starter },
+    const res = await submitReviewFn({
+      data: {
+        senseId,
+        response: text,
+        scaffolded: starter,
+        durationMs: Date.now() - shownAt,
+      },
     });
-    if (view.kind === "unavailable") setState({ phase: "unavailable" });
-    else if (view.kind === "judged")
-      setState({ phase: "verdict", result: view });
-    else setState({ phase: "writing" }); // bounce handled in phase 1 — defensive
+    if (res.view.kind === "unavailable") setState({ phase: "unavailable" });
+    else if (res.view.kind === "judged") {
+      setProgress(res.progress);
+      setState({ phase: "verdict", result: res.view });
+    } else setState({ phase: "writing" }); // bounce handled in phase 1 — defensive
   };
 
   const finish = (result: JudgedView) => {
     const move = moveOf(result);
-    onDone({
-      lemma,
-      tier,
-      outcome: result.passed ? "pass" : "fail",
-      judged: true, // counts toward the daily goal (CNT-8, INV-4)
-      ...(move ? { moved: move } : {}),
-    });
+    onDone(
+      {
+        lemma,
+        tier,
+        outcome: result.passed ? "pass" : "fail",
+        judged: true, // counts toward the daily goal (CNT-8, INV-4)
+        ...(move ? { moved: move } : {}),
+      },
+      progress,
+    );
   };
 
   const header = (
@@ -732,7 +952,7 @@ function FreeProductionCard({
             size="lg"
             variant="outline"
             className="h-12 w-full"
-            onClick={() => onDone({ lemma, tier, outcome: "skip" })}
+            onClick={() => onSkip({ lemma, tier, outcome: "skip" })}
           >
             Skip for now
           </Button>
@@ -848,9 +1068,21 @@ function FreeProductionCard({
           </p>
         ) : null}
         {state.phase === "unavailable" ? (
-          <p className="rounded-lg bg-paper-sunken px-3.5 py-3 text-sm text-ink-soft">
-            Couldn’t check that one — try again. Your sentence is still here.
-          </p>
+          <div className="space-y-3">
+            <p className="rounded-lg bg-paper-sunken px-3.5 py-3 text-sm text-ink-soft">
+              Couldn’t check that one — try again. Your sentence is still here.
+            </p>
+            {/* BAT-8: a persistent outage must not stall the batch — the skip shrinks it; the card
+                stays due and unrated (INV-2). */}
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12 w-full"
+              onClick={() => onSkip({ lemma, tier, outcome: "skip" })}
+            >
+              Skip for now
+            </Button>
+          </div>
         ) : null}
 
         {busy ? (

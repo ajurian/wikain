@@ -321,6 +321,30 @@ describe("submitFreeProduction — judged path (INV-1)", () => {
     expect(logs[0]?.scaffolded).toBe(false); // RAT-5 instrumented
   });
 
+  it("BAT-15: durationMs = client span + judge wait; absent when the client measured nothing", async () => {
+    const measured = deps(productiveCard(), new RecordingJudge(verdict()));
+    await submitFreeProduction(
+      {
+        userId: "u1",
+        senseId: SENSE,
+        response: "she negotiate a better contract price yesterday",
+        durationMs: 90000,
+        now: NOW,
+      },
+      measured.d,
+    );
+    // The fake judge resolves near-instantly; the recorded span is the client's plus that wait.
+    expect(measured.logs[0]!.durationMs).toBeGreaterThanOrEqual(90000);
+    expect(measured.logs[0]!.durationMs).toBeLessThan(91000);
+
+    const unmeasured = deps(productiveCard(), new RecordingJudge(verdict()));
+    await submitFreeProduction(
+      { userId: "u1", senseId: SENSE, response: "she negotiate a better contract price yesterday", now: NOW },
+      unmeasured.d,
+    );
+    expect(unmeasured.logs[0]!.durationMs).toBeUndefined();
+  });
+
   it("a single gate pass leaves mastery at Productive (one pass does not meet SM-5's ≥3 spaced-day gate)", async () => {
     const judge = new RecordingJudge(verdict());
     const { d, stored } = deps(productiveCard(), judge);

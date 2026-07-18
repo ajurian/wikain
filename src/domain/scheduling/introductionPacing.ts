@@ -27,7 +27,10 @@ export interface PacingInput {
  * they merely share the default value 5. A new introduction is a `Seen` interaction, not a productive
  * use, so this function never consults the use-goal.
  */
-export function newIntroductionsAllowed({ isFirstSession, dueBacklog }: PacingInput): number {
+export function newIntroductionsAllowed({
+  isFirstSession,
+  dueBacklog,
+}: PacingInput): number {
   if (isFirstSession) return FIRST_SESSION_SEED_WORDS;
   if (dueBacklog <= 0) return NEW_PER_DAY;
   const f = NEW_FRACTION_UNDER_BACKLOG;
