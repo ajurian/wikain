@@ -85,6 +85,13 @@
       "when": 1784401528636,
       "tag": "0011_add_theme_to_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784439088872,
+      "tag": "0012_seed_ledger_count",
+      "breakpoints": true
     }
   ]
 }

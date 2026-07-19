@@ -117,6 +117,26 @@ export function describeCardRepositoryContract(
       expect(await repo.listCards(USER_A)).toHaveLength(1);
     });
 
+    it("DM-5: deleteCard removes a saved card (load returns undefined after)", async () => {
+      const repo = await makeRepo();
+      await repo.save(card({ userId: USER_A, senseId: "abandon_verb_01" }));
+      await repo.deleteCard(USER_A, "abandon_verb_01");
+      expect(await repo.load(USER_A, "abandon_verb_01")).toBeUndefined();
+    });
+
+    it("deleteCard is a no-op for an absent card, and scopes to (userId, senseId)", async () => {
+      const repo = await makeRepo();
+      await repo.save(card({ userId: USER_A, senseId: "abandon_verb_01" }));
+      await repo.save(card({ userId: USER_A, senseId: "afford_verb_01" }));
+      await repo.save(card({ userId: USER_B, senseId: "abandon_verb_01" }));
+
+      await repo.deleteCard(USER_C, "nothing_noun_01"); // absent — no throw
+      await repo.deleteCard(USER_A, "abandon_verb_01"); // only USER_A's word
+
+      expect(await repo.listCards(USER_A)).toHaveLength(1); // afford survives
+      expect(await repo.load(USER_B, "abandon_verb_01")).toBeDefined(); // USER_B untouched
+    });
+
     it("DM-6: appendReviewLog + logsForWord returns logs in append order", async () => {
       const repo = await makeRepo();
       await repo.appendReviewLog(

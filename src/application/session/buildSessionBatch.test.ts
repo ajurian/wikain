@@ -1,21 +1,56 @@
 import { describe, expect, it } from "vitest";
-import { BATCH_CARD_CAP, BATCH_FP_CAP } from "~/domain/constants.js";
+import {
+  BATCH_CARD_CAP,
+  BATCH_FP_CAP,
+  FIRST_SESSION_SEED_WORDS,
+  NEW_PER_DAY,
+} from "~/domain/constants.js";
 import { buildSessionBatch } from "./buildSessionBatch.js";
 import { card, KIT_NOW, makeBuildDeps } from "./sessionBatchTestKit.js";
 
 const INPUT = { userId: "u1", frontierBand: "B2", utcOffsetMinutes: 0, batchNumber: 1, now: KIT_NOW };
 
 describe("buildSessionBatch", () => {
-  it("BAT-14: the first build of a local day seeds; a same-day rebuild orders existing cards only", async () => {
-    const deps = makeBuildDeps([], ["w1", "w2", "w3"]);
+  it("BAT-14/SEED-10: the first build of a local day seeds the fast-win batch and records the ledger count", async () => {
+    const deps = makeBuildDeps([], ["w1", "w2", "w3", "w4", "w5"]);
     const first = await buildSessionBatch(INPUT, deps);
     expect(first.kind).toBe("batch");
-    const seededCount = (await deps.cards.listCards("u1")).length;
-    expect(seededCount).toBeGreaterThan(0);
+    // First session → the fast-win batch (SEED-1), not the full daily pace.
+    expect((await deps.cards.listCards("u1")).length).toBe(FIRST_SESSION_SEED_WORDS);
+    expect(await deps.seedLedger.read("u1")).toEqual({
+      lastSeedAt: KIT_NOW,
+      seededCount: FIRST_SESSION_SEED_WORDS,
+    });
+  });
 
-    const again = await buildSessionBatch(INPUT, deps);
-    expect(again.kind).toBe("batch");
-    expect((await deps.cards.listCards("u1")).length).toBe(seededCount); // no re-seed
+  it("SEED-10/11: a backlog-throttled partial seed does NOT burn the day — clearing it refills to the cap same day", async () => {
+    // 7 due cards throttle SEED-6 pacing below NEW_PER_DAY, so the first seed is partial.
+    const backlog = Array.from({ length: 7 }, (_, i) => card(`due${i}`, "Recognized"));
+    const deps = makeBuildDeps(backlog, ["w1", "w2", "w3", "w4", "w5"]);
+
+    await buildSessionBatch(INPUT, deps);
+    const wSeeded = async () =>
+      (await deps.cards.listCards("u1")).filter((c) => c.senseId.startsWith("w")).length;
+    const seededFirst = await wSeeded();
+    expect(seededFirst).toBeGreaterThan(0);
+    expect(seededFirst).toBeLessThan(NEW_PER_DAY); // the backlog held it under the daily cap
+
+    // The learner reviews everything (all due cleared) an hour later, SAME local day.
+    const farFuture = new Date(KIT_NOW.getTime() + 7 * 86_400_000);
+    for (const c of await deps.cards.listCards("u1")) {
+      await deps.cards.save({ ...c, fsrs: { ...c.fsrs, due: farFuture } });
+    }
+    const laterSameDay = new Date(KIT_NOW.getTime() + 60 * 60_000); // +1h, no gap wait within a day
+    await buildSessionBatch({ ...INPUT, now: laterSameDay }, deps);
+
+    expect(await wSeeded()).toBe(NEW_PER_DAY); // refilled to the daily cap, same day
+  });
+
+  it("SEED-11: a granted pass that introduces nothing leaves the ledger untouched (day not burned)", async () => {
+    const deps = makeBuildDeps([], []); // first-ever seed grants, but the frontier is exhausted
+    await buildSessionBatch(INPUT, deps);
+    expect(await deps.seedLedger.read("u1")).toBeUndefined(); // no stamp, no count
+    expect(deps.seedInstrumentation.granted).toHaveLength(0); // and nothing logged as a grant
   });
 
   it("BAT-14: a rolled learner-local day re-enables seeding", async () => {
@@ -36,10 +71,10 @@ describe("buildSessionBatch", () => {
   });
 
   it("SEED-10: the midnight double (11:50pm→12:00am) is blocked by the min-gap clause", async () => {
-    // A seed at 23:50 and a rebuild at 00:00 are two calendar days ten minutes apart — the
-    // calendar-day clause passes but the gap clause fails, so no second seed fires.
+    // A seed at 23:50 and a rebuild at 00:00 are two calendar days ten minutes apart — the new day
+    // resets the count (headroom exists) but the gap clause fails, so no second seed fires.
     const deps = makeBuildDeps([], ["w1", "w2", "w3"]);
-    await deps.seedLedger.recordSeedAt("u1", new Date("2026-07-17T23:50:00Z"));
+    await deps.seedLedger.record("u1", new Date("2026-07-17T23:50:00Z"), NEW_PER_DAY); // yesterday's cap
     const now = new Date("2026-07-18T00:00:00Z");
     await buildSessionBatch({ ...INPUT, now }, deps);
     expect((await deps.cards.listCards("u1")).length).toBe(0); // no cards seeded
@@ -49,20 +84,20 @@ describe("buildSessionBatch", () => {
     expect(deps.seedInstrumentation.granted).toHaveLength(0);
   });
 
-  it("SEED-10/14: a same-local-day rebuild is denied on the calendar-day clause", async () => {
+  it("SEED-10/14: a same-local-day rebuild with the cap spent is denied on the daily_cap clause", async () => {
     const deps = makeBuildDeps([], ["w1", "w2", "w3"]);
-    await deps.seedLedger.recordSeedAt("u1", KIT_NOW); // seeded 10:00Z
+    await deps.seedLedger.record("u1", KIT_NOW, NEW_PER_DAY); // today's cap already spent
     const now = new Date(KIT_NOW.getTime() + 6 * 3_600_000); // +6h, still 2026-07-17 (gap alone would pass)
     await buildSessionBatch({ ...INPUT, now }, deps);
     expect((await deps.cards.listCards("u1")).length).toBe(0);
     expect(deps.seedInstrumentation.denied).toEqual([
-      { userId: "u1", at: now, failingClause: "calendar_day" },
+      { userId: "u1", at: now, failingClause: "daily_cap" },
     ]);
   });
 
   it("SEED-10/12/14: returning after an absence grants one batch and logs the grant", async () => {
     const deps = makeBuildDeps([], ["w1", "w2", "w3", "w4", "w5"]);
-    await deps.seedLedger.recordSeedAt("u1", new Date("2026-07-15T10:00:00Z")); // two days ago
+    await deps.seedLedger.record("u1", new Date("2026-07-15T10:00:00Z"), NEW_PER_DAY); // two days ago
     const res = await buildSessionBatch(INPUT, deps); // now = KIT_NOW: new day AND ≫ 5h gap
     expect(res.kind).toBe("batch");
     expect(deps.seedInstrumentation.granted).toHaveLength(1);
@@ -74,11 +109,12 @@ describe("buildSessionBatch", () => {
   });
 
   it("SEED-14: a grant on a day with existing due cards records hadBacklog=true", async () => {
+    // 3 due cards keep the backlog cap ≥ 1 intro (2 due would zero the pace → no grant to inspect).
     const deps = makeBuildDeps(
-      [card("due1", "Recognized"), card("due2", "Recognized")],
+      [card("due1", "Recognized"), card("due2", "Recognized"), card("due3", "Recognized")],
       ["w1", "w2", "w3"],
     );
-    const res = await buildSessionBatch(INPUT, deps); // ledger empty → grant; due1/due2 are due now
+    const res = await buildSessionBatch(INPUT, deps); // ledger empty → grant; due1..3 are due now
     expect(res.kind).toBe("batch");
     expect(deps.seedInstrumentation.granted[0]!.hadBacklog).toBe(true);
   });
@@ -124,8 +160,8 @@ describe("buildSessionBatch", () => {
   it("returns empty (and clears any state row) when nothing is due", async () => {
     const future = new Date(KIT_NOW.getTime() + 86_400_000);
     const deps = makeBuildDeps([card("later", "Recognized", future)]);
-    // A same-instant ledger entry fails both rail clauses, keeping seeding out of the picture.
-    await deps.seedLedger.recordSeedAt("u1", KIT_NOW);
+    // Today's cap already spent → the rail denies, keeping seeding out of the picture.
+    await deps.seedLedger.record("u1", KIT_NOW, NEW_PER_DAY);
     const res = await buildSessionBatch(INPUT, deps);
     expect(res.kind).toBe("empty");
     expect(deps.sessionStatePeek("u1")).toBeUndefined();

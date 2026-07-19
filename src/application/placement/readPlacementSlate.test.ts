@@ -49,6 +49,7 @@ function makeDeps(pool: string[], carded: string[] = []): {
     logsForWord: async () => [],
     listCards: async () =>
       carded.map((s): Card => ({ userId: "u1", senseId: s, mastery: "Seen", fsrs: {} as never })),
+    deleteCard: async () => {},
   };
   return { deps: { wordSource, catalog, cards }, calls };
 }

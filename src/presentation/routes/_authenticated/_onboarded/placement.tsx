@@ -84,7 +84,7 @@ function PlacementPage() {
   // The 60-item test runs chromeless, like /review — no bottom tabs to tap away mid-decision.
   if (view === "lextale") {
     return (
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-8">
+      <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-4 py-8">
         <LexTaleTest
           submitting={lextale.isPending}
           onCancel={() => setView("hub")}

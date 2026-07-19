@@ -36,9 +36,10 @@ export interface ReadDashboardSummaryResult {
   dueReviews: number;
   /**
    * The EXACT number of new words the next session build would actually introduce — not the SEED-6
-   * pacing ceiling. It is `min(newIntroductionsAllowed, un-carded frontier words available)` when the
-   * SEED-10/BAT-14 seed rail would grant a seed today, and **0** when it would not (already seeded
-   * today, within the min gap) or the frontier band is exhausted. Mirrors `seedIntroductions`'s own
+   * pacing ceiling. It is `min(newIntroductionsAllowed, today's remaining cap, un-carded frontier words
+   * available)` when the SEED-10/BAT-14 seed rail would grant a seed, and **0** when it would not
+   * (today's NEW_PER_DAY cap is spent, or within the boundary gap) or the frontier band is exhausted.
+   * Mirrors `seedIntroductions`'s own
    * computation exactly (same allowance, same exclude set, same `nextFrontierWords` call), as a
    * read-only dry run — so the count the learner sees equals the count the next `/review` seeds.
    */
@@ -71,17 +72,25 @@ export async function readDashboardSummary(
     (c) => c.fsrs.due.getTime() <= now.getTime(),
   ).length;
 
-  // The exact new-intro count the next build would seed (SEED-6 pace ∩ real frontier supply), gated by
-  // the SEED-10/BAT-14 seed rail: 0 when a seed can't be granted today, so the dashboard never
-  // advertises intros the next `/review` won't deliver.
-  const lastSeedAt = await deps.seedLedger.lastSeedAt(input.userId);
-  const { granted } = evaluateSeedRail({ lastSeedAt, now, utcOffsetMinutes: offset });
+  // The exact new-intro count the next build would seed (SEED-6 pace ∩ real frontier supply ∩ the
+  // SEED-10 per-day cap remaining), gated by the seed rail: 0 when a seed can't be granted today, so
+  // the dashboard never advertises intros the next `/review` won't deliver.
+  const ledger = await deps.seedLedger.read(input.userId);
+  const { granted, dailyRemaining } = evaluateSeedRail({
+    lastSeedAt: ledger?.lastSeedAt,
+    seededCount: ledger?.seededCount ?? 0,
+    now,
+    utcOffsetMinutes: offset,
+  });
   let newIntroductions = 0;
   if (granted) {
-    const allowed = newIntroductionsAllowed({
-      isFirstSession: cards.length === 0,
-      dueBacklog: dueReviews,
-    });
+    const allowed = Math.min(
+      newIntroductionsAllowed({
+        isFirstSession: cards.length === 0,
+        dueBacklog: dueReviews,
+      }),
+      dailyRemaining,
+    );
     if (allowed > 0) {
       const exclude = new Set(cards.map((c) => c.senseId));
       const senseIds = await deps.wordSource.nextFrontierWords(

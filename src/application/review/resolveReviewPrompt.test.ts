@@ -60,6 +60,7 @@ function makeDeps(
     appendReviewLog: async () => {},
     logsForWord: async () => logs,
     listCards: async () => [card],
+    deleteCard: async () => {},
   };
   const catalog: Catalog = { get: (id) => (id === item.sense_id ? item : undefined) };
   return { catalog, cards };

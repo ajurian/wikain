@@ -79,6 +79,7 @@ function makeDeps(
     appendReviewLog: async () => {},
     logsForWord: async (_u, senseId) => logsBySense[senseId] ?? [],
     listCards: async () => cards,
+    deleteCard: async () => {},
   };
   const scheduler: Scheduler = {
     newCard: () => fsrs(),

@@ -288,16 +288,22 @@ migrated amendment rationale; do not restate it here. Non-obvious, and not recor
 **`WIKAIN_DEV_TIER` now threads into a THIRD place** — `buildSessionBatch` — because the batcher weighs
 entries by tier; pinning the grader/prompt but not the batcher would budget recognition-weight batches
 full of free-production cards. The **`seed_ledger` day-guard (`BAT-14`) also fixed a live bug**:
-`startSession` seeded per-invocation, so every `/review` reload minted new intro cards — seeding now
-runs at most once per learner-local day, and `startSessionFn` is gone (`getReviewSessionFn` is the
-entry point; the `startSession` use-case survives untouched for the smoke tests). Batch progress keys
-off `reviewWasRated` — the outcome discriminants, never a parallel flag — so the bar and FSRS ground
-truth cannot drift (`BAT-7`). The **SEED-10 seed-rail gate is a pure `domain/scheduling/seedRail.ts`
-(`evaluateSeedRail`) shared by `buildSessionBatch` AND `readDashboardSummary`** — so the dashboard's
-"new" count is a read-only dry run of the seeder (SEED-6 pace ∩ real frontier supply, **gated by the
-rail**), i.e. the exact number the next `/review` will introduce, `0` when the rail is closed for today
-or the band is exhausted — never the bare `newIntroductionsAllowed` ceiling (which reads `NEW_PER_DAY`
-even when nothing would seed). The two must not diverge, which is why the gate is one function, not two.
+`startSession` seeded per-invocation, so every `/review` reload minted new intro cards — seeding is now
+bounded by a **per-learner-day `NEW_PER_DAY` count cap** (`SEED-10/11`; un-defers Amendment v4.2's
+deferred cap), with the `SEED_MIN_GAP_HOURS` gap kept **only** as the calendar-day-**boundary** guard.
+The load-bearing consequence: a partial or backlog-throttled seed **refills same-day up to the cap**
+instead of burning the day, and a **zero-intro pass no longer stamps the ledger** (the old binary
+once-per-day proxy under-seeded — the `seed_ledger` now carries `seeded_count` beside `last_seed_at`,
+and the ledger advances only on `n ≥ 1` real intros). `startSessionFn` is gone (`getReviewSessionFn` is
+the entry point; the `startSession` use-case survives untouched for the smoke tests). Batch progress
+keys off `reviewWasRated` — the outcome discriminants, never a parallel flag — so the bar and FSRS
+ground truth cannot drift (`BAT-7`). The **SEED-10 seed-rail gate is a pure
+`domain/scheduling/seedRail.ts` (`evaluateSeedRail`) shared by `buildSessionBatch` AND
+`readDashboardSummary`** — so the dashboard's "new" count is a read-only dry run of the seeder (SEED-6
+pace ∩ real frontier supply ∩ the cap's remaining headroom, **gated by the rail**), i.e. the exact
+number the next `/review` will introduce, `0` when today's cap is spent, within the boundary gap, or the
+band is exhausted — never the bare `newIntroductionsAllowed` ceiling. The two must not diverge, which is
+why the gate is one function, not two.
 
 **Key design conventions (follow in later slices):**
 - **Cross-layer imports use `~/*`; within-layer stay relative** (`DIR-7`). `npm run lint` enforces it, along

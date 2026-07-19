@@ -54,6 +54,7 @@ import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 import { BatchSeam } from "@/components/review/batch-seam";
 import { BounceCallout } from "@/components/review/bounce-callout";
 import { SoftBounceCallout } from "@/components/review/soft-bounce-callout";
+import { TarsierIdle } from "@/components/review/tarsier-idle";
 import { BlankAnswer, BlankInput } from "@/components/review/blank-input";
 import { CheckingIndicator } from "@/components/review/checking-indicator";
 import { ClozeSentence } from "@/components/review/cloze-sentence";
@@ -239,7 +240,7 @@ function ReviewSession() {
   });
 
   return (
-    <div className="relative mx-auto w-full max-w-md px-4">
+    <div className="relative mx-auto w-full max-w-xl px-4">
       {/*
        * The chrome is taken OUT of flow so the card centers against the viewport rather than against
        * the space left under the progress bar — in flow, the bar's height pushed the card ~50px low.
@@ -339,6 +340,7 @@ function NothingDue() {
       transition={{ duration: DURATION.base, ease: EASE }}
       className="w-full space-y-6 text-center"
     >
+      <TarsierIdle variant="flat" className="mx-auto w-44" />
       <div>
         <h1 className="text-xl font-semibold text-ink">Nothing due right now.</h1>
         <p className="mt-1 text-sm text-ink-soft">

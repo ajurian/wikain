@@ -12,7 +12,7 @@ export function Wordmark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center font-serif font-semibold tracking-tight text-ink",
+        "inline-flex items-center gap-[0.25em] font-serif font-semibold tracking-tight text-ink",
         className,
       )}
     >

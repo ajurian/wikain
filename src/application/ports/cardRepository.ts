@@ -18,4 +18,11 @@ export interface CardRepository {
   logsForWord(userId: string, senseId: string): Promise<ReviewLog[]>;
   /** All of a user's cards — the counter read-model iterates them to total "words you can now use". */
   listCards(userId: string): Promise<Card[]>;
+  /**
+   * Remove a single (user, word) card. Onboarding uses this to REPLACE a stale first-session seed
+   * when the learner re-picks a coarse level: the prior seed's `Seen` cards carry no review logs
+   * (INV-4), so dropping them before re-seeding is safe. A no-op if the card is absent. Narrow by
+   * intent (SOLID-4) — not a bulk wipe.
+   */
+  deleteCard(userId: string, senseId: string): Promise<void>;
 }

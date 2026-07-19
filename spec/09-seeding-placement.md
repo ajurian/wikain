@@ -160,30 +160,46 @@ And no parameters are pooled from other users
 `Seen`. On day one there are zero production-eligible words, so the use-goal cannot be met by new
 introductions.
 
-### SEED-10 — Steady-state seed rail: calendar-day boundary AND minimum inter-seed gap
-**Trace:** PRD §8; Amendment v4.2. Refines `BAT-14` (spec/14).
-**Requirement:** In steady state, a seed batch MUST be granted **iff both**: (a) `last_seed_at` is a
-**different** learner-local calendar day than now (the `CNT` day-boundary convention), **and** (b) at
-least `SEED_MIN_GAP_HOURS` (=5) have elapsed since `last_seed_at`. If **either** clause fails, no seed
-runs on this request — no card creation, no rating, nothing else changes (seeding is unrelated to
-review grading). A first-ever seed (no ledger fact) trivially satisfies both. The quantity being
-bounded is **cumulative introductions per period**, NOT instantaneous inter-card spacing — a learner
-taking all ~5 new cards in one sitting is the desired §10.1 pattern; the harm is a *count* overshoot
-that doubles the future review-and-judge tail.
+### SEED-10 — Steady-state seed rail: per-day count cap + calendar-day-boundary gap
+**Trace:** PRD §8; Amendment v4.2 (un-defers its deferred count cap). Refines `BAT-14` (spec/14).
+**Requirement:** In steady state, a seed batch MUST be granted **iff both**: (a) the day's cumulative
+introductions are **below the `NEW_PER_DAY` (=5) cap** — `introducedToday < NEW_PER_DAY`, where
+`introducedToday` is the count stamped at `last_seed_at` when that instant falls on the **current**
+learner-local calendar day (the `CNT` day-boundary convention), else `0`; **and** (b) — **only when
+this request crosses a learner-local calendar-day boundary** since `last_seed_at` — at least
+`SEED_MIN_GAP_HOURS` (=5) have elapsed. Within a single learner-local day the **count cap is the sole
+bound**, so same-day refills up to the cap are granted **immediately** — a partial or backlog-throttled
+seed never burns the day; the gap clause binds **only across the day boundary**, where it blocks the
+11:50pm→12:00am double that the calendar-day count-reset would otherwise permit. If the seed is not
+granted, no seed runs on this request — no card creation, no rating, nothing else changes (seeding is
+unrelated to review grading). A first-ever seed (no ledger fact) trivially satisfies both. The quantity
+being bounded is **cumulative introductions per learner-local day**, NOT instantaneous inter-card
+spacing — a learner taking all ~5 new cards in one sitting is the desired §10.1 pattern; the harm is a
+*count* overshoot that doubles the future review-and-judge tail.
 
 **Scenario: the midnight double is blocked by the gap clause**
 ```
-Given a seed batch ran at 11:50pm learner-local
+Given a seed batch that spent today's cap ran at 11:50pm learner-local
 When a rebuild runs at 12:00am (a new calendar day, ten minutes later)
-Then clause (a) passes but clause (b) fails (< SEED_MIN_GAP_HOURS)
+Then the new day resets introducedToday to 0 so clause (a) passes
+And the boundary gap clause (b) fails (< SEED_MIN_GAP_HOURS)
 And no second seed batch fires
 ```
 
-**Scenario: a same-local-day rebuild seeds nothing**
+**Scenario: a same-day partial-seed refill is granted immediately (no gap wait)**
 ```
-Given a seed batch ran earlier today learner-local
+Given a backlog-throttled seed introduced fewer than NEW_PER_DAY earlier today learner-local
+When a same-day rebuild runs after the backlog clears
+Then clause (a) passes (introducedToday < NEW_PER_DAY) with cap headroom remaining
+And clause (b) does not apply (no calendar-day boundary was crossed)
+And a seed of the remaining daily cap fires
+```
+
+**Scenario: a same-day rebuild with the cap spent seeds nothing**
+```
+Given seeding already introduced NEW_PER_DAY earlier today learner-local
 When any same-day rebuild runs (seam, T-expiry, reload)
-Then clause (a) fails
+Then clause (a) fails (introducedToday == NEW_PER_DAY)
 And no seed batch fires (existing cards are ordered only)
 ```
 
@@ -205,21 +221,34 @@ And no seed batch fires (existing cards are ordered only)
   semantics the §9 counter and §3.2 `Fluent` gate use. Calendar-day + debounce gives the same burst
   protection while keeping one calendar-day meaning app-wide (see `SEED-13`).
 
-### SEED-11 — A seed is atomic and stored as an absolute instant
-**Trace:** PRD §8; Amendment v4.2.
+### SEED-11 — A seed is atomic; the ledger stores the instant AND the running day-count
+**Trace:** PRD §8; Amendment v4.2 (revised — the deferred count cap is now normative, `SEED-10`).
 **Requirement:** A seed MUST be an **atomic batch** of the `SEED-6` pace, stamped at **one** timestamp
 `last_seed_at`; cards MUST NOT be introduced one-at-a-time across the session (no per-card seeding
-clock, so no mid-session self-tripping). The ledger MUST persist `last_seed_at` as an **absolute
-instant**, not a "day-seeded" boolean or day key — the instant is what answers **both** the
-calendar-day (a) and elapsed-gap (b) comparisons of `SEED-10`; a boolean/day-key cannot answer (b). The
-grant MUST stamp `last_seed_at` even when the pacing math admitted **0** introductions (the pass ran).
+clock, so no mid-session self-tripping). The ledger MUST persist **two** facts: `last_seed_at` as an
+**absolute instant** (not a "day-seeded" boolean or day key — the instant is what answers the boundary
+gap (b) and the day-key that scopes the count), **and** `seeded_count`, the **cumulative introductions
+stamped at that instant**, read relative to that instant's learner-local day (`SEED-10` clause (a)); a
+boolean/day-key can answer neither the gap nor the count. The ledger MUST advance (stamp `last_seed_at`
+and set `seeded_count = introducedToday + n`) **only when the pass actually introduced `n ≥ 1` cards**.
+A pass that introduces **0** (pace zeroed by backlog, or the frontier exhausted) MUST be a **no-op** on
+the ledger — it must **not** stamp, so a throttled or supply-starved moment never consumes the day's
+cap. *(This reverses the earlier "stamp even on 0 introductions" rule, whose binary once-per-day proxy
+under-seeded the learner: a partial or zero-intro pass burned the whole day.)*
 
-**Scenario: the ledger holds the seeding instant**
+**Scenario: the ledger holds the seeding instant and the day-count**
 ```
-Given a seed batch is granted at instant T
+Given a seed batch of n ≥ 1 cards is granted at instant T with introducedToday already = k
 When the ledger records it
-Then last_seed_at = T (an absolute instant)
-And the next request evaluates both SEED-10 clauses against T
+Then last_seed_at = T (an absolute instant) and seeded_count = k + n
+And the next request evaluates SEED-10 against T and seeded_count
+```
+
+**Scenario: a zero-introduction pass does not touch the ledger**
+```
+Given a granted pass whose pacing/supply admitted 0 introductions
+When the pass completes
+Then last_seed_at and seeded_count are left unchanged (the day is not burned)
 ```
 
 ### SEED-12 — Returning after an absence yields one bounded batch, no back-fill
@@ -255,17 +284,19 @@ And a full batch is granted (no rolling-window starvation)
 
 ### SEED-14 — Instrument every granted and denied seed
 **Trace:** PRD §8; Amendment v4.2.
-**Requirement:** Every **granted** seed MUST be logged (`last_seed_at`, count, backlog state at grant)
-and every **denied** seed request MUST be logged **with the failing clause**. The failing clause MUST
-follow this precedence: `calendar_day` whenever clause (a) failed (the ordinary same-day denial), and
-`min_gap` **only** when the day rolled but the gap had not elapsed — so a `min_gap` record is exactly a
-boundary-burst the new clause caught. Purposes: (i) tune `SEED_MIN_GAP_HOURS`; (ii) confirm the rail
-**rarely binds** — frequent binding points at the backlog gate or the §8 pace, not this rail.
+**Requirement:** Every **granted** seed MUST be logged (`last_seed_at`, count, backlog state at grant);
+a granted pass that introduced **0** cards is a `SEED-11` no-op and is **not** logged as a grant. Every
+**denied** seed request MUST be logged **with the failing clause**, following this precedence:
+`daily_cap` whenever clause (a) failed (today's `NEW_PER_DAY` cap is spent — the ordinary same-day
+denial), and `min_gap` **only** when the day rolled with cap headroom but the boundary gap had not
+elapsed — so a `min_gap` record is exactly a boundary-burst clause (b) caught. Purposes: (i) tune
+`SEED_MIN_GAP_HOURS`; (ii) confirm the rail **rarely binds** — frequent binding points at the backlog
+gate or the §8 pace, not this rail.
 
 **Scenario: a denied midnight-double is attributed to the gap clause**
 ```
-Given a seed ran at 11:50pm and a rebuild runs at 12:00am
-When the seed is denied (SEED-10 clause b)
+Given a seed that spent yesterday's cap ran at 11:50pm and a rebuild runs at 12:00am
+When the seed is denied (SEED-10 clause b — new day, cap reset, gap short)
 Then a denial event is logged with failing_clause = min_gap
 And no grant event is logged
 ```

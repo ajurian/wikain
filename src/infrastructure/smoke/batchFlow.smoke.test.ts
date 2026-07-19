@@ -12,7 +12,7 @@ import { getOrResumeSession } from "~/application/session/getOrResumeSession.js"
 import { advanceActiveBatch } from "~/application/session/advanceActiveBatch.js";
 import { recordSeamChoice } from "~/application/session/recordSeamChoice.js";
 import { reviewWasRated, runReviewPass } from "~/application/review/runReviewPass.js";
-import { BATCH_ABSENCE_T_MINUTES } from "~/domain/constants.js";
+import { BATCH_ABSENCE_T_MINUTES, NEW_PER_DAY } from "~/domain/constants.js";
 import { reviewBatches } from "../db/schema.js";
 import { USER_A } from "../testIds.js";
 
@@ -79,18 +79,44 @@ describe("mini-session batch flow (smoke: real catalog + pglite)", () => {
     const logs = await s.cards.logsForWord(USER_A, batch.entries[0]!.senseId);
     expect(logs[0]!.durationMs).toBe(9_000);
 
-    // BAT-9: Continue at the seam. Every rated card was rescheduled into the future and the
-    // same-day guard admits no new intros (BAT-14), so the session is exhausted.
-    const after = await recordSeamChoice(
+    // BAT-9 + SEED-10: Continue at the seam. Every rated card was rescheduled into the future, but the
+    // first build seeded only the fast-win batch (FIRST_SESSION_SEED_WORDS), so the day's NEW_PER_DAY
+    // cap still has headroom — a same-day Continue seeds the remaining intros (the boundary-guard
+    // refill), NOT nothing. Keep continuing + driving until the daily cap is spent, then it's exhausted.
+    let seededTotal = batch.entries.length;
+    let result = await recordSeamChoice(
       { ...INPUT, choice: "continue", now: new Date(t) },
       flowDeps,
     );
-    expect(after.kind).toBe("empty");
     const [chosen] = await s.db
       .select()
       .from(reviewBatches)
       .where(eq(reviewBatches.batchId, batch.batchId));
     expect(chosen!.continueChosen).toBe(true);
+
+    while (result.kind === "batch") {
+      for (const e of result.state.entries) {
+        t += 30_000;
+        const word = s.catalog.get(e.senseId)!.word;
+        const res = await runReviewPass(
+          { userId: USER_A, senseId: e.senseId, response: word, durationMs: 9_000, now: new Date(t) },
+          reviewDeps,
+        );
+        const adv = await advanceActiveBatch(
+          { userId: USER_A, senseId: e.senseId, ratingLogged: reviewWasRated(res), now: new Date(t) },
+          progressDeps,
+        );
+        if (!adv.active) throw new Error("expected an active batch");
+      }
+      seededTotal += result.state.entries.length;
+      result = await recordSeamChoice(
+        { ...INPUT, choice: "continue", now: new Date(t) },
+        flowDeps,
+      );
+    }
+
+    expect(result.kind).toBe("empty"); // exhausted once the day's cap is spent
+    expect(seededTotal).toBe(NEW_PER_DAY); // SEED-10: never more than the daily cap in one local day
   });
 
   it("BAT-12/13/14: within T resumes the same batch; past T finalizes abandoned + welcome-back, no re-seed", async () => {

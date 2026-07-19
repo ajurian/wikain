@@ -266,6 +266,9 @@ export const sessionState = pgTable("session_state", {
 export const seedLedger = pgTable("seed_ledger", {
   userId: uuid("user_id").primaryKey(),
   lastSeedAt: timestamp("last_seed_at", { withTimezone: true, mode: "date" }).notNull(),
+  // SEED-11: cumulative introductions stamped at `last_seed_at`, read relative to that instant's
+  // learner-local day (the day-cap resets when the day rolls). Additive with a 0 default.
+  seededCount: integer("seeded_count").notNull().default(0),
 });
 
 /**
@@ -283,7 +286,7 @@ export const seedEvents = pgTable(
     outcome: text("outcome").$type<"granted" | "denied">().notNull(),
     count: integer("count"),
     hadBacklog: boolean("had_backlog"),
-    failingClause: text("failing_clause").$type<"calendar_day" | "min_gap">(),
+    failingClause: text("failing_clause").$type<"daily_cap" | "min_gap">(),
   },
   (t) => [index("seed_events_user_idx").on(t.userId)],
 );

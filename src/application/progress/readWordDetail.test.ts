@@ -73,6 +73,7 @@ function makeDeps(
     appendReviewLog: async () => {},
     logsForWord: async () => logs,
     listCards: async () => Object.values(cards),
+    deleteCard: async () => {},
   };
   const scheduler: Scheduler = {
     newCard: () => fsrs(),

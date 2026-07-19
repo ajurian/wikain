@@ -114,6 +114,7 @@ function makeRepo(initial: Card): {
     logsForWord: async (userId, senseId) =>
       logs.filter((l) => l.userId === userId && l.senseId === senseId),
     listCards: async () => [card],
+    deleteCard: async () => {},
   };
   return { cards, logs, stored: () => card };
 }

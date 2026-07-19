@@ -11,22 +11,22 @@ import { USER_A, USER_B } from "../testIds.js";
 describe("DrizzleSeedLedger (pglite)", () => {
   it("SEED-11: no ledger row means seeding never ran (undefined, not a fabricated instant)", async () => {
     const ledger = new DrizzleSeedLedger(await makePgliteDb());
-    expect(await ledger.lastSeedAt(USER_A)).toBeUndefined();
+    expect(await ledger.read(USER_A)).toBeUndefined();
   });
 
-  it("SEED-11: the recorded instant round-trips and a later record overwrites it", async () => {
+  it("SEED-11: the instant + day-count round-trip and a later record overwrites both", async () => {
     const ledger = new DrizzleSeedLedger(await makePgliteDb());
     const first = new Date("2026-07-17T10:00:00.000Z");
     const second = new Date("2026-07-18T09:30:00.000Z");
-    await ledger.recordSeedAt(USER_A, first);
-    expect(await ledger.lastSeedAt(USER_A)).toEqual(first);
-    await ledger.recordSeedAt(USER_A, second);
-    expect(await ledger.lastSeedAt(USER_A)).toEqual(second);
+    await ledger.record(USER_A, first, 2);
+    expect(await ledger.read(USER_A)).toEqual({ lastSeedAt: first, seededCount: 2 });
+    await ledger.record(USER_A, second, 5);
+    expect(await ledger.read(USER_A)).toEqual({ lastSeedAt: second, seededCount: 5 });
   });
 
   it("multi-tenant: user B has their own ledger", async () => {
     const ledger = new DrizzleSeedLedger(await makePgliteDb());
-    await ledger.recordSeedAt(USER_A, new Date("2026-07-17T10:00:00.000Z"));
-    expect(await ledger.lastSeedAt(USER_B)).toBeUndefined();
+    await ledger.record(USER_A, new Date("2026-07-17T10:00:00.000Z"), 3);
+    expect(await ledger.read(USER_B)).toBeUndefined();
   });
 });

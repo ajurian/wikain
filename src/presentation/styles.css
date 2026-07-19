@@ -76,6 +76,19 @@
   --border: var(--line);
   --input: var(--line);
   --ring: var(--marigold-deep);
+
+  /* tarsier idle illustration (empty /review) — natural tans stay custom; eyes/leaf ride the
+   * marigold/moss signals so the figure themes with the field. */
+  --tarsier-body: oklch(0.76 0.095 70);
+  --tarsier-body-soft: oklch(0.85 0.065 75);
+  --tarsier-body-deep: oklch(0.68 0.095 68);
+  --tarsier-cream: oklch(0.95 0.025 85);
+  --tarsier-line: oklch(0.33 0.09 30);
+  --tarsier-branch: oklch(0.64 0.095 70);
+  --tarsier-pupil: oklch(0.28 0.08 30);
+  --tarsier-highlight: oklch(0.99 0 0);
+  --tarsier-eye: var(--marigold);
+  --tarsier-leaf: var(--moss);
 }
 
 /*
@@ -114,6 +127,17 @@
   --reason-grammar: oklch(0.72 0.14 48);
   --reason-register: oklch(0.74 0.07 320);
   --mastery-seen: oklch(0.76 0.09 85);
+
+  /* tarsier — tans deepen/desaturate onto the dark field; the maroon contour lifts so it still
+   * separates figure from field (eyes/leaf re-resolve via --marigold/--moss). */
+  --tarsier-body: oklch(0.66 0.08 68);
+  --tarsier-body-soft: oklch(0.75 0.055 72);
+  --tarsier-body-deep: oklch(0.58 0.08 66);
+  --tarsier-cream: oklch(0.88 0.03 82);
+  --tarsier-line: oklch(0.46 0.075 45);
+  --tarsier-branch: oklch(0.55 0.085 68);
+  --tarsier-pupil: oklch(0.25 0.07 30);
+  --tarsier-highlight: oklch(0.97 0.005 90);
 }
 
 @theme inline {
@@ -187,4 +211,88 @@
     color: var(--foreground);
     font-family: var(--font-sans);
   }
+}
+
+/*
+ * Tarsier idle animation (components/review/tarsier-idle.tsx). The one sanctioned idle loop —
+ * amplitudes stay tiny and cycles slow so it reads as a creature at rest, not an attention-seeker
+ * (motion.md). `.tarsier-animate` is added by the component only when reduced motion is off; the
+ * media query below is belt-and-braces for the same contract.
+ */
+.tarsier .t-stroke,
+.tarsier [data-fill] {
+  stroke: var(--tarsier-line);
+  stroke-width: 3.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.tarsier .t-detail {
+  stroke: var(--tarsier-line);
+  stroke-width: 3;
+  stroke-linecap: round;
+  fill: none;
+}
+/* flat variant: drop the outer contours; detail lines (bark, fingers, vein, smile) stay */
+.tarsier[data-variant="flat"] [data-fill] {
+  stroke: none;
+}
+.tarsier[data-variant="flat"] .t-under {
+  display: none;
+}
+.tarsier[data-variant="flat"] .t-haunch {
+  fill: var(--tarsier-body-deep);
+}
+
+/* Without fill-box, transform-origin resolves against the viewport and every pivot lands off-limb. */
+.t-leaf, .t-tail, .t-body, .t-head, .t-ear-l, .t-blink, .t-pupil {
+  transform-box: fill-box;
+}
+.t-leaf   { transform-origin: 100% 100%; }
+.t-tail   { transform-origin: 50% 0%; }
+.t-body   { transform-origin: 50% 100%; }
+.t-head   { transform-origin: 50% 88%; }
+.t-ear-l  { transform-origin: 50% 100%; }
+.t-blink  { transform-origin: 50% 50%; }
+
+/* Mutually offset cycle lengths so the combination never visibly syncs. */
+.tarsier-animate .t-leaf  { animation: tarsier-leaf 3.8s ease-in-out infinite alternate; }
+.tarsier-animate .t-tail  { animation: tarsier-tail 7s ease-in-out infinite; }
+.tarsier-animate .t-body  { animation: tarsier-breathe 4.5s ease-in-out infinite; }
+.tarsier-animate .t-head  { animation: tarsier-tilt 12s ease-in-out infinite; }
+.tarsier-animate .t-ear-l { animation: tarsier-ear 11s linear infinite; }
+.tarsier-animate .t-blink { animation: tarsier-blink 6s linear infinite; }
+.tarsier-animate .t-pupil { animation: tarsier-gaze 9s ease-in-out infinite; }
+
+@keyframes tarsier-leaf {
+  from { transform: rotate(-6deg); }
+  to   { transform: rotate(6deg); }
+}
+@keyframes tarsier-tail {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+@keyframes tarsier-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.015); }
+}
+@keyframes tarsier-tilt {
+  0%, 55%, 88%, 100% { transform: rotate(0deg); }
+  63%, 80%           { transform: rotate(2.5deg); }
+}
+@keyframes tarsier-ear {
+  0%, 88%, 90%, 92%, 94%, 100% { transform: rotate(0deg); }
+  89%, 93%                     { transform: rotate(-8deg); }
+}
+@keyframes tarsier-blink {
+  0%, 91%, 96%, 100% { transform: scaleY(1); }
+  93%, 94%           { transform: scaleY(0.06); }
+}
+@keyframes tarsier-gaze {
+  0%, 52%, 82%, 100% { transform: translateX(0); }
+  58%, 76%           { transform: translateX(-4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tarsier-animate .t-leaf, .tarsier-animate .t-tail, .tarsier-animate .t-body,
+  .tarsier-animate .t-head, .tarsier-animate .t-ear-l, .tarsier-animate .t-blink,
+  .tarsier-animate .t-pupil { animation: none; }
 }

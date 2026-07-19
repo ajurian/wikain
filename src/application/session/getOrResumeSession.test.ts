@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BATCH_ABSENCE_T_MINUTES } from "~/domain/constants.js";
+import { BATCH_ABSENCE_T_MINUTES, NEW_PER_DAY } from "~/domain/constants.js";
 import { getOrResumeSession } from "./getOrResumeSession.js";
 import { card, KIT_NOW, makeBuildDeps } from "./sessionBatchTestKit.js";
 
@@ -98,7 +98,7 @@ describe("getOrResumeSession", () => {
 
   it("BAT-13: an expired session over an exhausted queue resolves to empty", async () => {
     const deps = makeBuildDeps([card("a", "Recognized", new Date(KIT_NOW.getTime() + 86_400_000))]);
-    await deps.seedLedger.recordSeedAt("u1", KIT_NOW); // same-day instant → rail denies re-seed
+    await deps.seedLedger.record("u1", KIT_NOW, NEW_PER_DAY); // same-day, cap full → rail denies re-seed
     await deps.sessionState.save({
       userId: "u1",
       batchId: "stale-batch",

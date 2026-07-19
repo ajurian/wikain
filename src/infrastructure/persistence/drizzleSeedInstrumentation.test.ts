@@ -53,12 +53,12 @@ describe("DrizzleSeedInstrumentation (pglite)", () => {
     await store.recordDenial({
       userId: USER_A,
       at: new Date("2026-07-17T12:00:00.000Z"),
-      failingClause: "calendar_day",
+      failingClause: "daily_cap",
     });
     await store.recordGrant({
       userId: USER_A,
       seededAt: new Date("2026-07-18T10:00:00.000Z"),
-      count: 0,
+      count: 2,
       hadBacklog: false,
     });
     await store.recordDenial({

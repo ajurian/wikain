@@ -66,11 +66,11 @@ function wordSourceStub(available = 50): WordSource {
   };
 }
 
-/** The seed ledger; `undefined` (default) is a first-ever seed → the rail grants. */
-function seedLedgerStub(lastSeedAt?: Date): SeedLedgerStore {
+/** The seed ledger; `undefined` (default) is a first-ever seed → the rail grants the full cap. */
+function seedLedgerStub(lastSeedAt?: Date, seededCount = 0): SeedLedgerStore {
   return {
-    lastSeedAt: async () => lastSeedAt,
-    recordSeedAt: async () => {},
+    read: async () => (lastSeedAt ? { lastSeedAt, seededCount } : undefined),
+    record: async () => {},
   };
 }
 
@@ -87,6 +87,7 @@ function makeDeps(
     appendReviewLog: async () => {},
     logsForWord: async (_u, senseId) => logsBySense[senseId] ?? [],
     listCards: async () => cards,
+    deleteCard: async () => {},
   };
   return { cards: repo, settings, wordSource, seedLedger };
 }
@@ -169,22 +170,39 @@ describe("readDashboardSummary", () => {
     expect(res.newIntroductions).toBe(0);
   });
 
-  it("SEED-10: reports 0 new when the learner already seeded today (the reported 'up to 5 new' bug)", async () => {
-    // Seeded earlier THIS learner-local day → the seed rail denies → the next /review introduces
-    // nothing, so the dashboard must not advertise the daily pace even with 0 due.
+  it("SEED-10: reports 0 new when today's cap is already spent (the reported 'up to 5 new' bug)", async () => {
+    // Already introduced NEW_PER_DAY THIS learner-local day → the cap is spent → the next /review
+    // introduces nothing, so the dashboard must not advertise the daily pace even with 0 due.
     const lastSeedAt = new Date("2026-06-30T08:00:00Z"); // same UTC day as NOW
     const deps = makeDeps(
       [card("a", "Fluent", FUTURE)],
       {},
       settingsStub(),
       wordSourceStub(50),
-      seedLedgerStub(lastSeedAt),
+      seedLedgerStub(lastSeedAt, NEW_PER_DAY),
     );
 
     const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, deps);
 
     expect(res.dueReviews).toBe(0);
     expect(res.newIntroductions).toBe(0);
+  });
+
+  it("SEED-10: after a partial seed today, reports only the remaining daily cap", async () => {
+    // Seeded 2 earlier today with 0 due backlog → the cap allows 3 more, and a same-day refill needs
+    // no gap wait — so the dashboard advertises exactly the remaining 3, not the full pace.
+    const lastSeedAt = new Date("2026-06-30T08:00:00Z"); // same UTC day as NOW
+    const deps = makeDeps(
+      [card("a", "Fluent", FUTURE)],
+      {},
+      settingsStub(),
+      wordSourceStub(50),
+      seedLedgerStub(lastSeedAt, 2),
+    );
+
+    const res = await readDashboardSummary({ userId: USER, frontierBand: BAND, now: NOW }, deps);
+
+    expect(res.newIntroductions).toBe(NEW_PER_DAY - 2);
   });
 
   it("BAT-14: a new calendar day still within the min gap reports 0 new", async () => {

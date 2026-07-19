@@ -80,6 +80,9 @@ function makeRepo(initial: Card[] = []): CardRepository {
     },
     logsForWord: async () => logs,
     listCards: async (u) => [...map.values()].filter((c) => c.userId === u),
+    deleteCard: async (u, s) => {
+      map.delete(`${u}-${s}`);
+    },
   };
 }
 

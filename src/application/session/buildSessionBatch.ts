@@ -71,40 +71,54 @@ export async function buildSessionBatch(
   const { userId } = input;
   const now = input.now ?? new Date();
 
-  // SEED-10: grant a seed iff BOTH clauses hold — (a) a new learner-local calendar day, and (b) at
-  // least SEED_MIN_GAP_HOURS since the last seed. First-ever seed (no ledger row) trivially passes both.
-  // The rule is the pure `evaluateSeedRail`, shared with the dashboard read-model so the count it shows
-  // is the count this builder will actually seed.
-  const lastSeedAt = await deps.seedLedger.lastSeedAt(userId);
-  const { newCalendarDay, granted } = evaluateSeedRail({
-    lastSeedAt,
-    now,
-    utcOffsetMinutes: input.utcOffsetMinutes,
-  });
+  // SEED-10: grant a seed iff there is daily headroom under the NEW_PER_DAY count cap AND — only when
+  // crossing a learner-local calendar-day boundary — the SEED_MIN_GAP_HOURS gap has elapsed (the gap
+  // blocks the 11:50pm→12:00am double). Within a day the cap alone bounds intros, so a partial or
+  // backlog-throttled seed no longer burns the day. The rule is the pure `evaluateSeedRail`, shared
+  // with the dashboard read-model so the count it shows is the count this builder will actually seed.
+  const ledger = await deps.seedLedger.read(userId);
+  const { introducedToday, dailyRemaining, granted, failingClause } =
+    evaluateSeedRail({
+      lastSeedAt: ledger?.lastSeedAt,
+      seededCount: ledger?.seededCount ?? 0,
+      now,
+      utcOffsetMinutes: input.utcOffsetMinutes,
+    });
 
   let seededSenseIds: string[] = [];
   if (granted) {
     const seeded = await seedIntroductions(
-      { userId, frontierBand: input.frontierBand, now },
+      {
+        userId,
+        frontierBand: input.frontierBand,
+        maxIntroductions: dailyRemaining,
+        now,
+      },
       deps,
     );
     seededSenseIds = seeded.map((c) => c.senseId);
-    await deps.seedLedger.recordSeedAt(userId, now);
+    // SEED-11: advance the ledger ONLY when a card was actually introduced. A zero-intro pass (pace
+    // zeroed by backlog, or the frontier exhausted) is a no-op — it must not stamp/burn the day.
+    if (seeded.length > 0) {
+      await deps.seedLedger.record(userId, now, introducedToday + seeded.length);
+    }
   } else {
-    // SEED-14 precedence: the calendar-day clause is the ordinary denial; tag `min_gap` only when the
-    // day rolled but the gap was short — i.e. exactly the boundary-burst the new clause caught.
+    // SEED-14 precedence: `daily_cap` is the ordinary same-day denial (today's NEW_PER_DAY spent);
+    // `min_gap` fires only when the day rolled with headroom but the gap was short — exactly the
+    // boundary-burst the gap clause catches.
     await deps.seedInstrumentation.recordDenial({
       userId,
       at: now,
-      failingClause: newCalendarDay ? "min_gap" : "calendar_day",
+      failingClause: failingClause ?? "daily_cap",
     });
   }
 
   const all = await deps.cards.listCards(userId);
   const queue = orderSessionQueue(all, seededSenseIds, now);
 
-  if (granted) {
-    // Backlog state at grant (SEED-14): any queued card that was NOT just seeded is existing due debt.
+  if (seededSenseIds.length > 0) {
+    // SEED-14: log the grant only when it actually introduced cards (a granted-but-zero pass advanced
+    // nothing and is not a rail bind). Backlog state: any queued card NOT just seeded is existing debt.
     const seededSet = new Set(seededSenseIds);
     await deps.seedInstrumentation.recordGrant({
       userId,

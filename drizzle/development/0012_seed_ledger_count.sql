@@ -1,0 +1,1 @@
+ALTER TABLE "seed_ledger" ADD COLUMN "seeded_count" integer DEFAULT 0 NOT NULL;

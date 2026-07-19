@@ -44,6 +44,27 @@ describe("first-session seeding (smoke: real catalog + ts-fsrs)", () => {
     expect(created.every((c) => c.fsrs.due.getTime() <= now.getTime())).toBe(true);
   });
 
+  it("SEED-1: onboarding relevel — deleting the prior seed reseeds a fresh first-session batch", async () => {
+    // Reproduces the /onboarding refresh-and-repick fix (seedFirstSessionFn). A brand-new user gets a
+    // first-session batch; a naive re-seed while those cards exist would seed NONE (SEED-6 backlog pacing
+    // treats them as a non-first session), which is why the flow deletes them before reseeding.
+    const { cards, marks, catalog, wordSource } = await makeTestStores();
+    const deps = composeSeeding(cards, marks, catalog, wordSource);
+
+    const first = await seedIntroductions({ userId: USER_A, frontierBand: BAND, now }, deps);
+    expect(first).toHaveLength(FIRST_SESSION_SEED_WORDS);
+
+    // The bug: with the seed cards still present, a second pass seeds nothing (pacing → 0).
+    const noDelete = await seedIntroductions({ userId: USER_A, frontierBand: BAND, now }, deps);
+    expect(noDelete).toHaveLength(0);
+
+    // The fix: delete the prior seed (as seedFirstSessionFn does), then reseed → a fresh batch, not doubled.
+    for (const c of await cards.listCards(USER_A)) await cards.deleteCard(USER_A, c.senseId);
+    const reseed = await seedIntroductions({ userId: USER_A, frontierBand: BAND, now }, deps);
+    expect(reseed).toHaveLength(FIRST_SESSION_SEED_WORDS);
+    expect(await cards.listCards(USER_A)).toHaveLength(FIRST_SESSION_SEED_WORDS);
+  });
+
   it("SM-11/SEED-3: a placement-known word enters Recognized; an unmarked one stays Seen", async () => {
     const picks = await firstPicks();
     const known = picks[0]!;

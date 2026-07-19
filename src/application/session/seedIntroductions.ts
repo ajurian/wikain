@@ -19,6 +19,12 @@ export interface SeedIntroductionsInput {
    * (`deps.marks`), or no word skips `Seen` if neither is provided.
    */
   placementKnown?: ReadonlySet<string>;
+  /**
+   * SEED-10/11: an upper bound on this pass's introductions, imposed by the caller (the seed rail's
+   * `dailyRemaining`). The effective allowance is `min(newIntroductionsAllowed, maxIntroductions)`, so
+   * the per-day `NEW_PER_DAY` cap composes with the SEED-6 backlog pacing. Absent → no extra cap.
+   */
+  maxIntroductions?: number;
   /** Defaults to `new Date()`; injectable for deterministic tests. */
   now?: Date;
 }
@@ -66,7 +72,11 @@ export async function seedIntroductions(
   const isFirstSession = existing.length === 0;
   const dueBacklog = existing.filter((c) => c.fsrs.due.getTime() <= now.getTime()).length;
 
-  const allowed = newIntroductionsAllowed({ isFirstSession, dueBacklog });
+  // SEED-10/11: the SEED-6 backlog pace, further capped by the rail's remaining daily headroom.
+  const allowed = Math.min(
+    newIntroductionsAllowed({ isFirstSession, dueBacklog }),
+    input.maxIntroductions ?? Infinity,
+  );
   if (allowed <= 0) return [];
 
   const exclude = new Set(existing.map((c) => c.senseId));

@@ -171,4 +171,10 @@ export class DrizzleCardRepository implements CardRepository {
       .where(eq(cards.userId, userId));
     return rows.map(fromCardRow);
   }
+
+  async deleteCard(userId: string, senseId: string): Promise<void> {
+    await this.db
+      .delete(cards)
+      .where(and(eq(cards.userId, userId), eq(cards.senseId, senseId)));
+  }
 }

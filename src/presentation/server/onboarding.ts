@@ -36,6 +36,13 @@ export interface SeedFirstSessionInput {
  * This is the ONLY place recording a coarse level also seeds. A retune (`setCoarseLevelFn`) must not, or
  * changing a setting would introduce a fresh batch of words as a side effect.
  *
+ * REPLACE-on-reseed (not idempotent): a learner who re-enters the flow — a refresh resets the client to
+ * step 1 — and re-picks a DIFFERENT coarse level must see words at the NEW band. So any existing cards
+ * (only this onboarding's `Seen` seeds can exist here: the route guards to un-onboarded users, and the
+ * first win persists nothing, INV-4) are DELETED before re-seeding. With zero cards the seeder treats it
+ * as a first session (`FIRST_SESSION_SEED_WORDS` at the new band); without the delete, SEED-6 backlog
+ * pacing would seed 0 and the learner would keep seeing the first band's words.
+ *
  * No `placementKnown` is passed — the win comes BEFORE the "tune your level" step, so any word the learner
  * later flags known is consumed by the seeder from the shared marks store (SEED-7) on a subsequent session.
  * `userId` is resolved server-side (never trusted from the client).
@@ -55,12 +62,12 @@ export const seedFirstSessionFn = createServerFn({ method: "POST" })
       { userId, level: data.level },
       placementProfileDeps(),
     );
+    // Drop the prior first-session seed so re-picking a level reseeds fresh at the new band (see above).
+    const existing = await deps.cards.listCards(userId);
+    for (const c of existing) await deps.cards.deleteCard(userId, c.senseId);
+
     const seeded = await seedIntroductions({ userId, frontierBand }, deps);
-    // Idempotent for a re-entered flow: a returning user (already carded) seeds nothing this call (SEED-6
-    // pacing) — fall back to their earliest cards so the first-win screen still has a word to show.
-    const cards =
-      seeded.length > 0 ? seeded : (await deps.cards.listCards(userId)).slice(0, 2);
-    return presentSeededWords(cards, deps.catalog);
+    return presentSeededWords(seeded, deps.catalog);
   });
 
 export interface JudgeFirstProductionFnInput {

@@ -95,9 +95,10 @@ function Onboarding() {
   });
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-6 pb-8">
-      {/* step dots */}
-      <div className="mb-10 flex items-center justify-between">
+    <div className="relative mx-auto w-full max-w-xl px-4">
+      {/* Chrome (wordmark + step dots) pinned out of flow, so the content below centers on the whole
+          page rather than in the space left under a header — the /review pattern. */}
+      <div className="absolute inset-x-4 top-6 flex items-center justify-between">
         <Wordmark className="text-xl" />
         <div className="flex gap-1.5">
           {STEPS.map((s) => (
@@ -114,7 +115,7 @@ function Onboarding() {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center">
+      <div className="flex min-h-dvh flex-col justify-center py-20">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -182,8 +183,8 @@ function Welcome({ onNext }: { onNext: () => void }) {
     <div className="space-y-6">
       <h1 className="font-serif text-3xl leading-snug font-semibold text-ink">
         {/* The emphasis is the italic, not a color: marigold never colors running text. */}
-        Grow the English you can actually <em>use</em> — one written sentence at a
-        time.
+        Grow the English you can actually <em>use</em> — one written sentence at
+        a time.
       </h1>
       <p className="text-sm leading-relaxed text-ink-soft">
         Wikain trains active vocabulary: you don’t just recognize words, you
@@ -262,9 +263,7 @@ function SeedsStep({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-ink">
-        Two words to start.
-      </h2>
+      <h2 className="text-xl font-semibold text-ink">Two words to start.</h2>
       <p className="text-sm leading-relaxed text-ink-soft">
         You’ll write your first sentence in about a minute.
       </p>
@@ -274,9 +273,7 @@ function SeedsStep({
             key={item.senseId}
             className="rounded-xl border border-line bg-paper-raised p-5"
           >
-            <p className="text-xl font-semibold text-ink">
-              {item.lemma}
-            </p>
+            <p className="text-xl font-semibold text-ink">{item.lemma}</p>
             <p className="mt-0.5 font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
               {item.pos}
               {item.cefr ? ` · ${item.cefr}` : ""}
@@ -354,6 +351,7 @@ function FirstWinStep({
     const result = await judgeFirstProductionFn({
       data: { senseId: word.senseId, response: text },
     });
+    console.log(result);
     setChecking(false);
     // Onboarding win: ANY judged outcome (pass or fail) reaches the win screen (SEED-1).
     if (result.kind === "judged") setWon(true);

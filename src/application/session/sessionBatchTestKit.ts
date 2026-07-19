@@ -97,6 +97,9 @@ export function makeCardRepo(initial: Card[] = []): CardRepository {
     },
     logsForWord: async (u, s) => logs.filter((l) => l.userId === u && l.senseId === s),
     listCards: async (u) => [...map.values()].filter((c) => c.userId === u),
+    deleteCard: async (u, s) => {
+      map.delete(`${u}-${s}`);
+    },
   };
 }
 
@@ -117,11 +120,11 @@ export function makeSessionStateStore(): SessionStateStore & {
 }
 
 export function makeSeedLedger(): SeedLedgerStore {
-  const map = new Map<string, Date>();
+  const map = new Map<string, { lastSeedAt: Date; seededCount: number }>();
   return {
-    lastSeedAt: async (u) => map.get(u),
-    recordSeedAt: async (u, at) => {
-      map.set(u, at);
+    read: async (u) => map.get(u),
+    record: async (u, at, seededCount) => {
+      map.set(u, { lastSeedAt: at, seededCount });
     },
   };
 }
