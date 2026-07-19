@@ -182,6 +182,8 @@ application, not magic literals. Each is **owned** by one spec; this table is th
 | `BATCH_CARD_CAP` | 10 | `BAT` | Amendment §12.3 (`BAT-3`) |
 | `BATCH_FP_CAP` | 2 | `BAT` | Amendment §12.3 (`BAT-3`) |
 | `BATCH_ABSENCE_T_MINUTES` | 20 | `BAT` | Amendment §12.6 (`BAT-11..13`) |
+| `CUED_SOFT_BOUNCE_CAP` | 3 | `CUE` | `15` (`CUE-7`) |
+| `CUED_TYPO_MAX_DISTANCE` | 1 | `CUE` | §3.6; `15` (`CUE-5`) |
 
 > All values are tunable from review data (PRD §11 "sign-offs"). None is load-bearing enough to
 > agonize over pre-build; the spec fixes the **wiring**, not the number.
@@ -207,6 +209,7 @@ application, not magic literals. Each is **owned** by one spec; this table is th
 | `12-data-model.md` | `DM` | lexical item / FSRS card / review entities (bridges BUILD.md) |
 | `13-cloze-fit-set.md` | `FIT` | classified cloze fit-set, three-lane grading, soft bounces, typo lane, heal queue |
 | `14-mini-sessions.md` | `BAT` | effort-unit batches, batch lifecycle, completion seam, absence handling, batch instrumentation |
+| `15-cued-synonym-soft-bounce.md` | `CUE` | cued same-sense synonym set, four-lane grading, soft bounce, cap-then-reveal |
 
 ---
 

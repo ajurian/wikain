@@ -39,7 +39,7 @@ describe("end-to-end loop (smoke: real catalog + wink + ts-fsrs, fake judge)", (
     );
 
     expect(res.tier).toBe("cued");
-    if (res.tier === "cued") {
+    if (res.tier === "cued" && res.outcome.kind === "graded") {
       expect(res.outcome.passed).toBe(true);
       expect(res.outcome.mastery).toBe("Productive"); // SM-4
     }

@@ -73,8 +73,13 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+  main()
+    .then(() => {
+      // Force Node to exit cleanly, closing any lingering DB connections
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
 }

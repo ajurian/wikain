@@ -61,6 +61,7 @@ function item(senseId: string, lemma: string): LexicalItem {
     self_reference_prompt: null,
     cloze_fit_set: null,
     bounce_gloss: null,
+    cued_valid_synonyms: null,
     fit_set_version: null,
     gen_model: "test",
     gen_spec_version: "0",

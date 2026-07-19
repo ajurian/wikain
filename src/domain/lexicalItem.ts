@@ -61,6 +61,13 @@ export interface LexicalItem {
   cloze_fit_set: ClozeFitEntry[] | null;
   /** FIT-4: the different-sense soft-bounce meaning cue — a paraphrase of `productive_meaning`. */
   bounce_gloss: string | null;
+  /**
+   * CUE-3: same-sense synonym lemmas of the target, enumerated against the intended sense + POS +
+   * productive gloss (NOT the cloze frame — CUE-2). A cued response lemma-matching one of these
+   * soft-bounces (CUE-5.2). `different_sense_fit` is excluded by construction (CUE-4). NEVER shipped
+   * to the client pre-answer.
+   */
+  cued_valid_synonyms: string[] | null;
   // --- provenance ---
   gen_model: string;
   gen_spec_version: string;

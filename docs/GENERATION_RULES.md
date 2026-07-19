@@ -59,6 +59,16 @@ Shown only inside the different-sense soft bounce: "That's a real sentence — b
 - **Zero target-form leakage** — no token whose lemma equals the target lemma (same code-enforced rule as `self_reference_prompt`).
 - **Terse.** It sits inline in a one-line bounce callout, not a definition panel — aim well under the length of `intended_sense`.
 
+## 6.2 Cued valid synonyms (`cued_valid_synonyms`) — the cued soft-bounce set (Cued only)
+
+The cued tier withholds the target and asks the learner to **produce** it from the productive gloss, graded by a deterministic lemma-match (no judge). A learner who produces a correct-meaning **synonym** has demonstrated the productive skill but not retrieved *this* item — so instead of a harsh `Again`, they get a soft "that's a synonym; we're building one specific word" nudge (spec/15 `CUE-1`/`CUE-6`). This field is the set that triggers that lane.
+
+- **Enumerate against the GLOSS, not the cloze frame.** This is cued's **own** set — do **not** copy `cloze_fit_set`. The cloze fit-set entries were chosen for a specific sentence; cued has no sentence, only the meaning. Ask: "what other words could a learner produce for *this exact sense* and be counted meaning-correct?" (`CUE-2`).
+- **Same-sense only — a flat list of root lemmas.** Every entry must pass gate 1 of the classification rubric for the **intended sense**: a genuine same-meaning synonym (the cloze `same_sense_near_miss` bar). There is **no** `different_sense_fit` analogue — at cued, a different-sense word is a wrong retrieval, not a near-miss (`CUE-4`). Lemmas distinct; the runtime handles inflections.
+- **Never the target lemma; never a distractor.** The target is the pass, not a synonym; and a word the MCQ taught as wrong (`distractors`) cannot be waved through here (both are hard fails — `CUE-4`).
+- **`[]` when there is no good same-sense synonym.** Do not pad with loose or different-sense words — an over-broad set teaches false equivalence and fails learners into soft bounces they should have passed.
+- **Same enumeration instincts as §6** — Lower-Band Fallback and Tagalog-L1 equivalents are exactly the words a learner reaches for when they cannot retrieve the target, and are the highest-value same-sense entries. Curate, don't thesaurus-dump; completeness is not required (gaps are backfilled at the next build).
+
 ## 7. Self-referential prompt (Free production)
 
 - **Demand episodic retrieval, not a pronoun.** "Write about a time you *negotiated* something" beats "use *negotiate* in a sentence about yourself." The boost is in the elaboration, not the first person.

@@ -43,6 +43,7 @@ GENERATED: dict[str, Any] = {
         {"lemma": "surgeon", "class": "different_sense_fit", "why": "asserts surgical care instead"},
     ],
     "bounce_gloss": "a person devoted to one narrow branch of a field",
+    "cued_valid_synonyms": ["expert", "consultant"],
 }
 
 

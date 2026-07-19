@@ -92,6 +92,9 @@ GOLD_EXAMPLE: dict[str, Any] = {
         # spec/13 FIT-4: a short paraphrase of productive_meaning; never repeats either gloss and
         # never contains a form of the target (it is shown while the learner must still produce it).
         "bounce_gloss": "a person devoted to one narrow branch of a field",
+        # spec/15 CUE-3: same-sense synonym lemmas enumerated against THE GLOSS (not the cloze frame,
+        # CUE-2). Same-sense only (CUE-4); never the target itself; never an MCQ distractor.
+        "cued_valid_synonyms": ["expert", "consultant"],
     },
 }
 

@@ -32,6 +32,7 @@ const FIELDS: Record<keyof LexicalItem, true> = {
   self_reference_prompt: true,
   cloze_fit_set: true,
   bounce_gloss: true,
+  cued_valid_synonyms: true,
   gen_model: true,
   gen_spec_version: true,
   fit_set_version: true,

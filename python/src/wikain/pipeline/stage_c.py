@@ -175,6 +175,25 @@ def validate_item(item: LexicalItem) -> ValidationResult:
             if isinstance(value, str) and normalized_gloss == value.strip().lower():
                 fails.append(f"bounce_gloss is identical to {other}")
 
+    # ---- cued_valid_synonyms: the cued soft-bounce set (spec/15 CUE-3); same-sense only, distinct,
+    # ---- never the target lemma, never an MCQ distractor (CUE-2/CUE-4). `[]` is valid (no synonym) ----
+    if present("cued_valid_synonyms"):
+        syns = item["cued_valid_synonyms"] or []
+        if not isinstance(syns, list) or not all(isinstance(s, str) for s in syns):
+            fails.append("cued_valid_synonyms must be a list of string lemmas")
+        else:
+            normalized = [s.lower().strip() for s in syns]
+            if any(s == "" for s in normalized):
+                fails.append("cued_valid_synonyms contains an empty lemma")
+            if len(set(normalized)) != len(normalized):
+                fails.append("cued_valid_synonyms lemmas not all distinct")
+            if lemma in normalized:
+                fails.append("cued_valid_synonyms must not contain the target lemma (CUE-4)")
+            distractor_set = {d.lower().strip() for d in (item.get("distractors") or [])}
+            for s in normalized:
+                if s in distractor_set:
+                    fails.append(f'cued_valid_synonyms "{s}" is also a distractor (CUE-4)')
+
     present("intended_sense")
     return result
 

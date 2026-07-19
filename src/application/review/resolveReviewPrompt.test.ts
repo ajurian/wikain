@@ -40,6 +40,7 @@ function makeItem(over: Partial<LexicalItem> = {}): LexicalItem {
     self_reference_prompt: "When did you last abandon a goal?",
     cloze_fit_set: null,
     bounce_gloss: null,
+    cued_valid_synonyms: null,
     fit_set_version: null,
     gen_model: "test",
     gen_spec_version: "test",

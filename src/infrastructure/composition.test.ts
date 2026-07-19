@@ -30,6 +30,7 @@ describe("cued-review slice (smoke: real catalog + ts-fsrs)", () => {
       deps,
     );
 
+    if (res.kind !== "graded") throw new Error("expected a graded cued result");
     expect(res.passed).toBe(true); // TIER-3/TIER-5: the bare lemma matches
     expect(res.rating).toBe("Good"); // RAT-1
     expect(res.mastery).toBe("Productive"); // SM-4
