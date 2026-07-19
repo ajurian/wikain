@@ -43,6 +43,7 @@ function makeItem(): LexicalItem {
     self_reference_prompt: null,
     cloze_fit_set: null,
     bounce_gloss: null,
+    cued_valid_synonyms: null,
     fit_set_version: null,
     gen_model: "test",
     gen_spec_version: "test",
@@ -195,7 +196,7 @@ describe("runReviewPass — deterministic branch (LOOP-1, LOOP-2)", () => {
     );
 
     expect(res.tier).toBe("cued");
-    if (res.tier === "cued") {
+    if (res.tier === "cued" && res.outcome.kind === "graded") {
       expect(res.outcome.passed).toBe(true);
       expect(res.outcome.mastery).toBe("Productive"); // SM-4
     }
@@ -216,7 +217,8 @@ describe("runReviewPass — deterministic branch (LOOP-1, LOOP-2)", () => {
     );
 
     expect(res.previousMastery).toBe("Recognized"); // pre-pass
-    if (res.tier === "cued") expect(res.outcome.mastery).toBe("Productive"); // post-pass
+    if (res.tier === "cued" && res.outcome.kind === "graded")
+      expect(res.outcome.mastery).toBe("Productive"); // post-pass
   });
 });
 

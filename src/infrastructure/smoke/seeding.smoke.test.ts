@@ -106,7 +106,7 @@ describe("first-session seeding (smoke: real catalog + ts-fsrs)", () => {
     const res = await runReviewPass({ userId: USER_A, senseId: known, response: lemma, now }, reviewDeps);
 
     expect(res.tier).toBe("cued"); // LOOP-1/SM-1: Recognized → cued
-    if (res.tier === "cued") {
+    if (res.tier === "cued" && res.outcome.kind === "graded") {
       expect(res.outcome.passed).toBe(true);
       expect(res.outcome.mastery).toBe("Productive"); // SM-4: one cued pass promotes
     }

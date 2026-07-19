@@ -55,13 +55,15 @@ export interface ReviewLog {
    */
   typoFixed?: boolean;
   /**
-   * FIT-10: soft bounces accrued on this presentation before the final graded outcome. Persisted from
-   * day one for the v2 "passed after synonym bounce → Hard" mapping; v1 does not rate on it. Absent on
-   * tiers without fit-set lanes (everything but cloze); never a fabricated 0 for them.
+   * FIT-10 / CUE-11: soft bounces accrued on this presentation before the final graded outcome.
+   * Persisted from day one for the v2 "passed after synonym bounce → Hard" mapping; v1 does not rate
+   * on it. Recorded on the two tiers with a soft-bounce lane — cloze (fit-set) and cued (synonym set);
+   * absent on recognition/free, never a fabricated 0 for them.
    */
   softBounceCount?: number;
   /**
-   * FIT-10: the lane(s) those soft bounces took, in order. Same presence rule as `softBounceCount`.
+   * FIT-10: the cloze lane(s) those soft bounces took, in order. Cloze-only — cued has a single
+   * synonym lane, so it records `softBounceCount` alone and omits this cloze-typed field.
    */
   softBounceLanes?: ClozeSoftBounceLane[];
   /**

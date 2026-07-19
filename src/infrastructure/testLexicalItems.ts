@@ -28,6 +28,7 @@ export function makeLexicalItem(patch: Partial<LexicalItem> = {}): LexicalItem {
       { lemma: "sentence", class: "different_sense_fit" },
     ],
     bounce_gloss: "one meaningful piece of language on its own",
+    cued_valid_synonyms: ["term"],
     fit_set_version: 1,
     gen_model: "manual-frontier-llm",
     gen_spec_version: "gen-spec v3",

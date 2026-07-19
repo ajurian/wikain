@@ -55,6 +55,23 @@ export const CLOZE_SOFT_BOUNCE_CAP = 3;
  */
 export const CLOZE_TYPO_MAX_DISTANCE = 1;
 
+// --- Cued-production synonym soft-bounce (spec/15, `CUE`) ---
+
+/**
+ * CUE-7(a): cued synonym soft bounces are capped here; at the cap the submission reveals the target
+ * and grades the wrong path (Again, no demote — cued is at the Recognized floor, CUE-5.3). `[DEFAULT]`
+ * = the cloze cap value (CLOZE_SOFT_BOUNCE_CAP) for consistency, but its own knob — the two tune
+ * independently. Sign-off is the CUE-7 `[VALIDATE]` open item.
+ */
+export const CUED_SOFT_BOUNCE_CAP = 3;
+
+/**
+ * CUE-5.1: a cued response within this Damerau–Levenshtein distance of the target lemma is treated as
+ * a target match (Good, `typoFixed` recorded) — the same PRD §3.6 typo tolerance the cloze tier
+ * realizes (CLOZE_TYPO_MAX_DISTANCE), named separately so the two tune independently.
+ */
+export const CUED_TYPO_MAX_DISTANCE = 1;
+
 // --- Mini-session batching (spec/14, `BAT`) ---
 
 /**

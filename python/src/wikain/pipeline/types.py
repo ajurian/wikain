@@ -24,7 +24,7 @@ ClozeFitClass = Literal["target", "same_sense_near_miss", "different_sense_fit"]
 #: `ingest` strips before commit (FIT-3), so it is deliberately NOT part of this committed shape.
 ClozeFitEntry = TypedDict("ClozeFitEntry", {"lemma": str, "class": ClozeFitClass})
 
-#: The nine generated fields, in the order the prompt's output contract lists them.
+#: The ten generated fields, in the order the prompt's output contract lists them.
 GENERATED_KEYS: tuple[str, ...] = (
     "intended_sense",
     "recognition_meaning",
@@ -35,6 +35,7 @@ GENERATED_KEYS: tuple[str, ...] = (
     "self_reference_prompt",
     "cloze_fit_set",
     "bounce_gloss",
+    "cued_valid_synonyms",
 )
 
 
@@ -69,6 +70,9 @@ class LexicalItem(CarriedFields):
     cloze_fit_set: list[ClozeFitEntry] | None
     #: spec/13 FIT-4 — the different-sense soft-bounce meaning cue (paraphrase of productive_meaning).
     bounce_gloss: str | None
+    #: spec/15 CUE-3 — same-sense synonym lemmas for the cued soft-bounce lane, enumerated against the
+    #: intended sense + POS + gloss (NOT the cloze frame — CUE-2). `[]` when the sense has none.
+    cued_valid_synonyms: list[str] | None
     #: Set by the generator when a rule could not be satisfied (§5.2, §7.3).
     _flags: NotRequired[list[str]]
     gen_model: str

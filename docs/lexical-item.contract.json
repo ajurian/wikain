@@ -18,7 +18,8 @@
     "model_sentence",
     "self_reference_prompt",
     "cloze_fit_set",
-    "bounce_gloss"
+    "bounce_gloss",
+    "cued_valid_synonyms"
   ],
   "provenance": ["gen_model", "gen_spec_version", "fit_set_version"],
   "producerOnly": {

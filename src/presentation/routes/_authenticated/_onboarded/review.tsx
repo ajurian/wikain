@@ -198,7 +198,8 @@ function ReviewSession() {
   const handleSkip = async (outcome: StepOutcome) => {
     if (stage.kind !== "batch") return;
     const senseId = stage.batch.queue[stage.batch.completed];
-    const progress = senseId === undefined ? null : await skipCardFn({ data: senseId });
+    const progress =
+      senseId === undefined ? null : await skipCardFn({ data: senseId });
     setBatchResults((r) => [...r, outcome]);
     setAllResults((r) => [...r, outcome]);
     setStage((prev) => {
@@ -207,7 +208,10 @@ function ReviewSession() {
       const completed = progress?.completed ?? prev.batch.completed;
       const total = progress?.total ?? queue.length;
       if (completed >= total) return { kind: "seam", total };
-      return { kind: "batch", batch: { ...prev.batch, queue, completed, total } };
+      return {
+        kind: "batch",
+        batch: { ...prev.batch, queue, completed, total },
+      };
     });
   };
 
@@ -271,7 +275,7 @@ function ReviewSession() {
 
       {/* `py-20` clears the absolute chrome and stays symmetric — equal top/bottom padding is what
           keeps the card centered once a tall card overflows and the page scrolls. */}
-      <div className="flex min-h-dvh flex-col justify-center py-20">
+      <div className="flex min-h-dvh flex-col justify-center pt-20 pb-53">
         {session.isPending && stage.kind === "loading" ? (
           <CenteredSpinner label="Preparing your session…" />
         ) : session.isError && stage.kind === "loading" ? (
@@ -342,7 +346,9 @@ function NothingDue() {
     >
       <TarsierIdle variant="flat" className="mx-auto w-44" />
       <div>
-        <h1 className="text-xl font-semibold text-ink">Nothing due right now.</h1>
+        <h1 className="text-xl font-semibold text-ink">
+          Nothing due right now.
+        </h1>
         <p className="mt-1 text-sm text-ink-soft">
           Your words are resting — come back when the next review is due.
         </p>
@@ -409,7 +415,9 @@ function PromptCard({
     case "cued":
       return <TypedCard prompt={prompt} onDone={onDone} />;
     case "free":
-      return <FreeProductionCard prompt={prompt} onDone={onDone} onSkip={onSkip} />;
+      return (
+        <FreeProductionCard prompt={prompt} onDone={onDone} onSkip={onSkip} />
+      );
   }
 }
 
@@ -622,13 +630,19 @@ function RecognitionCard({
 
 /* ---------------------------------------- cloze + cued (typed, lemma-match) */
 
-/** One cloze soft bounce as shown (FIT-7). `typed` freezes the word the callout talks about. */
-interface SoftBounceView {
-  lane: ClozeSoftBounceLane;
-  typed: string;
-  hintPrefix: string;
-  gloss: string | null;
-}
+/**
+ * One soft bounce as shown — cloze (FIT-7, a classified lane + optional gloss) or cued (CUE-6, a
+ * single same-sense-synonym lane). `typed` freezes the word the callout talks about.
+ */
+type SoftBounceView =
+  | {
+      kind: "cloze";
+      lane: ClozeSoftBounceLane;
+      typed: string;
+      hintPrefix: string;
+      gloss: string | null;
+    }
+  | { kind: "cued"; typed: string; hintPrefix: string };
 
 function TypedCard({
   prompt,
@@ -678,10 +692,20 @@ function TypedCard({
         setSoftBounces(view.bounces);
         setSoftLanes((lanes) => [...lanes, view.lane]);
         setSoftBounce({
+          kind: "cloze",
           lane: view.lane,
           typed: value,
           hintPrefix: view.hintPrefix,
           gloss: view.gloss,
+        });
+      } else if (res.view.kind === "cuedSoftBounce") {
+        // CUE-6: same as the cloze soft bounce — no rating, card stays live; a single synonym lane.
+        const view = res.view;
+        setSoftBounces(view.bounces);
+        setSoftBounce({
+          kind: "cued",
+          typed: value,
+          hintPrefix: view.hintPrefix,
         });
       }
     } finally {
@@ -765,14 +789,26 @@ function TypedCard({
           <EntryDefinition id={bodyId}>{prompt.meaning}</EntryDefinition>
         )}
 
-        {/* FIT-7: a soft bounce leaves the card live — the callout cues, the input stays open. */}
+        {/* FIT-7 / CUE-6: a soft bounce leaves the card live — the callout cues, the input stays open.
+         * Narrow by `kind` and pass explicit props rather than spreading the union: JSX does not
+         * distribute a spread over a discriminated union, so `{...softBounce}` fails to match the
+         * callout's own union of prop shapes. */}
         {softBounce !== null && result === null ? (
-          <SoftBounceCallout
-            lane={softBounce.lane}
-            typed={softBounce.typed}
-            hintPrefix={softBounce.hintPrefix}
-            gloss={softBounce.gloss}
-          />
+          softBounce.kind === "cloze" ? (
+            <SoftBounceCallout
+              kind="cloze"
+              lane={softBounce.lane}
+              typed={softBounce.typed}
+              hintPrefix={softBounce.hintPrefix}
+              gloss={softBounce.gloss}
+            />
+          ) : (
+            <SoftBounceCallout
+              kind="cued"
+              typed={softBounce.typed}
+              hintPrefix={softBounce.hintPrefix}
+            />
+          )
         ) : null}
 
         {result === null ? (

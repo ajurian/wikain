@@ -1,0 +1,1 @@
+ALTER TABLE "lexical_items" ADD COLUMN "cued_valid_synonyms" jsonb;

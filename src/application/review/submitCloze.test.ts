@@ -41,6 +41,7 @@ function makeItem(overrides: Partial<LexicalItem> = {}): LexicalItem {
       { lemma: "discuss", class: "different_sense_fit" },
     ],
     bounce_gloss: GLOSS,
+    cued_valid_synonyms: null,
     fit_set_version: 1,
     gen_model: "test",
     gen_spec_version: "test",

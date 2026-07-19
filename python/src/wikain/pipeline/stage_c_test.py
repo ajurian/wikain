@@ -26,6 +26,7 @@ GOOD: dict[str, Any] = {
         {"lemma": "surgeon", "class": "different_sense_fit"},
     ],
     "bounce_gloss": "a person devoted to one narrow branch of a field",
+    "cued_valid_synonyms": ["expert", "consultant"],
     "gen_model": "manual-frontier-llm",
     "gen_spec_version": "gen-spec v3",
     "fit_set_version": 1,
@@ -220,3 +221,33 @@ def test_bounce_gloss_must_differ_from_both_glosses() -> None:
         item(bounce_gloss="someone who focuses deeply on a single narrow area")
     )
     assert any("bounce_gloss" in f and "productive_meaning" in f for f in as_productive.fails)
+
+
+# ---- cued_valid_synonyms (spec/15 CUE-2/CUE-3/CUE-4) ----
+
+
+def test_cued_valid_synonyms_empty_list_is_valid() -> None:
+    """A sense with no good same-sense synonym carries [] — not a fail (CUE-3)."""
+    assert validate_item(item(cued_valid_synonyms=[])).fails == []
+
+
+def test_cued_valid_synonyms_may_not_contain_the_target_lemma() -> None:
+    result = validate_item(item(cued_valid_synonyms=["expert", "specialist"]))
+    assert any("must not contain the target lemma" in f for f in result.fails)
+
+
+def test_cued_valid_synonyms_may_not_collide_with_a_distractor() -> None:
+    """CUE-4: a distractor taught 'not this word'; accepting it at cued would contradict that."""
+    result = validate_item(item(cued_valid_synonyms=["expert", "apprentice"]))
+    assert any('"apprentice" is also a distractor' in f for f in result.fails)
+
+
+def test_cued_valid_synonyms_lemmas_must_be_distinct() -> None:
+    result = validate_item(item(cued_valid_synonyms=["expert", "expert"]))
+    assert any("not all distinct" in f for f in result.fails)
+
+
+def test_cued_valid_synonyms_missing_is_a_fail_without_flags() -> None:
+    """CUE-3: the field is generated content — a null with no _flags is a hard miss."""
+    result = validate_item(item(cued_valid_synonyms=None))
+    assert any("cued_valid_synonyms is empty" in f for f in result.fails)

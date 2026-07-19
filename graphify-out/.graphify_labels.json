@@ -247,7 +247,6 @@
   "245": "__init__.py",
   "246": "__init__.py",
   "247": "__init__.py",
-  "248": "submitFreeProduction.ts",
   "249": "submitFreeProduction.ts",
   "250": "DrizzleDb",
   "251": "drizzleHealQueue.ts",
@@ -257,15 +256,8 @@
   "255": "PlacementMarksStore",
   "256": "runReviewPass.ts",
   "257": "Cloze Fit-Set Classification Rubric",
-  "258": "ruleLayer.ts",
-  "259": "submitCloze.test.ts",
   "260": "httpJudge.ts",
   "261": "checkFreeProductionRuleLayer.test.ts",
   "262": "judgedPassLedger.ts",
-  "263": "fakeAnalyzer.ts",
-  "264": "startSession.test.ts",
-  "265": "readWordsList.test.ts",
-  "266": "absence.ts",
-  "267": "submitFreeProduction",
-  "268": "sessionStateContract.ts"
+  "267": "submitFreeProduction"
 }

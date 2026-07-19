@@ -228,8 +228,9 @@ export interface SubmitReviewInput {
   response: string;
   /** RAT-5 / SM-9: the learner used a starter scaffold. Only the judged branch reads it. */
   scaffolded: boolean;
-  /** FIT-7/FIT-8: this presentation's accrued soft bounces. Only the cloze branch reads them. */
+  /** FIT-8 / CUE-7: this presentation's accrued soft bounces. Read by the cloze AND cued branches. */
   priorSoftBounces: number;
+  /** FIT-10: the cloze lanes those bounces took; only the cloze branch reads them. */
   priorSoftBounceLanes: ClozeSoftBounceLane[];
   /** BAT-15: client-measured card-shown → submit span; absent when the client measured nothing. */
   durationMs?: number;

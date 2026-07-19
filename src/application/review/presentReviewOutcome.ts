@@ -65,6 +65,17 @@ export type ReviewOutcomeView =
       bounces: number;
       hintPrefix: string;
       gloss: string | null;
+    }
+  /**
+   * CUE-6: a cued synonym soft bounce — no rating happened; the card stays due and the client
+   * re-prompts with the synonym callout. A single lane (same-sense synonym, CUE-4), so no `lane` or
+   * `gloss` — the target is withheld until the CUE-7a cap, exactly like the cued prompt withholds it.
+   */
+  | {
+      kind: "cuedSoftBounce";
+      tier: "cued";
+      bounces: number;
+      hintPrefix: string;
     };
 
 /**
@@ -98,7 +109,28 @@ export function presentReviewOutcome(result: RunReviewPassResult, lemma: string)
     };
   }
 
-  // LOOP-2: the other deterministic tiers — pass/fail + the mastery move.
+  // The cued tier's result is itself a union: CUE-6's synonym soft bounce carries no grade.
+  if (result.tier === "cued") {
+    const outcome = result.outcome;
+    if (outcome.kind === "softBounce") {
+      return {
+        kind: "cuedSoftBounce",
+        tier: "cued",
+        bounces: outcome.bounces,
+        hintPrefix: outcome.hintPrefix,
+      };
+    }
+    return {
+      kind: "deterministic",
+      tier: "cued",
+      lemma,
+      passed: outcome.passed,
+      previousMastery,
+      mastery: outcome.mastery,
+    };
+  }
+
+  // LOOP-2: the remaining deterministic tier (recognition) — pass/fail + the mastery move.
   if (result.tier !== "free") {
     return {
       kind: "deterministic",

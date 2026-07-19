@@ -59,7 +59,8 @@ describe("Seen on-ramp climb (smoke: real catalog + wink + ts-fsrs, no judge)", 
       deps,
     );
     expect(cued.tier).toBe("cued");
-    if (cued.tier === "cued") expect(cued.outcome.mastery).toBe("Productive");
+    if (cued.tier === "cued" && cued.outcome.kind === "graded")
+      expect(cued.outcome.mastery).toBe("Productive");
 
     // The entire on-ramp climb is deterministic — the judge was never reached.
     expect(judge.calls).toHaveLength(0);

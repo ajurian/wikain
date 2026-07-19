@@ -26,7 +26,7 @@ describe("presentReviewOutcome", () => {
     const result: RunReviewPassResult = {
       tier: "cued",
       previousMastery: "Recognized",
-      outcome: { passed: true, rating: "Good", mastery: "Productive", due },
+      outcome: { kind: "graded", passed: true, rating: "Good", mastery: "Productive", due },
     };
     const view = presentReviewOutcome(result, "negotiate");
     expect(view).toEqual({
@@ -36,6 +36,21 @@ describe("presentReviewOutcome", () => {
       passed: true,
       previousMastery: "Recognized",
       mastery: "Productive",
+    });
+  });
+
+  it("CUE-6: a cued synonym soft bounce maps to its own no-grade view (target withheld)", () => {
+    const result: RunReviewPassResult = {
+      tier: "cued",
+      previousMastery: "Recognized",
+      outcome: { kind: "softBounce", bounces: 1, hintPrefix: "n" },
+    };
+    const view = presentReviewOutcome(result, "negotiate");
+    expect(view).toEqual({
+      kind: "cuedSoftBounce",
+      tier: "cued",
+      bounces: 1,
+      hintPrefix: "n",
     });
   });
 

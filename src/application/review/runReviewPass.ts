@@ -27,8 +27,13 @@ export interface RunReviewPassInput {
   scaffolded?: boolean;
   /** RL-6: per-presentation bounce count; only the judged branch reads it. Defaults to 0. */
   priorBounces?: number;
-  /** FIT-7/FIT-8: per-presentation soft-bounce state; only the cloze branch reads it. Defaults to 0/[]. */
+  /**
+   * FIT-8 / CUE-7: per-presentation soft-bounce count. Read by BOTH the cloze branch (fit-set lanes)
+   * and the cued branch (synonym lane) — a card is one tier per presentation, so one count serves.
+   * Defaults to 0.
+   */
   priorSoftBounces?: number;
+  /** FIT-10: the cloze lanes those bounces took; only the cloze branch reads it. Defaults to []. */
   priorSoftBounceLanes?: ClozeSoftBounceLane[];
   /** BAT-15: client-measured card-shown → submit span; every branch records it, none rates on it. */
   durationMs?: number;
@@ -68,16 +73,16 @@ export type RunReviewPassResult = { previousMastery: MasteryState } & (
 /**
  * BAT-7: whether this pass persisted a ReviewLog — the single predicate batch progress keys off,
  * derived from the SAME discriminants the use-cases return (never a parallel bookkeeping flag).
- * Recognition/cued always rate (their core has no no-rating path); cloze rates only its graded
- * lanes (a FIT-7 soft bounce logs nothing); free rates only a judged verdict (an INV-2 bounce and
- * a NET-3 unavailable log nothing).
+ * Recognition always rates (its core has no no-rating path); cloze and cued rate only their graded
+ * lanes (a FIT-7 / CUE-6 soft bounce logs nothing); free rates only a judged verdict (an INV-2
+ * bounce and a NET-3 unavailable log nothing).
  */
 export function reviewWasRated(result: RunReviewPassResult): boolean {
   switch (result.tier) {
     case "recognition":
-    case "cued":
       return true;
     case "cloze":
+    case "cued":
       return result.outcome.kind === "graded";
     case "free":
       return result.outcome.kind === "judged";

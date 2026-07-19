@@ -5,29 +5,40 @@ import { Info } from "lucide-react";
 import type { ClozeSoftBounceLane } from "~/domain/review/clozeFitSet.js";
 
 /**
- * Typed-cloze soft-bounce callout (spec/13 FIT-7). Like the rule-layer BounceCallout it is
- * deliberately NEUTRAL — a soft bounce is not an error and produced no rating: paper-sunken,
- * ink-soft, no red, a bare fade. The two lanes differ only in what they teach: same-sense asks for
- * precision; different-sense names the meaning gap (`gloss` is the item's bounce_gloss, shipped
- * only on this response — FIT-4). Both end on the first-letter cue ("o___", FIT-6).
+ * Soft-bounce callout for the two tiers that have one — cloze (spec/13 FIT-7) and cued (spec/15
+ * CUE-6). Like the rule-layer BounceCallout it is deliberately NEUTRAL: a soft bounce is not an error
+ * and produced no rating — paper-sunken, ink-soft, no red, a bare fade. All variants end on the
+ * first-letter cue ("j___", FIT-6 / CUE-7), never revealing the target before the cap.
+ *
+ * Cloze has two lanes: same-sense asks for precision; different-sense names the meaning gap (`gloss`
+ * is the item's bounce_gloss, shipped only on this response — FIT-4). Cued has a single lane: the
+ * learner produced a valid same-sense synonym (CUE-4), so the copy credits the near-success and points
+ * at the one specific word being built.
  * Copy: brand/references/voice.md tone — retry stays in the flow, never "wrong".
+ *
+ * Props are a discriminated union on `kind` — callers narrow and pass explicit props (JSX cannot
+ * distribute a spread over a union).
  */
-export function SoftBounceCallout({
-  lane,
-  typed,
-  hintPrefix,
-  gloss,
-}: {
-  lane: ClozeSoftBounceLane;
-  /** The word the learner typed when this bounce happened (frozen — the input may change after). */
-  typed: string;
-  hintPrefix: string;
-  gloss: string | null;
-}) {
+type SoftBounceCalloutProps =
+  | {
+      kind: "cloze";
+      lane: ClozeSoftBounceLane;
+      /** The word the learner typed when this bounce happened (frozen — the input may change after). */
+      typed: string;
+      hintPrefix: string;
+      gloss: string | null;
+    }
+  | {
+      kind: "cued";
+      typed: string;
+      hintPrefix: string;
+    };
+
+export function SoftBounceCallout(props: SoftBounceCalloutProps) {
   const reduced = useReducedMotion();
   const hint = (
     <span className="font-serif text-ink">
-      {hintPrefix}
+      {props.hintPrefix}
       ___
     </span>
   );
@@ -44,7 +55,12 @@ export function SoftBounceCallout({
         strokeWidth={1.5}
       />
       <p className="text-sm leading-relaxed text-ink-soft">
-        {lane === "same_sense_near_miss" ? (
+        {props.kind === "cued" ? (
+          <>
+            <span className="font-serif italic">{props.typed}</span> is a
+            synonym — but we’re building one specific word here: {hint}
+          </>
+        ) : props.lane === "same_sense_near_miss" ? (
           <>
             Close — we’re after a more precise word for this exact meaning:{" "}
             {hint}
@@ -52,11 +68,11 @@ export function SoftBounceCallout({
         ) : (
           <>
             That’s a real sentence — but{" "}
-            <span className="font-serif italic">{typed}</span> means something
-            different here.{" "}
-            {gloss ? (
+            <span className="font-serif italic">{props.typed}</span> means
+            something different here.{" "}
+            {props.gloss ? (
               <>
-                This word means {gloss}: {hint}
+                This word means {props.gloss}: {hint}
               </>
             ) : (
               <>Try the word that fits this meaning: {hint}</>

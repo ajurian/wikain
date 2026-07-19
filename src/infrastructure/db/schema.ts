@@ -211,6 +211,9 @@ export const lexicalItems = pgTable(
     // is lossless (cf. the FSRS-state note above).
     clozeFitSet: jsonb("cloze_fit_set").$type<ClozeFitEntry[]>(),
     bounceGloss: text("bounce_gloss"),
+    // CUE-3: same-sense synonym lemmas for the cued soft-bounce lane (spec/15). Nullable like every
+    // generated field (a pre-generation item degrades to target/typo/wrong at cued runtime).
+    cuedValidSynonyms: jsonb("cued_valid_synonyms").$type<string[]>(),
     // provenance
     genModel: text("gen_model").notNull(),
     genSpecVersion: text("gen_spec_version").notNull(),

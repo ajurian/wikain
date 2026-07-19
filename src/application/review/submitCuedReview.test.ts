@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { submitCuedReview, type SubmitCuedReviewDeps } from "./submitCuedReview.js";
+import {
+  submitCuedReview,
+  type SubmitCuedReviewDeps,
+  type SubmitCuedReviewResult,
+} from "./submitCuedReview.js";
 import type { Card, FsrsCardState, MasteryState } from "~/domain/mastery/card.js";
 import type { LexicalItem } from "~/domain/lexicalItem.js";
 import type { FsrsReviewLog, ReviewLog } from "~/domain/review/review.js";
@@ -12,7 +16,7 @@ import type { Scheduler } from "../ports/scheduler.js";
 const NOW = new Date("2026-06-30T00:00:00Z");
 const SENSE = "negotiate_verb_01";
 
-function makeItem(): LexicalItem {
+function makeItem(synonyms: string[] | null = null): LexicalItem {
   return {
     word: "negotiate",
     lemma: "negotiate",
@@ -30,14 +34,22 @@ function makeItem(): LexicalItem {
     self_reference_prompt: null,
     cloze_fit_set: null,
     bounce_gloss: null,
+    cued_valid_synonyms: synonyms,
     fit_set_version: null,
     gen_model: "test",
     gen_spec_version: "test",
   };
 }
 
+/** Default catalog carries no synonym set; `depsWith(synonyms)` supplies one for the CUE-5.2 tests. */
 const catalog: Catalog = {
   get: (id) => (id === SENSE ? makeItem() : undefined),
+};
+
+/** CUE-1 fixture: "bargain"/"haggle" are same-sense synonyms of "negotiate". */
+const SYNONYMS = ["bargain", "haggle"];
+const catalogWithSynonyms: Catalog = {
+  get: (id) => (id === SENSE ? makeItem(SYNONYMS) : undefined),
 };
 
 /** A fake that lowercases and splits — the match is controlled by what `response` is fed. */
@@ -123,7 +135,7 @@ function recognizedCard(state = 1): Card {
   return { userId: "u1", senseId: SENSE, mastery: "Recognized", fsrs: makeFsrs(state) };
 }
 
-function deps(card: Card): {
+function deps(card: Card, cat: Catalog = catalog): {
   d: SubmitCuedReviewDeps;
   calls: Rating[];
   logs: ReviewLog[];
@@ -132,19 +144,27 @@ function deps(card: Card): {
   const { scheduler, calls } = makeScheduler();
   const repo = makeRepo(card);
   return {
-    d: { catalog, cards: repo.cards, scheduler, analyzer },
+    d: { catalog: cat, cards: repo.cards, scheduler, analyzer },
     calls,
     logs: repo.logs,
     stored: repo.stored,
   };
 }
 
+/** Narrow the union to the graded arm — every graded-path test asserts it produced a rating. */
+function graded(res: SubmitCuedReviewResult) {
+  if (res.kind !== "graded") throw new Error(`expected a graded result, got ${res.kind}`);
+  return res;
+}
+
 describe("submitCuedReview", () => {
   it("RAT-1: a correct cued response rates Good and schedules with Good", async () => {
     const { d, calls } = deps(recognizedCard());
-    const res = await submitCuedReview(
-      { userId: "u1", senseId: SENSE, response: "negotiate", now: NOW },
-      d,
+    const res = graded(
+      await submitCuedReview(
+        { userId: "u1", senseId: SENSE, response: "negotiate", now: NOW },
+        d,
+      ),
     );
     expect(res.passed).toBe(true);
     expect(res.rating).toBe("Good");
@@ -166,9 +186,11 @@ describe("submitCuedReview", () => {
 
   it("SM-4: a cued pass promotes Recognized → Productive", async () => {
     const { d, stored } = deps(recognizedCard());
-    const res = await submitCuedReview(
-      { userId: "u1", senseId: SENSE, response: "negotiate", now: NOW },
-      d,
+    const res = graded(
+      await submitCuedReview(
+        { userId: "u1", senseId: SENSE, response: "negotiate", now: NOW },
+        d,
+      ),
     );
     expect(res.mastery).toBe("Productive");
     expect(stored().mastery).toBe("Productive");
@@ -176,9 +198,11 @@ describe("submitCuedReview", () => {
 
   it("RAT-1 + SM-6: a wrong cued response rates Again, reschedules, and does NOT demote", async () => {
     const { d, calls, stored } = deps(recognizedCard());
-    const res = await submitCuedReview(
-      { userId: "u1", senseId: SENSE, response: "banana", now: NOW },
-      d,
+    const res = graded(
+      await submitCuedReview(
+        { userId: "u1", senseId: SENSE, response: "banana", now: NOW },
+        d,
+      ),
     );
     expect(res.passed).toBe(false);
     expect(res.rating).toBe("Again");
@@ -191,9 +215,11 @@ describe("submitCuedReview", () => {
     const outcomes: MasteryState[] = [];
     for (const fsrsState of [1, 2, 3]) {
       const { d } = deps(recognizedCard(fsrsState));
-      const res = await submitCuedReview(
-        { userId: "u1", senseId: SENSE, response: "negotiate", now: NOW },
-        d,
+      const res = graded(
+        await submitCuedReview(
+          { userId: "u1", senseId: SENSE, response: "negotiate", now: NOW },
+          d,
+        ),
       );
       outcomes.push(res.mastery);
     }
@@ -210,5 +236,62 @@ describe("submitCuedReview", () => {
     expect(logs).toHaveLength(1);
     expect(logs[0]?.tier).toBe("cued");
     expect(logs[0]?.rating).toBe("Good");
+  });
+
+  it("CUE-5.1: a response within DL 1 of the target rates Good with typoFixed recorded", async () => {
+    const { d, calls, logs } = deps(recognizedCard());
+    const res = graded(
+      await submitCuedReview(
+        { userId: "u1", senseId: SENSE, response: "negotiat", now: NOW },
+        d,
+      ),
+    );
+    expect(res.passed).toBe(true);
+    expect(res.rating).toBe("Good");
+    expect(calls).toEqual(["Good"]);
+    expect(logs[0]?.typoFixed).toBe(true);
+  });
+
+  it("CUE-6: a valid synonym soft-bounces — no rating, no scheduler call, no ReviewLog", async () => {
+    const { d, calls, logs, stored } = deps(recognizedCard(), catalogWithSynonyms);
+    const res = await submitCuedReview(
+      { userId: "u1", senseId: SENSE, response: "bargain", now: NOW },
+      d,
+    );
+    expect(res.kind).toBe("softBounce");
+    if (res.kind === "softBounce") {
+      expect(res.bounces).toBe(1);
+      expect(res.hintPrefix).toBe("n");
+    }
+    expect(calls).toEqual([]); // scheduler untouched
+    expect(logs).toHaveLength(0); // no ReviewLog
+    expect(stored().mastery).toBe("Recognized"); // no promotion (CUE-5.2)
+  });
+
+  it("CUE-7a: a synonym at the cap reveals + rates Again (no demote), recording the bounce count", async () => {
+    const { d, calls, logs, stored } = deps(recognizedCard(), catalogWithSynonyms);
+    const res = graded(
+      await submitCuedReview(
+        // CUED_SOFT_BOUNCE_CAP = 3; two prior bounces + this one hits the cap.
+        { userId: "u1", senseId: SENSE, response: "haggle", priorSoftBounces: 2, now: NOW },
+        d,
+      ),
+    );
+    expect(res.passed).toBe(false);
+    expect(res.rating).toBe("Again");
+    expect(calls).toEqual(["Again"]);
+    expect(res.mastery).toBe("Recognized"); // cued never demotes
+    expect(stored().mastery).toBe("Recognized");
+    expect(logs).toHaveLength(1);
+    expect(logs[0]?.softBounceCount).toBe(3);
+  });
+
+  it("CUE-11: a clean cued pass records softBounceCount 0 (an honest measurement)", async () => {
+    const { d, logs } = deps(recognizedCard(), catalogWithSynonyms);
+    await submitCuedReview(
+      { userId: "u1", senseId: SENSE, response: "negotiate", now: NOW },
+      d,
+    );
+    expect(logs[0]?.softBounceCount).toBe(0);
   });
 });
