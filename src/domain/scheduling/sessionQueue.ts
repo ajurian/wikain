@@ -18,16 +18,22 @@ import type { Card } from "../mastery/card.js";
  *
  * The fresh-intro set is passed in explicitly (the seeder knows exactly which cards it just created)
  * rather than inferred from `fsrs.reps`/mastery — no heuristic, and no INV-3 concern.
+ *
+ * `includeNotDue` is a DEV-only escape hatch (the Dev Tools "show cards even when not due" toggle):
+ * when set it surfaces every present card regardless of `fsrs.due`, so any tier/state can be driven
+ * without waiting for a card to fall due. It defaults to `false` — the real due filter — so production
+ * behavior is unchanged.
  */
 export function orderSessionQueue(
   cards: readonly Card[],
   introSenseIds: readonly string[],
   now: Date,
+  includeNotDue = false,
 ): string[] {
   const t = now.getTime();
   const dueSenseIds = new Set(
     cards
-      .filter((c) => /* c.fsrs.due.getTime() <= t */ true)
+      .filter((c) => includeNotDue || c.fsrs.due.getTime() <= t)
       .map((c) => c.senseId),
   );
 

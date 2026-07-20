@@ -115,3 +115,20 @@ describe("SEED-6: fresh intros interleaved with due reviews", () => {
     expect(orderSessionQueue(cards, ["i"], NOW)).toEqual([]);
   });
 });
+
+describe("Dev Tools: includeNotDue surfaces not-yet-due cards", () => {
+  it("includeNotDue=true returns a card due in the future (bypasses the due filter)", () => {
+    const cards = [
+      card("due", "2026-07-02T00:00:00Z"),
+      card("future", "2026-07-03T00:00:00Z"),
+    ];
+    // Default filters the future card out; the dev flag surfaces both.
+    expect(orderSessionQueue(cards, [], NOW)).toEqual(["due"]);
+    expect(orderSessionQueue(cards, [], NOW, true)).toEqual(["due", "future"]);
+  });
+
+  it("includeNotDue=true surfaces a not-yet-due intro (dev drive of a fresh word)", () => {
+    const cards = [card("i", "2026-07-03T00:00:00Z", "Seen")]; // due in the future
+    expect(orderSessionQueue(cards, ["i"], NOW, true)).toEqual(["i"]);
+  });
+});

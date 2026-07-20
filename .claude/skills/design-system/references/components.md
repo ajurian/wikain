@@ -15,8 +15,10 @@ composites live in `src/presentation/components/`. Rules per component:
   `destructive` (terracotta). **Marigold never fills a button.** Min touch target 44px on mobile.
   A text action ("Sign out", "Stop the test") is `variant="link"`, never a bare `<button>`.
 - **Card** — paper-raised, `rounded-xl` (8px), `border-line`, **no shadow**. One thought per panel.
-- **Input / Textarea** — paper-raised, `border-line`, focus ring marigold-deep. Learner sentence
-  entry uses **Textarea with `font-serif text-xl`** — the learner writes in the content voice.
+- **Input / Textarea** — paper-raised, `border-line`, focus ring marigold-deep. Two variants (cva):
+  `box` (the default bordered field) and `bare` (borderless/transparent, no ring) — `bare` exists so a
+  textarea can live inside another surface. Free-production sentence entry does NOT use the boxed
+  textarea; it uses **`SentenceField`** (below), a `bare` Textarea in a cloze-style well.
 - **Badge** — tags: `rounded-sm` (3px), mono `text-[10.5px]`, tracked. Never `rounded-full`.
 - **Progress** — 4px track paper-sunken, fill marigold. Session progress (top of review).
 - **Combobox** — the filterable select. Use it over a plain select whenever the list is long enough
@@ -42,12 +44,36 @@ composites live in `src/presentation/components/`. Rules per component:
   productive`, maintenance adds `/ maintenance`. `font-mono text-[10.5px] uppercase tracking-wide
   text-ink-faint`. *Currently rendered inline via `EntryHeader` + `pos-label`, not a standalone
   component.*
+- **Sentence** `{children}` — a specimen sentence (a full example / the language shown as an utterance),
+  cast as **italic serif wrapped in curly double quotes “…”** with the quote glyphs in `text-ink-faint`
+  (`aria-hidden`) and a hanging opening quote (negative first-line indent). This is the ONE treatment
+  that distinguishes a sentence from a **definition** (upright/roman serif — `EntryDefinition`) and from
+  **instrument copy** (sans `text-ink-soft`), so the learner tells the three registers apart at a glance.
+  Used for the RL-6 model/example reveal. Keep it to single specimen sentences — a full body set in
+  italic taxes readability.
+- **SentenceWell** — the shared shaded well that hosts both `SentenceField` and `ClozeSentence`
+  (`-mx-3 flex items-stretch gap-1 rounded-lg bg-paper-sunken px-3 py-2 cursor-text`), with the two
+  framing double quotes as flex columns — opening `self-start` (top-left), closing `self-end`
+  (bottom-right). **Always shaded** (not hover/focus). Extracted so cloze↔free parity — same tint, same
+  padding, same quote framing — is structural, not copied; they drifted before (cloze hung its quote via
+  `text-indent`, free framed it in a flex column, so text started at different x). `label` prop renders
+  it as a `<label>` (cloze's implicit-association need) instead of a `<div>`.
+- **SentenceField** — the TIER-6 free-production writing surface. A `bare` Textarea (italic serif,
+  marigold caret) flexed inside `SentenceWell`. This gives cloze↔free **parity**: both are a serif
+  specimen on the same always-shaded well — cloze has an inline underlined blank, free is the whole line.
+  Deliberately NOT a boxed textarea, which broke the "one dictionary entry" feel.
 - **ClozeSentence** `{clozedSentence}` — the TIER-5 cloze sentence, splitting on its single `_` around
-  the BlankInput. It is a native `<label>` wrapping the blank, so clicking anywhere in the sentence
-  focuses it with no JS and no `htmlFor` (an input inside its label is associated implicitly) — the
-  whole sentence really is the target, so the affordance is honest. Tints to a paper-sunken well on
-  hover/focus-within, `cursor-text`. The blank keeps its own `aria-label`, which wins over the label
+  the BlankInput, rendered in the flex-1 middle column of `SentenceWell` (`label`). Shares the well's
+  framing double quotes and always-shaded tint with `SentenceField`; the italic-serif middle carries the
+  specimen cast and the inline blank shares the italic so a completed line reads as one sentence. Because
+  the well is a native `<label>`, clicking anywhere in the sentence focuses the blank with no JS and no
+  `htmlFor` (an input inside its label is associated implicitly) — the whole sentence really is the
+  target, so the affordance is honest. The blank keeps its own `aria-label`, which wins over the label
   text, so the field is not announced by reading the entire sentence back.
+- **HeadwordBlank** — the unanswered headword slot on cloze (empty state) + recognition: a **dotted,
+  faint** rule, NOT a solid one. The solid underline is reserved for real inputs (the cued headword, the
+  cloze sentence blank), so a reveal slot and a fill slot never look identical — a learner is never
+  faced with two matching blanks and left guessing which to answer.
 - **BounceCallout** `{kind}` — neutral inline callout for RL-2/3/4 bounces: paper-sunken bg,
   ink-soft text, no icon color drama (info icon, ink-faint). Appears instantly (no spinner ever
   precedes it). Copy from brand voice.md.

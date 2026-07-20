@@ -32,7 +32,10 @@ export function makeAuth(db: DrizzleDb, config: AuthConfig) {
     secret: config.secret,
     baseURL: config.baseURL,
     emailAndPassword: { enabled: true },
-    advanced: { database: { generateId: () => randomUUID() } },
+    advanced: {
+      database: { generateId: () => randomUUID() },
+      disableOriginCheck: process.env.NODE_ENV === "development",
+    },
     plugins: [tanstackStartCookies()], // last plugin (sets the session cookie)
   });
 }

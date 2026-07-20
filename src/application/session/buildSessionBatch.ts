@@ -42,6 +42,12 @@ export interface BuildSessionBatchDeps extends SeedIntroductionsDeps {
    * a pinned grader would budget recognition-weight batches full of free-production cards.
    */
   tierOverride?: ReviewTier;
+  /**
+   * DEV ONLY — the Dev Tools "show cards even when not due" toggle, injected from the same composition
+   * root. When set, `orderSessionQueue` surfaces every present card regardless of `fsrs.due`, so any
+   * tier/state can be driven without waiting for a card to fall due. Defaults to the real due filter.
+   */
+  includeNotDue?: boolean;
   /** Batch-id source; defaults to `crypto.randomUUID` at the composition edge (deterministic tests). */
   idFactory?: () => string;
 }
@@ -114,7 +120,7 @@ export async function buildSessionBatch(
   }
 
   const all = await deps.cards.listCards(userId);
-  const queue = orderSessionQueue(all, seededSenseIds, now);
+  const queue = orderSessionQueue(all, seededSenseIds, now, deps.includeNotDue);
 
   if (seededSenseIds.length > 0) {
     // SEED-14: log the grant only when it actually introduced cards (a granted-but-zero pass advanced

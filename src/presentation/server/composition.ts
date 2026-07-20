@@ -43,7 +43,7 @@ import type { AdvanceActiveBatchDeps } from "~/application/session/advanceActive
 import type { SeedIntroductionsDeps } from "~/application/session/seedIntroductions.js";
 import type { RunReviewPassDeps } from "~/application/review/runReviewPass.js";
 import type { ResolveReviewPromptDeps } from "~/application/review/resolveReviewPrompt.js";
-import type { ReviewTier } from "~/domain/review/review.js";
+import { devOverrides } from "./devOverrides.js";
 import type { ReadUsableCounterDeps } from "~/application/progress/readUsableCounter.js";
 import type { ReadDashboardSummaryDeps } from "~/application/progress/readDashboardSummary.js";
 import type { ReadWordsListDeps } from "~/application/progress/readWordsList.js";
@@ -83,44 +83,6 @@ requireEnv("DATABASE_URL");
 const BETTER_AUTH_SECRET = requireEnv("BETTER_AUTH_SECRET");
 const NLP_SERVICE_URL = requireEnv("NLP_SERVICE_URL");
 const NLP_SERVICE_TOKEN = requireEnv("NLP_SERVICE_TOKEN");
-
-const REVIEW_TIERS: readonly ReviewTier[] = [
-  "recognition",
-  "cloze",
-  "cued",
-  "free",
-];
-
-/**
- * DEV ONLY (`WIKAIN_DEV_TIER=cloze`): pin every card to one tier so a single review state can be driven
- * without seeding cards at the matching mastery.
- *
- * It is resolved HERE, once, and injected into both `reviewDeps()` and `promptDeps()` — because the two
- * must never disagree. This replaces a hardcoded `const tier = "cued"` that had been pasted into
- * `runReviewPass` AND `resolveReviewPrompt` separately: pinning one but not the other renders one tier's
- * prompt while a different tier grades the response, silently (`resolveReviewTier`'s docstring names that
- * as the exact failure it exists to prevent).
- *
- * Unknown value → throw (halt, don't guess). Set in production → throw: it would corrupt real FSRS
- * scheduling for every learner at once.
- */
-function devTierOverride(): ReviewTier | undefined {
-  const raw = process.env.WIKAIN_DEV_TIER;
-  if (!raw) return undefined;
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "WIKAIN_DEV_TIER is set in production. It pins every learner's review tier — unset it.",
-    );
-  }
-  if (!REVIEW_TIERS.includes(raw as ReviewTier)) {
-    throw new Error(
-      `WIKAIN_DEV_TIER="${raw}" is not a review tier (${REVIEW_TIERS.join(" | ")}).`,
-    );
-  }
-  return raw as ReviewTier;
-}
-
-const DEV_TIER = devTierOverride();
 
 /**
  * ONE Neon handle (lazy connection, built synchronously) shared by every store — cards, the verdict memo
@@ -181,9 +143,11 @@ const judge: JudgePort = new HttpJudge(languageService);
 const judgeVersions: MemoVersions = await fetchJudgeVersions(languageService);
 
 /** Deps for the mini-session flow (spec/14 BAT-11..14): get-or-resume, seam choice, batch builds.
- * Shares the seeding stores AND the same `DEV_TIER` pin the grader/prompt receive, so a pinned dev
- * run batches, renders, and grades the same tier. */
+ * Shares the seeding stores AND the same Dev Tools overrides the grader/prompt receive, resolved once
+ * per request here (`devOverrides()`), so a pinned dev run batches, renders, and grades the same tier
+ * — and honours "show cards even when not due". */
 export function sessionFlowDeps(): GetOrResumeSessionDeps {
+  const dev = devOverrides();
   return composeSessionFlow(
     cards,
     marks,
@@ -193,7 +157,10 @@ export function sessionFlowDeps(): GetOrResumeSessionDeps {
     seedLedgerStore,
     seedInstrumentationStore,
     batchStore,
-    DEV_TIER,
+    {
+      ...(dev.tier ? { tierOverride: dev.tier } : {}),
+      includeNotDue: dev.includeNotDue,
+    },
   );
 }
 
@@ -222,6 +189,7 @@ export function recordMarksDeps(): RecordPlacementMarksDeps {
 }
 
 export function reviewDeps(): RunReviewPassDeps {
+  const dev = devOverrides();
   return composeReviewPass(
     judge,
     cards,
@@ -230,12 +198,20 @@ export function reviewDeps(): RunReviewPassDeps {
     catalog,
     analyzer,
     healQueue,
-    DEV_TIER,
+    {
+      ...(dev.tier ? { tierOverride: dev.tier } : {}),
+      freezeFsrs: dev.freezeFsrs,
+    },
   );
 }
 
 export function promptDeps(): ResolveReviewPromptDeps {
-  return composeResolvePrompt(cards, catalog, DEV_TIER);
+  const dev = devOverrides();
+  return composeResolvePrompt(
+    cards,
+    catalog,
+    dev.tier ? { tierOverride: dev.tier } : {},
+  );
 }
 
 /** Deps for the "words you can use" counter read-model (spec/10). Shares the same store + a real

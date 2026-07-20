@@ -108,14 +108,20 @@ it moved into the Python service. Tests run against embedded **pglite** (`makePg
 out-of-process service (one of them paid). Run `npm run db:migrate:dev` once before boot, and have
 `docker compose up nlp` running before `npm run dev`.
 
-**`WIKAIN_DEV_TIER` pins the review tier** (`recognition|cloze|cued|free`, dev only — the composition root
-throws if it is set in production, or set to a non-tier). It exists because driving one review state
-otherwise means seeding a card at the matching mastery. It is resolved **once**, in the server composition
-root, and injected into `runReviewPass` AND `resolveReviewPrompt` — never read per use-case. That is the
-whole point: the two were previously pinned by a hardcoded `const tier = "cued"` copy-pasted into both, and
-pinning one but not the other renders one tier's prompt while a *different* tier grades the answer, silently
-(`resolveReviewTier` exists to prevent exactly that). Vite reads `.env` at startup — **restart the dev
-server** after changing it; an edit alone does nothing.
+**In-app Dev Tools pin review behavior (DEV only) — `WIKAIN_DEV_TIER` is gone.** A floating panel
+(`src/presentation/components/dev-tools.tsx`, `import.meta.env.DEV`-gated so Vite tree-shakes it out of
+the prod bundle) writes a `wikain-dev-overrides` cookie the server reads per-request at the composition
+edge (`server/devOverrides.ts`, hard-gated to non-production). Three levers: **review tier** (the old env
+pin — `auto|recognition|cloze|cued|free`), **show cards even when not due** (bypasses the
+`orderSessionQueue` due filter — which is otherwise the real `fsrs.due <= now` predicate, no longer a
+stub), and **freeze FSRS scheduling** (`FrozenScheduler` decorator: `scheduler.next` returns the card
+unchanged so it stays due, while still writing a real `ReviewLog` so mastery replay is intact). The tier
+still resolves **once** and is injected into `resolveReviewPrompt` AND `runReviewPass` AND
+`buildSessionBatch` — the pure `DevRuntimeOptions` threads through the three composers — so shown-tier ==
+graded-tier == batched-tier (`resolveReviewTier` exists to prevent that drift). Unlike the env var, the
+cookie changes behavior **live**: the panel invalidates the `review-session` + `review-prompt` queries, so
+**no dev-server restart**. Shape/parse live in `src/presentation/lib/devOverrides.ts` (shared by the panel
+and the reader; malformed input degrades to the neutral default, never throws).
 
 **Migrations are per-environment.** `drizzle.config.ts` keys `out` off `NODE_ENV`, so generated SQL
 lands in `drizzle/development/` or `drizzle/production/` (the `drizzle/` root no longer holds any).
@@ -209,7 +215,11 @@ onboarding — marks are additive-only in v1, so a mistaken tap would be permane
 
 **Loop polish.** All four review tiers are typeset as one **dictionary entry**; `resolveReviewPrompt`
 carries `pos` on every arm (not a leak — MCQ distractors are POS-homogeneous by construction,
-`docs/GENERATION_RULES.md §1`) and `intendedSense` on the free arm. The day boundary (SM-5b/CNT-2) runs on
+`docs/GENERATION_RULES.md §1`) and `intendedSense` on the free arm. The two writing surfaces —
+cloze (`ClozeSentence`) and free production (`SentenceField`) — share ONE `SentenceWell` component so
+they cannot drift: they had, once, rendering the same act with different quote layouts and inline
+padding. The specimen-sentence casting (italic serif + framing quotes vs. the roman-serif definition
+and sans instrument copy) is owned by the **design-system skill** — read it, not this line. The day boundary (SM-5b/CNT-2) runs on
 the learner's own clock: pure `utcOffsetMinutesFor(ianaZone, at)` via `Intl` (DST-correct because it is
 computed per-instant; sign matches `judgedPassLedger.localDayKey`), converted at the **composition edge**
 so the read-models keep their tested `utcOffsetMinutes` input, and `updateSettings` rejects a junk zone —
@@ -285,9 +295,10 @@ and labels from the other.
 server-authoritative active batch (`session_state`), a Continue/Done seam, T-expiry "Welcome back"
 rebuilds, and per-batch instrumentation (`review_batches`) — the spec file holds the behavior and the
 migrated amendment rationale; do not restate it here. Non-obvious, and not recorded elsewhere:
-**`WIKAIN_DEV_TIER` now threads into a THIRD place** — `buildSessionBatch` — because the batcher weighs
+**the Dev Tools tier pin threads into a THIRD place** — `buildSessionBatch` — because the batcher weighs
 entries by tier; pinning the grader/prompt but not the batcher would budget recognition-weight batches
-full of free-production cards. The **`seed_ledger` day-guard (`BAT-14`) also fixed a live bug**:
+full of free-production cards (the Dev Tools "show cards even when not due" flag rides the same
+`DevRuntimeOptions` into the batcher's `orderSessionQueue`). The **`seed_ledger` day-guard (`BAT-14`) also fixed a live bug**:
 `startSession` seeded per-invocation, so every `/review` reload minted new intro cards — seeding is now
 bounded by a **per-learner-day `NEW_PER_DAY` count cap** (`SEED-10/11`; un-defers Amendment v4.2's
 deferred cap), with the `SEED_MIN_GAP_HOURS` gap kept **only** as the calendar-day-**boundary** guard.

@@ -25,7 +25,9 @@ in `src/presentation/styles.css`), shadcn-style components in `src/presentation/
   scales to `max-w-xl` (576px) content + whitespace (no multi-pane layouts).
 - App chrome: sticky top bar (wordmark left, counter right) + bottom tab nav on mobile
   (Home / Words / Settings), top-right inline nav on `sm+`. **The review session is chromeless**
-  (focus mode): only a thin progress bar, a close button, and the card.
+  (focus mode): only a thin progress bar, a close button, and the card. The card is **top-aligned to a
+  constant offset** (`pt-24`), NOT vertically centered — centering a variable-height card landed the
+  tier tag at a different Y on every tier, so the four tiers stopped reading as one entry.
 - Spacing rhythm: 4px base; sections separate by `space-y-6`; panel padding `p-5`/`p-6` (20–24px).
 - One panel = one thought. Never stack two decisions in one panel.
 - **Radius:** panels `rounded-xl`/`rounded-lg` (8px) · buttons & inputs `rounded-md` (6px) · chips
@@ -50,6 +52,13 @@ Serif = the language in play. Sans = the instrument speaking. Mono = the instrum
 
 A count in sans, or a page title in serif, is a **miscast**. The voice tells the learner what kind of
 thing they are reading before they read it.
+
+**Within the serif voice, three registers are held apart** so a review card doesn't blur into one wall
+of serif: a **specimen sentence** (a full example / the language as an utterance) is **italic + curly
+double quotes** (`Sentence` / `SentenceField` / `ClozeSentence`); a **definition** is upright/roman serif
+(`EntryDefinition`); everything the instrument says (instructions, callouts, system copy) is **sans
+`text-ink-soft`**. Keep italic to single specimen sentences — a multi-line body in italic is harder to
+read.
 
 ## Motion principles (details in `references/motion.md`)
 

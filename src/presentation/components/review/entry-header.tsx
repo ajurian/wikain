@@ -34,13 +34,18 @@ export function EntryHeader({
   );
 }
 
-/** The unanswered headword: a rule where the word will be. Zero-height so it sits on the baseline. */
+/**
+ * The unanswered headword: a rule where the word will be revealed. Zero-height so it sits on the
+ * baseline. It is **dotted and faint** on purpose — a reveal slot, NOT a fillable input. The solid
+ * underline is reserved for real inputs (the cued headword, the cloze sentence blank), so a learner is
+ * never faced with two identical-looking blanks and left guessing which one to answer.
+ */
 export function HeadwordBlank({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "inline-block w-32 border-b-2 border-ink-faint align-baseline",
+        "inline-block w-32 border-b-2 border-dotted border-ink-faint/45 align-baseline",
         className,
       )}
     />

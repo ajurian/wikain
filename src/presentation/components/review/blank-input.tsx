@@ -13,7 +13,9 @@ export type BlankInputVariant = "headword" | "inline";
 /** The mirror MUST match the input in font, size, weight, tracking, and horizontal padding. */
 const TYPE: Record<BlankInputVariant, string> = {
   headword: "font-serif text-4xl leading-tight font-semibold",
-  inline: "font-serif text-xl leading-relaxed",
+  // `italic` so the typed word matches the italic cloze sentence it sits inside (the completed line
+  // reads as one specimen sentence). The mirror shares this class, so auto-width stays correct.
+  inline: "font-serif text-xl leading-relaxed italic",
 };
 
 const MIN_WIDTH: Record<BlankInputVariant, string> = {

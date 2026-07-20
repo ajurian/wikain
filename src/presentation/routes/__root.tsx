@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import {
   HeadContent,
   Outlet,
@@ -10,6 +10,16 @@ import appCss from "../styles.css?url";
 import icon from "../favicon.ico?url";
 import { getSessionFn } from "@/server/session";
 import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme";
+
+// DEV-only dev tools. Lazy + DEV-gated: in a production build `import.meta.env.DEV` folds to `false`, so
+// the `import()` sits in a dead branch and Rollup never emits the chunk — the whole panel (and its cookie
+// logic) is fully excluded from the prod client bundle. A plain static import + dead ternary was NOT
+// enough (the module's top-level store state marks it as side-effectful, defeating tree-shaking).
+const DevTools = import.meta.env.DEV
+  ? lazy(() =>
+      import("@/components/dev-tools").then((m) => ({ default: m.DevTools })),
+    )
+  : null;
 
 export const Route = createRootRoute({
   head: () => ({
@@ -45,6 +55,11 @@ function RootComponent() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <Outlet />
+            {DevTools ? (
+              <Suspense fallback={null}>
+                <DevTools />
+              </Suspense>
+            ) : null}
           </ThemeProvider>
         </QueryClientProvider>
         <Scripts />

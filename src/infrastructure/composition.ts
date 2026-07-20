@@ -35,7 +35,19 @@ import type { GetOrResumeSessionDeps } from "~/application/session/getOrResumeSe
 import type { AdvanceActiveBatchDeps } from "~/application/session/advanceActiveBatch.js";
 import type { ReviewTier } from "~/domain/review/review.js";
 import { TsFsrsScheduler } from "./tsFsrsScheduler.js";
+import { FrozenScheduler } from "./frozenScheduler.js";
 import { TAGALOG_LEXICON } from "./nlp/tagalogLexicon.js";
+
+/**
+ * DEV-ONLY runtime overrides threaded from the composition root (the Dev Tools cookie; formerly
+ * `WIKAIN_DEV_TIER`). Kept as an infra-local shape so this layer needn't import the presentation
+ * `DevOverrides` (ARCH-1). All fields are optional — an absent/empty object is production behavior.
+ */
+export interface DevRuntimeOptions {
+  tierOverride?: ReviewTier;
+  includeNotDue?: boolean;
+  freezeFsrs?: boolean;
+}
 
 /**
  * spec/05 MEMO-6: a fixed memo version stamp for wirings that use a FAKE judge (tests). A memo hit must
@@ -104,12 +116,17 @@ export function composeReviewPass(
   catalog: Catalog,
   analyzer: SentenceAnalyzer,
   healQueue: HealQueuePort,
-  tierOverride?: ReviewTier,
+  dev?: DevRuntimeOptions,
 ): RunReviewPassDeps {
+  const base = composeFreeProduction(judge, cards, memo, judgeVersions, catalog, analyzer);
+  // Dev "freeze FSRS": the grading path is the ONLY place `scheduler.next` is called, so wrapping the
+  // scheduler here (and not in the seeding/prompt composers) is sufficient to hold every schedule.
+  const scheduler = dev?.freezeFsrs ? new FrozenScheduler(base.scheduler) : base.scheduler;
   return {
-    ...composeFreeProduction(judge, cards, memo, judgeVersions, catalog, analyzer),
+    ...base,
+    scheduler,
     healQueue,
-    ...(tierOverride ? { tierOverride } : {}),
+    ...(dev?.tierOverride ? { tierOverride: dev.tierOverride } : {}),
   };
 }
 
@@ -149,9 +166,9 @@ export function composeSession(
 /**
  * Wiring for the mini-session flow (spec/14 BAT-11..14): the two-branch get-or-resume, the seam
  * choice, and the shared batch builder behind both. Extends the seeding wiring (the day-guarded
- * build seeds through it) with the three batch stores. `tierOverride` is the SAME `WIKAIN_DEV_TIER`
- * pin `composeReviewPass`/`composeResolvePrompt` receive — the batcher weighs entries by tier, so
- * it must see what the grader will grade.
+ * build seeds through it) with the three batch stores. `dev.tierOverride` is the SAME Dev Tools pin
+ * `composeReviewPass`/`composeResolvePrompt` receive — the batcher weighs entries by tier, so it must
+ * see what the grader will grade; `dev.includeNotDue` lets the batcher surface not-yet-due cards.
  */
 export function composeSessionFlow(
   cards: CardRepository,
@@ -162,7 +179,7 @@ export function composeSessionFlow(
   seedLedger: SeedLedgerStore,
   seedInstrumentation: SeedInstrumentationStore,
   batches: BatchInstrumentationStore,
-  tierOverride?: ReviewTier,
+  dev?: DevRuntimeOptions,
 ): GetOrResumeSessionDeps {
   return {
     ...composeSeeding(cards, marks, catalog, wordSource),
@@ -170,7 +187,8 @@ export function composeSessionFlow(
     seedLedger,
     seedInstrumentation,
     batches,
-    ...(tierOverride ? { tierOverride } : {}),
+    ...(dev?.tierOverride ? { tierOverride: dev.tierOverride } : {}),
+    ...(dev?.includeNotDue ? { includeNotDue: true } : {}),
   };
 }
 
@@ -211,9 +229,9 @@ export function composeRecordPlacementMarks(
 export function composeResolvePrompt(
   cards: CardRepository,
   catalog: Catalog,
-  tierOverride?: ReviewTier,
+  dev?: DevRuntimeOptions,
 ): ResolveReviewPromptDeps {
-  return { catalog, cards, ...(tierOverride ? { tierOverride } : {}) };
+  return { catalog, cards, ...(dev?.tierOverride ? { tierOverride: dev.tierOverride } : {}) };
 }
 
 /**

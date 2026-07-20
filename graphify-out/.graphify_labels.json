@@ -247,6 +247,7 @@
   "245": "__init__.py",
   "246": "__init__.py",
   "247": "__init__.py",
+  "248": "JudgeVerdict",
   "249": "submitFreeProduction.ts",
   "250": "DrizzleDb",
   "251": "drizzleHealQueue.ts",
@@ -256,8 +257,18 @@
   "255": "PlacementMarksStore",
   "256": "runReviewPass.ts",
   "257": "Cloze Fit-Set Classification Rubric",
+  "258": "batch-seam.tsx",
+  "259": "readDashboardSummary.ts",
   "260": "httpJudge.ts",
   "261": "checkFreeProductionRuleLayer.test.ts",
   "262": "judgedPassLedger.ts",
-  "267": "submitFreeProduction"
+  "263": "batchInstrumentation.ts",
+  "264": "editResolution.ts",
+  "265": "advanceActiveBatch.test.ts",
+  "266": "judgeFirstProduction.test.ts",
+  "267": "submitFreeProduction",
+  "268": "auth.ts",
+  "269": "cardRepositoryContract.ts",
+  "270": "sessionStateContract.ts",
+  "271": "submitFreeProduction"
 }

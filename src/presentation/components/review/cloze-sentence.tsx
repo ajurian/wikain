@@ -1,14 +1,21 @@
 /*
  * The clozed sentence a learner types the missing word into (TIER-5).
  *
- * The whole sentence is a native `<label>` wrapping the blank, so clicking anywhere in it focuses the
- * input — no `onClick`, no `ref`, no `id`/`htmlFor` (an input that is a descendant of its label is
- * associated implicitly). That is also why the affordance is honest rather than decorative: the target
- * really is the whole sentence, and a keyboard/screen-reader user gets the same association for free.
+ * The whole sentence is a native `<label>` (via `SentenceWell label`) wrapping the blank, so clicking
+ * anywhere in it focuses the input — no `onClick`, no `ref`, no `id`/`htmlFor` (an input that is a
+ * descendant of its label is associated implicitly). That is also why the affordance is honest rather than
+ * decorative: the target really is the whole sentence, and a keyboard/screen-reader user gets the same
+ * association for free.
  *
- * The blank keeps its own `aria-label`, which wins over the label's text for the accessible name — so
- * the field is announced as the blank, not by reading the entire sentence back.
+ * It shares `SentenceWell` with `SentenceField` so cloze and free production render as the same act on the
+ * same paper — identical shaded well, framing quotes, and inline padding. The middle column carries the
+ * specimen-sentence cast (italic serif); the typed blank shares the italic (`BlankInput inline`), so a
+ * completed line reads as one sentence.
+ *
+ * The blank keeps its own `aria-label`, which wins over the label's text for the accessible name — so the
+ * field is announced as the blank, not by reading the entire sentence back.
  */
+import { SentenceWell } from "@/components/review/sentence-well";
 import { cn } from "@/lib/utils";
 
 export function ClozeSentence({
@@ -24,19 +31,17 @@ export function ClozeSentence({
   const [before, after] = clozedSentence.split("_");
 
   return (
-    <label
-      className={cn(
-        // `-mx-3` + `px-3`: the well bleeds past the text so the sentence stays aligned with the rest
-        // of the entry, instead of being indented by its own padding.
-        "-mx-3 block cursor-text rounded-lg px-3 py-2 transition-colors",
-        "hover:bg-paper-sunken focus-within:bg-paper-sunken",
-        "font-serif text-xl leading-relaxed text-ink",
-        className,
-      )}
-    >
-      {before}
-      {children}
-      {after}
-    </label>
+    <SentenceWell label>
+      <span
+        className={cn(
+          "min-w-0 flex-1 font-serif text-xl leading-relaxed text-ink italic",
+          className,
+        )}
+      >
+        {before}
+        {children}
+        {after}
+      </span>
+    </SentenceWell>
   );
 }

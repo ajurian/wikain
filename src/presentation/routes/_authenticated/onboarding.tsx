@@ -58,7 +58,7 @@ import { Wordmark } from "@/components/wordmark";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { SentenceField } from "@/components/review/sentence-field";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
@@ -403,13 +403,13 @@ function FirstWinStep({
         {word.selfReferencePrompt ? ` ${word.selfReferencePrompt}` : ""}
       </p>
       <div className="space-y-3">
-        <Textarea
+        <SentenceField
           autoFocus
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={setText}
           disabled={checking}
-          placeholder="Your sentence…"
-          className="min-h-24 font-serif text-xl leading-relaxed"
+          placeholder="Write your sentence…"
+          aria-label="Your sentence"
         />
         {bounce ? <BounceCallout kind={bounce} lemma={word.lemma} /> : null}
         {notice === "offline" ? (

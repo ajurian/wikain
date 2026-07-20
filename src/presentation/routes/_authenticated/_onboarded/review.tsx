@@ -58,6 +58,8 @@ import { TarsierIdle } from "@/components/review/tarsier-idle";
 import { BlankAnswer, BlankInput } from "@/components/review/blank-input";
 import { CheckingIndicator } from "@/components/review/checking-indicator";
 import { ClozeSentence } from "@/components/review/cloze-sentence";
+import { Sentence } from "@/components/review/sentence";
+import { SentenceField } from "@/components/review/sentence-field";
 import {
   EntryDefinition,
   EntryHeader,
@@ -72,7 +74,6 @@ import { MasteryChip } from "@/components/mastery-chip";
 import { WordOptionList } from "@/components/review/word-option-list";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/_onboarded/review")({
@@ -273,9 +274,11 @@ function ReviewSession() {
         </span>
       </div>
 
-      {/* `py-20` clears the absolute chrome and stays symmetric — equal top/bottom padding is what
-          keeps the card centered once a tall card overflows and the page scrolls. */}
-      <div className="flex min-h-dvh flex-col justify-center py-20">
+      {/* Top-aligned to a CONSTANT offset (not vertically centered): centering a variable-height card
+          landed the tier tag at a different Y on every tier, so the four tiers stopped reading as one
+          entry and short cards floated mid-screen. `pt-24` clears the absolute chrome; the card grows
+          downward from a fixed anchor. `pb-24` keeps breathing room when the page scrolls. */}
+      <div className="flex min-h-dvh flex-col justify-start pt-24 pb-24">
         {session.isPending && stage.kind === "loading" ? (
           <CenteredSpinner label="Preparing your session…" />
         ) : session.isError && stage.kind === "loading" ? (
@@ -970,9 +973,7 @@ function FreeProductionCard({
           Here’s the example to lean on:
         </p>
         {state.modelSentence ? (
-          <blockquote className="border-l-2 border-marigold pl-4 font-serif text-xl leading-relaxed text-ink">
-            {state.modelSentence}
-          </blockquote>
+          <Sentence>{state.modelSentence}</Sentence>
         ) : null}
         <div className="space-y-3">
           <Button
@@ -1046,13 +1047,13 @@ function FreeProductionCard({
       </p>
 
       <div className="space-y-3">
-        <Textarea
+        <SentenceField
           autoFocus
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={setText}
           disabled={busy}
-          placeholder="Your sentence…"
-          className="min-h-24 font-serif text-xl leading-relaxed"
+          placeholder="Write your sentence…"
+          aria-label="Your sentence"
         />
 
         {starter ? (
@@ -1127,7 +1128,7 @@ function FreeProductionCard({
               <Button
                 variant="ghost"
                 size="lg"
-                className="h-12"
+                className="h-12 font-normal text-ink-soft"
                 onClick={() => setStarter(true)}
               >
                 Show a starter
