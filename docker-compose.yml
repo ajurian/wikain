@@ -3,16 +3,32 @@
 # The web app is NOT in here — it runs on Vite (`npm run dev`) and reaches this container on
 # NLP_SERVICE_URL=http://localhost:8000.
 services:
+  pgadmin:
+    image: dpage/pgadmin4:9.16
+    restart: on-failure
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "http://localhost:80/misc/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
   db:
     image: postgres:18.4
-    container_name: wikain-db
-    restart: unless-stopped
+    restart: on-failure
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: wikain
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql
     healthcheck:
@@ -23,6 +39,7 @@ services:
 
   nlp:
     build: ./python
+    restart: on-failure
     env_file:
       - .env.development
     ports:

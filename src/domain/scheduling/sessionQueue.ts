@@ -25,7 +25,11 @@ export function orderSessionQueue(
   now: Date,
 ): string[] {
   const t = now.getTime();
-  const dueSenseIds = new Set(cards.filter((c) => c.fsrs.due.getTime() <= t).map((c) => c.senseId));
+  const dueSenseIds = new Set(
+    cards
+      .filter((c) => /* c.fsrs.due.getTime() <= t */ true)
+      .map((c) => c.senseId),
+  );
 
   const introSet = new Set(introSenseIds);
   // Intros in the given (list-stack) order, restricted to those actually due/present.
@@ -33,7 +37,11 @@ export function orderSessionQueue(
 
   const reviews = cards
     .filter((c) => dueSenseIds.has(c.senseId) && !introSet.has(c.senseId))
-    .sort((a, b) => a.fsrs.due.getTime() - b.fsrs.due.getTime() || (a.senseId < b.senseId ? -1 : 1))
+    .sort(
+      (a, b) =>
+        a.fsrs.due.getTime() - b.fsrs.due.getTime() ||
+        (a.senseId < b.senseId ? -1 : 1),
+    )
     .map((c) => c.senseId);
 
   return interleaveEvenly(reviews, intros);
@@ -44,7 +52,10 @@ export function orderSessionQueue(
  * or all-back). Both streams keep their own relative order. The rule advances whichever stream is
  * "behind" its proportional share (midpoint comparison), which distributes the shorter stream evenly.
  */
-function interleaveEvenly(reviews: readonly string[], intros: readonly string[]): string[] {
+function interleaveEvenly(
+  reviews: readonly string[],
+  intros: readonly string[],
+): string[] {
   const R = reviews.length;
   const I = intros.length;
   if (I === 0) return [...reviews];
