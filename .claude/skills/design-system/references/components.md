@@ -81,8 +81,6 @@ feature slice (PRAG-1). Don't assume they exist:
   "Skip for now". Skip = no rating, card stays due.
 - **OfflineBar / RetryNotice** — NET-5 block state and NET-3 neutral failure notice. Both neutral
   ink-soft; **never terracotta** (not the learner's fault). Sentence always preserved.
-- **UnscoredPracticeNote** — SM-8: after a judged fail, input remains with the "already recorded"
-  label.
 - **OnboardingStep** — a step-card shell with step dots. Onboarding currently renders its steps
   directly.
 

@@ -41,7 +41,6 @@ Session shell: Progress bar (position/total) + close (×) → back to dashboard.
 | Fail: grammar (meaning-obscuring) | JDG-2 | VerdictPanel fail (grammar copy) + EditedSentence |
 | EDIT-4 fallback (unresolvable edit) | EDIT-4 | EditedSentence fallback mode: whole corrected_sentence |
 | Edit feedback on demand | EDIT-7 | tap span → one_line_feedback popover |
-| Unscored further practice after fail | SM-8 | UnscoredPracticeNote + open input |
 | Transient failure after retry | NET-3/4 | RetryNotice (neutral), sentence preserved, card stays due |
 | Offline at submit | NET-5 | OfflineBar, submit blocked |
 | Session complete | — | SessionSummary |

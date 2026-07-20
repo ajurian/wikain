@@ -80,9 +80,8 @@ remain Deferred below.
 ### RAT-4 — First-genuine-fail; no retry-until-pass against the judge
 **Trace:** PRD §3.6, §10 step 7.
 **Requirement:** The free-production `Again` MUST be taken on the **first genuine gate fail**. The
-schedule MUST NOT be gameable into a `Good` by re-submitting after a fail. Further sentences MAY be
-written for practice but MUST be **unscored** for that review (served from memo where identical —
-never re-judged hoping for a pass).
+schedule MUST NOT be gameable into a `Good` by re-submitting after a fail: a resubmission MUST NOT be
+re-judged or re-scored (served from memo where identical — never re-judged hoping for a pass).
 
 **Scenario: resubmission after a fail does not overturn the rating**
 ```

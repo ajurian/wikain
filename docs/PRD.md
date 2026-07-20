@@ -244,8 +244,7 @@ triggers a demotion, §3) but are stored separately.
   weeks ago but just failed is not currently usable, and its badge reflects that.
 - **`[VALIDATE]` There is no recovery path for a wrong demotion in v1.** With the override removed
   (§5.5, v4 changelog), a sentence the judge *wrongly* rejects still demotes and still takes the
-  `Again` lapse, and that stands. The learner may write a further sentence, but it is **unscored
-  for that review** (§10 step 7). Re-earning happens only through the word's normal future
+  `Again` lapse, and that stands. Re-earning happens only through the word's normal future
   reviews. See "Risks introduced by v4."
 
 ### 3.4 Scaffolding
@@ -299,8 +298,7 @@ self-reported, so `Hard`/`Easy` would be synthesized from thin signal.
 - **The free-production `Again` is taken on the _first genuine gate fail_** (§5.2 / §10 step 7).
   There is **no "retry until pass"** against the judge — the schedule must not be gameable into a
   `Good` by re-submitting after a fail. (This protects the integrity of each learner's own FSRS
-  data, hence their own learning.) Further sentences may be written for
-  practice but are **unscored** for that review. **There is no override and no rejudge in v1** — a
+  data, hence their own learning.) **There is no override and no rejudge in v1** — a
   gate fail is final for that presentation; the word demotes and takes the `Again`. (Consequence
   and risk: §3.3 `[VALIDATE]` and "Risks introduced by v4." An internal inference retry on a
   network/transport error is not a learner signal and never touches the rating — §7.)
@@ -842,10 +840,9 @@ Attaches to the loop; adds no separate progression system.
    - **Pass** (sense-correct AND grammatical) → **promote** one rung (§3.2); green-check, plus any
      non-failing `replacements`/enrichment rendered inline (§9).
    - **Fail** → **rating taken on this first genuine gate fail** (`Again` + demote, §3.3). Feedback +
-     `replacements` shown; the learner **may try a new sentence, but those further attempts are
-     unscored** for this review (served from memo where identical — never re-judge hoping for a pass).
-     **There is no override and no rejudge in v1** — the fail stands for this presentation. No harsh
-     penalty.
+     `replacements` shown; a resubmission is **not re-judged or re-scored** (served from memo where
+     identical — never re-judge hoping for a pass). **There is no override and no rejudge in v1** — the
+     fail stands for this presentation. No harsh penalty.
 8. **Derive the rating** (§3.6) and call the scheduler; reschedule the word and **persist the
    `ReviewLog`** (§8 optimizer). Rule-layer bounces (step 4) are skipped here — they produced no
    rating. _(End of pass; loop repeats.)_

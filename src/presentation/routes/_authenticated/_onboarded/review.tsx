@@ -275,7 +275,7 @@ function ReviewSession() {
 
       {/* `py-20` clears the absolute chrome and stays symmetric — equal top/bottom padding is what
           keeps the card centered once a tall card overflows and the page scrolls. */}
-      <div className="flex min-h-dvh flex-col justify-center pt-20 pb-53">
+      <div className="flex min-h-dvh flex-col justify-center py-20">
         {session.isPending && stage.kind === "loading" ? (
           <CenteredSpinner label="Preparing your session…" />
         ) : session.isError && stage.kind === "loading" ? (
@@ -290,7 +290,7 @@ function ReviewSession() {
             batch.completed === 0 &&
             batchResults.length === 0 ? (
               <p className="mb-6 text-center text-sm text-ink-soft">
-                Welcome back — here’s your next set.
+                Welcome back — here&rsquo;s your next set.
               </p>
             ) : null}
             <AnimatePresence mode="wait">
@@ -390,7 +390,7 @@ function StepCard({
         <CenteredSpinner label="Loading…" />
       ) : prompt.isError || prompt.data === undefined ? (
         <p className="text-center text-sm text-terracotta">
-          Couldn’t load this one.
+          Couldn&rsquo;t load this one.
         </p>
       ) : (
         <PromptCard prompt={prompt.data} onDone={onDone} onSkip={onSkip} />
@@ -1020,18 +1020,6 @@ function FreeProductionCard({
           lemma={lemma}
           {...(r.passed ? {} : { demotedTo: r.mastery })}
         />
-        {!r.passed ? (
-          /* SM-8: further sentences are unscored for this review */
-          <div className="space-y-2">
-            <p className="text-xs text-ink-faint">
-              Keep practicing if you like — this one’s already recorded.
-            </p>
-            <Textarea
-              placeholder={`Another sentence with “${lemma}”…`}
-              className="min-h-20 font-serif text-xl"
-            />
-          </div>
-        ) : null}
         <NextButton onClick={() => finish(r)} />
       </div>
     );

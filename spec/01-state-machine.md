@@ -185,16 +185,14 @@ And does not fall below Recognized
 ### SM-8 — No recovery path for a wrong demotion in v1
 **Trace:** PRD §3.3 `[VALIDATE]`, §5.5, §10 step 7; Risks-v4 #1.
 **Requirement:** With override/rejudge removed (`06`), a sentence the judge **wrongly** rejects MUST
-still demote and still take the `Again` lapse, and that MUST stand for the presentation. The learner
-MAY write a further sentence, but it MUST be **unscored** for that review. Re-earning happens only
-through the word's normal future reviews.
+still demote and still take the `Again` lapse, and that MUST stand for the presentation. Re-earning
+happens only through the word's normal future reviews.
 
 **Scenario: a wrongly-rejected sentence stays demoted**
 ```
 Given a correct sentence that the judge incorrectly fails
 When the gate fail is recorded
 Then the word demotes and takes the Again lapse
-And any further sentence the learner writes is unscored for this review
 And there is no override or rejudge available
 ```
 

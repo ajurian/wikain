@@ -69,7 +69,7 @@ And the pass proceeds to verdict handling with that verdict
 **Requirement:** On a **pass** (sense-correct AND grammatical, `06`) the system MUST promote one rung
 (`01`) and render a green check plus any non-failing `replacements`/enrichment inline (`07`/`10`). On
 a **fail** the rating MUST be taken on this **first genuine gate fail** (`Again` + demote, `01`/`02`);
-feedback + `replacements` are shown; further sentences are **unscored** for this review (served from
+feedback + `replacements` are shown; a resubmission MUST NOT be re-judged or re-scored (served from
 memo where identical — never re-judged). There MUST be no override and no rejudge (`06`).
 
 **Scenario: a judged pass promotes and renders inline edits**
@@ -87,7 +87,6 @@ Given a free production judged a sense or grammar fail
 When the verdict is handled
 Then the rating Again is taken on this first genuine gate fail
 And the word demotes one rung (floor Recognized)
-And any further sentence in this review is unscored
 And no override or rejudge is available
 ```
 

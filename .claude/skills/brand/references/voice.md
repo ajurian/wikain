@@ -48,7 +48,6 @@ learner's fault. **Never reveals the target** — every line ends on the first-l
 | Edit feedback hint (EDIT-7) | "Tap an edit to see why." Feedback is on-demand, never the primary surface. |
 | Fail, sense (LOOP-4/SM-6) | "Not the sense we're after here." behind a mono `FAIL` label + mono `DETECTED` / `INTENDED` sense lines + inline edits. Then: "*{word}* moved back a step — it'll come around again." |
 | Fail, grammar (meaning-obscuring) | "The meaning gets lost here." + inline edits + same moved-back line. |
-| Unscored further practice (SM-8) | Input stays open, labeled: "Keep practicing if you like — this one's already recorded." |
 
 ## Failure path (never the learner's fault — NET-3/4/5)
 
